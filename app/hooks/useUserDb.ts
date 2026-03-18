@@ -1,16 +1,18 @@
+import { getUserById } from "@/client/endpoints/users/getUserById";
+import { useUser } from "@clerk/clerk-expo";
 import { useEffect, useState, useCallback } from "react";
-import { getUserPersonalInfo } from "@/client/endpoints/users/getUserDetails";
 
 export function useUserDb() {
   const [userDb, setUserDb] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<any>(null);
+      const { user } = useUser();
 
   const fetchUserDb = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getUserPersonalInfo();
+      const data = await getUserById();
       setUserDb(data);
     } catch (err) {
       setError(err);

@@ -2,7 +2,6 @@ import React from "react";
 import { View, Alert, StatusBar } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useForm, FormProvider } from "react-hook-form";
-import { getUserPersonalInfo } from "@/client/endpoints/users/getUserDetails";
 import Header from "@/components/Header";
 import CreteEventTabsComponent from "@/components/Create-Events/CreateEventsTabs";
 import Event_Information from "@/components/Create-Events/EventInformation";
@@ -11,7 +10,8 @@ import TicketInformation from "@/components/Create-Events/TicketInformations";
 import InviteMembers from "@/components/Create-Events/InviteMembers";
 import PreviewEvent from "@/components/Create-Events/PreviewEvent";
 import { createEvent } from "@/client/endpoints/events/createEvent";
-
+import { getUserDetailsByClerkId } from "@/client/endpoints/users/getUserDetailsByClerkId";
+import { useUser } from "@clerk/clerk-expo";
 export type EventFormValues = {
   title: string;
   description: string;
@@ -51,6 +51,8 @@ export type EventFormValues = {
 
 const CreateEvents = () => {
   const router = useRouter();
+    const { user } = useUser(); // ✅ move hook here
+
   const { control, handleSubmit, ...methods } = useForm<EventFormValues>({
     defaultValues: {
       title: "",
@@ -97,43 +99,114 @@ const CreateEvents = () => {
 
   const onSubmit = handleSubmit(async (data) => {
     const now = new Date();
-    const startDate = data.startDate instanceof Date ? data.startDate : new Date(data.startDate);
-    const endDate = data.endDate instanceof Date ? data.endDate : new Date(data.endDate);
-    const paymentDeadline = data.paymentDeadline instanceof Date ? data.paymentDeadline : new Date(data.paymentDeadline);
-    const refundDeadline = data.refundDeadline ? new Date(data.refundDeadline) : null;
+    const startDate =
+      data.startDate instanceof Date
+        ? data.startDate
+        : new Date(data.startDate);
+    const endDate =
+      data.endDate instanceof Date ? data.endDate : new Date(data.endDate);
+    const paymentDeadline =
+      data.paymentDeadline instanceof Date
+        ? data.paymentDeadline
+        : new Date(data.paymentDeadline);
+    const refundDeadline = data.refundDeadline
+      ? new Date(data.refundDeadline)
+      : null;
     const minAttendees = Number(data.minAttendees) || 0;
     const maxAttendees = Number(data.maxAttendees) || 0;
     const availableTickets = Number(data.availableTickets) || 0;
     const ticketPrice = Number(data.ticketPrice) || 0;
 
-    if (!data.title.trim()) { Alert.alert("Validation", "Event title is required."); return; }
-    if (!data.category.trim()) { Alert.alert("Validation", "Event category is required."); return; }
-    if (!data.location.name.trim()) { Alert.alert("Validation", "Event location is required."); return; }
-    if (!data.coverImage.fileUrl) { Alert.alert("Validation", "Cover image is required."); return; }
-    if (!data.description.trim()) { Alert.alert("Validation", "Event description is required."); return; }
+    if (!data.title.trim()) {
+      Alert.alert("Validation", "Event title is required.");
+      return;
+    }
+    if (!data.category.trim()) {
+      Alert.alert("Validation", "Event category is required.");
+      return;
+    }
+    if (!data.location.name.trim()) {
+      Alert.alert("Validation", "Event location is required.");
+      return;
+    }
+    if (!data.coverImage.fileUrl) {
+      Alert.alert("Validation", "Cover image is required.");
+      return;
+    }
+    if (!data.description.trim()) {
+      Alert.alert("Validation", "Event description is required.");
+      return;
+    }
 
-    if (startDate < now) { Alert.alert("Validation", "Start date cannot be in the past."); return; }
-    if (endDate <= startDate) { Alert.alert("Validation", "End date must be after the start date."); return; }
-    if (paymentDeadline > startDate) { Alert.alert("Validation", "Payment deadline must be before the start date."); return; }
-    if (refundDeadline && refundDeadline >= startDate) { Alert.alert("Validation", "Refund deadline must be before the start date."); return; }
+    if (startDate < now) {
+      Alert.alert("Validation", "Start date cannot be in the past.");
+      return;
+    }
+    if (endDate <= startDate) {
+      Alert.alert("Validation", "End date must be after the start date.");
+      return;
+    }
+    if (paymentDeadline > startDate) {
+      Alert.alert(
+        "Validation",
+        "Payment deadline must be before the start date.",
+      );
+      return;
+    }
+    if (refundDeadline && refundDeadline >= startDate) {
+      Alert.alert(
+        "Validation",
+        "Refund deadline must be before the start date.",
+      );
+      return;
+    }
 
-    if (minAttendees < 1) { Alert.alert("Validation", "Minimum attendees must be at least 1."); return; }
-    if (maxAttendees < minAttendees) { Alert.alert("Validation", "Maximum attendees must be greater than or equal to minimum attendees."); return; }
-    if (availableTickets < 1) { Alert.alert("Validation", "Available tickets must be at least 1."); return; }
-    if (availableTickets > maxAttendees) { Alert.alert("Validation", "Available tickets cannot exceed maximum attendees."); return; }
-    if (data.isPaidEvent && ticketPrice <= 0) { Alert.alert("Validation", "Ticket price must be greater than 0 for paid events."); return; }
+    if (minAttendees < 1) {
+      Alert.alert("Validation", "Minimum attendees must be at least 1.");
+      return;
+    }
+    if (maxAttendees < minAttendees) {
+      Alert.alert(
+        "Validation",
+        "Maximum attendees must be greater than or equal to minimum attendees.",
+      );
+      return;
+    }
+    if (availableTickets < 1) {
+      Alert.alert("Validation", "Available tickets must be at least 1.");
+      return;
+    }
+    if (availableTickets > maxAttendees) {
+      Alert.alert(
+        "Validation",
+        "Available tickets cannot exceed maximum attendees.",
+      );
+      return;
+    }
+    if (data.isPaidEvent && ticketPrice <= 0) {
+      Alert.alert(
+        "Validation",
+        "Ticket price must be greater than 0 for paid events.",
+      );
+      return;
+    }
+    console.log(192)
+    let creatorId: string;
+    try {
+      console.log(195)
 
-    // Fetch user ID from / users / me
-    // let creatorId: string;
-    // try {
-    // const me = await getUserPersonalInfo();
-    // console.log('me :>> ', me);
-    // if (!me?.id) { Alert.alert("Error", "Could not resolve your user profile. Please try again."); return; }
-    // creatorId = me.id;
-    // } catch {
-    //   Alert.alert("Error", "Could not resolve your user profile. Please try again.");
-    //   return;
-    // }
+      console.log("user 195",user);
+      const me: any = await getUserDetailsByClerkId(user?.id as string);
+      console.log("me :>> ", JSON.stringify(me.data,null,2));
+      creatorId = me.data.id;
+    } catch(e) {
+      console.log(e)
+      Alert.alert(
+        "Error",
+        "something went wrong with getUserDetailsByClerkId",
+      );
+      return;
+    }
 
     try {
       const res = await createEvent({
@@ -159,15 +232,21 @@ const CreateEvents = () => {
         paymentDeadline: toISO(paymentDeadline),
         refundDeadline: refundDeadline ? toISO(refundDeadline) : toISO(endDate),
         isPaidEvent: data.isPaidEvent,
-        organizers: ['69b8d9115c4b424bc85783a8'],
-        creatorId: '69b8d9115c4b424bc85783a8',
+        organizers: ["69b8d9115c4b424bc85783a8"],
+        creatorId: creatorId,
       });
-      console.log('res :>> ', JSON.stringify(res, null, 2));
+      console.log("res :>> ", JSON.stringify(res, null, 2));
       Alert.alert("Success", "Event created successfully!");
       router.back();
     } catch (err: any) {
-      const msg = err?.response?.data?.message ?? err?.response?.data?.error ?? "Failed to create event. Please try again.";
-      console.log("Create event error response:", JSON.stringify(err?.response?.data, null, 2));
+      const msg =
+        err?.response?.data?.message ??
+        err?.response?.data?.error ??
+        "Failed to create event. Please try again.";
+      console.log(
+        "Create event error response:",
+        JSON.stringify(err?.response?.data, null, 2),
+      );
       Alert.alert("Error", Array.isArray(msg) ? msg.join("\n") : msg);
     }
   });
