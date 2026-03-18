@@ -1,0 +1,43 @@
+export const footerTranslations = {
+    en: {
+      cc_2025: "cc.2025",
+      privacy_policy: "Privacy Policy",
+      terms_conditions: "Terms & Conditions",
+      about_us: "About Us",
+      events: "Events",
+      pricing: "Pricing",
+      market: "Market",
+      instagram: "Instagram",
+      facebook: "Facebook",
+      youtube: "YouTube",
+      twitter: "Twitter",
+      phone: "+1 34326543356",
+      address: "Address: 12, Samuel John Street, Paris.",
+      join_mailing_list: "JOIN MAILING LIST",
+      mailing_list_text:
+        "Be the first to know about events happening around you as well as new features",
+      email_placeholder: "Enter your email",
+      submit_button: "Submit",
+    },
+    fr: {
+      cc_2025: "cc.2025",
+      privacy_policy: "Politique de confidentialité",
+      terms_conditions: "Conditions d'utilisation",
+      about_us: "À propos de nous",
+      events: "Événements",
+      pricing: "Tarification",
+      market: "Marché",
+      instagram: "Instagram",
+      facebook: "Facebook",
+      youtube: "YouTube",
+      twitter: "Twitter",
+      phone: "+1 34326543356",
+      address: "Adresse : 12, Samuel John Street, Paris.",
+      join_mailing_list: "REJOIGNEZ LA LISTE DE MAIL",
+      mailing_list_text:
+        "Soyez le premier à savoir les événements autour de vous ainsi que les nouvelles fonctionnalités",
+      email_placeholder: "Entrez votre e-mail",
+      submit_button: "Envoyer",
+    },
+  };
+  
