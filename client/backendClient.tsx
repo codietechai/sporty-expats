@@ -14,7 +14,7 @@ export const setUpAuthInterceptor = (getToken: () => Promise<string | null>) => 
     async (config) => {
       try {
         const token = await getToken();
-        console.log("dd", token)
+        // console.log("dd", token)
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }

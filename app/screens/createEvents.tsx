@@ -66,10 +66,19 @@ const CreateEvents = () => {
 
   const onSubmit = handleSubmit(async (data) => {
     const now = new Date();
-    const startDate = data.startDate instanceof Date ? data.startDate : new Date(data.startDate);
-    const endDate = data.endDate instanceof Date ? data.endDate : new Date(data.endDate);
-    const paymentDeadline = data.paymentDeadline instanceof Date ? data.paymentDeadline : new Date(data.paymentDeadline);
-    const refundDeadline = data.refundDeadline ? new Date(data.refundDeadline) : null;
+    const startDate =
+      data.startDate instanceof Date
+        ? data.startDate
+        : new Date(data.startDate);
+    const endDate =
+      data.endDate instanceof Date ? data.endDate : new Date(data.endDate);
+    const paymentDeadline =
+      data.paymentDeadline instanceof Date
+        ? data.paymentDeadline
+        : new Date(data.paymentDeadline);
+    const refundDeadline = data.refundDeadline
+      ? new Date(data.refundDeadline)
+      : null;
     const minAttendees = Number(data.minAttendees) || 0;
     const maxAttendees = Number(data.maxAttendees) || 0;
     const availableTickets = Number(data.availableTickets) || 0;
