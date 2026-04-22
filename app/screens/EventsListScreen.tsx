@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { useEvents } from "@/app/hooks/useEvents";
 import type { Event } from "@/client/endpoints/events/types";
 import dayjs from "dayjs";
@@ -22,8 +23,17 @@ const CATEGORIES = [
     "Yoga", "Running", "Volleyball",
 ];
 
+type TimeFilter = "upcoming" | "ongoing" | "past";
+
+const TIME_FILTERS: { label: string; value: TimeFilter }[] = [
+    { label: "Upcoming", value: "upcoming" },
+    { label: "Ongoing", value: "ongoing" },
+    { label: "Past", value: "past" },
+];
+
 export default function EventsListScreen() {
     const [selectedCategory, setSelectedCategory] = useState("All");
+    const [timeFilter, setTimeFilter] = useState<TimeFilter>("ongoing");
     const [minPrice, setMinPrice] = useState("");
     const [maxPrice, setMaxPrice] = useState("");
 
@@ -31,7 +41,12 @@ export default function EventsListScreen() {
         events, isLoading, isError,
         updateFilters, resetFilters,
         hasNextPage, hasPrevPage, goToNextPage, goToPrevPage,
-    } = useEvents();
+    } = useEvents({ timeFilter: "ongoing" });
+
+    const handleTimeFilterChange = (f: TimeFilter) => {
+        setTimeFilter(f);
+        updateFilters({ timeFilter: f });
+    };
 
     const handleCategorySelect = (cat: string) => {
         setSelectedCategory(cat);
@@ -49,7 +64,9 @@ export default function EventsListScreen() {
         setSelectedCategory("All");
         setMinPrice("");
         setMaxPrice("");
+        setTimeFilter("ongoing");
         resetFilters();
+        updateFilters({ timeFilter: "ongoing" });
     };
 
     return (
@@ -62,6 +79,20 @@ export default function EventsListScreen() {
                 <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
                     <Ionicons name="options-outline" size={20} color="#2ecc71" />
                 </TouchableOpacity>
+            </View>
+
+            <View style={styles.timeFilterRow}>
+                {TIME_FILTERS.map((f) => (
+                    <TouchableOpacity
+                        key={f.value}
+                        onPress={() => handleTimeFilterChange(f.value)}
+                        style={[styles.timePill, timeFilter === f.value && styles.timePillActive]}
+                    >
+                        <Text style={[styles.timePillText, timeFilter === f.value && styles.timePillTextActive]}>
+                            {f.label}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
             </View>
 
             {/* Category chips */}
@@ -85,7 +116,7 @@ export default function EventsListScreen() {
             </ScrollView>
 
             {/* Price filter */}
-            <View style={styles.priceRow}>
+            {/*} <View style={styles.priceRow}>
                 <Ionicons name="pricetag-outline" size={16} color="#6B7280" style={{ marginRight: 4 }} />
                 <TextInput
                     style={styles.priceInput}
@@ -109,7 +140,7 @@ export default function EventsListScreen() {
                 <TouchableOpacity style={styles.applyBtn} onPress={handlePriceFilter}>
                     <Text style={styles.applyBtnText}>Apply</Text>
                 </TouchableOpacity>
-            </View>
+        </View>*/}
 
             {/* Content */}
             {isLoading ? (
@@ -167,12 +198,16 @@ export default function EventsListScreen() {
 }
 
 function EventCard({ event }: { event: Event }) {
+    const navigation = useNavigation<any>();
     const formattedDate = dayjs(event.startDate).format("MMM D, YYYY · HH:mm");
     const endDate = dayjs(event.endDate).format("MMM D");
 
     return (
-        <View style={styles.card}>
-            {/* Cover image */}
+        <TouchableOpacity
+            style={styles.card}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate("EventInfo", { event })}
+        >
             {event.coverImage?.fileUrl ? (
                 <Image source={{ uri: event.coverImage.fileUrl }} style={styles.cardImage} />
             ) : (
@@ -181,7 +216,6 @@ function EventCard({ event }: { event: Event }) {
                 </View>
             )}
 
-            {/* Badge overlay */}
             <View style={styles.badgeRow}>
                 <View style={styles.categoryBadge}>
                     <Text style={styles.categoryBadgeText}>{event.category}</Text>
@@ -228,12 +262,34 @@ function EventCard({ event }: { event: Event }) {
                     </View>
                 </View>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 }
 
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: "#0d0d0d" },
+
+    timeFilterRow: {
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: 12,
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+    },
+    timePill: {
+        paddingHorizontal: 24,
+        paddingVertical: 9,
+        borderRadius: 50,
+        backgroundColor: "#1a1a1a",
+        borderWidth: 1,
+        borderColor: "#2a2a2a",
+    },
+    timePillActive: {
+        backgroundColor: "#166534",
+        borderColor: "#2ecc71",
+    },
+    timePillText: { fontSize: 14, fontWeight: "600", color: "#9CA3AF" },
+    timePillTextActive: { color: "#fff" },
 
     titleRow: {
         flexDirection: "row",
@@ -265,6 +321,7 @@ const styles = StyleSheet.create({
 
         paddingHorizontal: 16,
         paddingVertical: 10,
+        paddingBottom: 20,
         gap: 8,
     },
     chip: {

@@ -11,7 +11,7 @@ type RootDrawerParamList = {
   Market: undefined;
   "Contact Us": undefined;
   "About Us": undefined;
-  "Add Feed":undefined,
+  "Add Feed": undefined,
 };
 
 type HeaderProps = {

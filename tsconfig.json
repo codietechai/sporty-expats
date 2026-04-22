@@ -3,6 +3,7 @@
   "compilerOptions": {
     "jsx": "react",
     "strict": true,
+    "moduleResolution": "bundler",
     "paths": {
       "@/*": [
         "./*"
@@ -14,6 +15,7 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
-    "nativewind-env.d.ts"
-, "helpers/date.js"  ]
+    "nativewind-env.d.ts",
+    "helpers/date.js"
+  ]
 }

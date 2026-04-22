@@ -11,6 +11,7 @@ export type EventFilters = {
     maximumPrice?: number;
     creator?: string;
     userId?: string;
+    timeFilter?: "upcoming" | "ongoing" | "past";
 };
 
 const DEBOUNCE_MS = 400;

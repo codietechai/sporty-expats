@@ -1,44 +1,37 @@
+import React, { useState } from "react";
+import { View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Stack } from "expo-router";
 import TabsComponent from "@/components/dashboard/DashboardTabs";
 import Stories from "@/components/dashboard/Stories";
-import React, { useState } from "react";
-import { SafeAreaView, Text, View } from "react-native";
-
-import { Stack } from "expo-router";
-import Header from "@/components/Header";
 import MyFeed from "@/components/dashboard/MyFeed";
 import SelectedEvents from "@/components/dashboard/SelectedEvents";
 import JoinedGroups from "@/components/dashboard/JoinedGroups";
 import ItemSales from "@/components/dashboard/ItemSales";
-
-const purchase = () => (
-  <View>
-    <Text style={{ fontSize: 18, color: "white" }}>
-      💵 This is your purchase areas.
-    </Text>
-  </View>
-);
+import MyPurchases from "@/components/dashboard/MyPurchases";
+import Header from "@/components/Header";
 
 const Dashboard = () => {
-  const [currentTab, setCurrentTab] = useState<string>("");
+  const [currentTab, setCurrentTab] = useState<string>("my_feed");
+
   const tabs = [
     { key: "my_feed", label: "My Feed", component: MyFeed },
     { key: "events", label: "Selected Events", component: SelectedEvents },
     { key: "joined_group", label: "Joined Groups", component: JoinedGroups },
     { key: "item_sales", label: "Item Sales", component: ItemSales },
-    { key: "my_purchase", label: "My Purchase", component: ItemSales },
+    { key: "my_purchase", label: "My Purchase", component: MyPurchases },
   ];
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={{ flex: 1, backgroundColor: "black" }}>
-        <Header myFeed={currentTab === "my_feed"} />
-        <Stories />
-
-        <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#0d0d0d" }} edges={["top"]}>
+        <View style={{ flex: 1, backgroundColor: "#0d0d0d" }}>
+          <Header myFeed={true} />
+          <Stories />
           <TabsComponent tabs={tabs} setCurrentTab={setCurrentTab} />
-        </SafeAreaView>
-      </View>
+        </View>
+      </SafeAreaView>
     </>
   );
 };

@@ -24,9 +24,11 @@ import PasswordSecurityScreen from "./screens/passwordSecurity";
 import UpdateProfilePhotoScreen from "./screens/updateProfilePhoto";
 import ChatScreen from "./screens/ChatScreen";
 import EventInfoScreen from "./screens/EventInfoScreen";
+import EventRegistrationScreen from "./screens/EventRegistrationScreen";
 import EditUserScreen from "./screens/EditUserScreen";
 import ConversationScreen from "./screens/Conversations";
 import EventsListScreen from "./screens/EventsListScreen";
+import GroupChatsScreen from "./screens/GroupChatsScreen";
 
 const Drawer = createDrawerNavigator();
 
@@ -74,6 +76,11 @@ export default function AppNavigator() {
         options={{ drawerLabel: t("Group Chat") }}
       />
       <Drawer.Screen
+        name="Group Chats"
+        component={GroupChatsScreen}
+        options={{ drawerLabel: t("Group Chats") }}
+      />
+      <Drawer.Screen
         name="Edit User Detail"
         component={EditUserScreen}
         options={{ drawerLabel: t("Edit User Detail") }}
@@ -96,7 +103,12 @@ export default function AppNavigator() {
       <Drawer.Screen
         name="EventInfo"
         component={EventInfoScreen}
-        options={{ drawerLabel: t("Event Info") }}
+        options={{ drawerLabel: t("Event Info"), drawerItemStyle: { display: "none" } }}
+      />
+      <Drawer.Screen
+        name="EventRegistration"
+        component={EventRegistrationScreen}
+        options={{ drawerLabel: "Event Registration", drawerItemStyle: { display: "none" } }}
       />
 
       <Drawer.Screen

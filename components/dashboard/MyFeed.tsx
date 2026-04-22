@@ -1,271 +1,494 @@
-import {
-  GET_ALL_POSTS,
-  getAllPosts,
-} from "@/client/endpoints/posts/getAllPosts";
-import React, { useEffect, useState } from "react";
-import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import Svg, { Path } from "react-native-svg";
-import { useInfiniteQuery, useQuery } from "react-query";
-import { timeAgo } from "@/helpers/date";
+import { GET_ALL_POSTS, getAllPosts } from "@/client/endpoints/posts/getAllPosts";
 import { likePost } from "@/client/endpoints/posts/likePost";
-import { GET_USER_BY_ID, getUserById } from "@/client/endpoints/users/getUserById";
+import { reactToPost, bookmarkPost, addComment, getPostComments } from "@/client/endpoints/posts/postActions";
+import { useUserDb } from "@/app/hooks/useUserDb";
+import PostStatusBar from "@/components/dashboard/PostStatusBar";
+import { timeAgo } from "@/helpers/date";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView,
+  Modal, Platform, ScrollView, Share, StyleSheet, Text,
+  TextInput, TouchableOpacity, TouchableWithoutFeedback, View,
+} from "react-native";
+import { useQuery } from "react-query";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface CommentAuthor {
+  id: string;
+  username: string;
+  imageUrl?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+}
+
+interface IComment {
+  id: string;
+  comment: string;
+  createdAt: string;
+  author: CommentAuthor;
+  parentId?: string | null;
+  children?: IComment[];
+}
 
 interface Post {
   _id: string;
   desc: string;
-  files: any[];
+  files: { fileUrl: string; fileType?: string }[];
   vote: number;
   title: string;
   total_comments: number;
-  author: {
-    firstName: string;
-    lastName: string;
-    imageUrl: string;
-  };
+  total_reactions: number;
+  author: { id: string; firstName: string; lastName: string; username: string; imageUrl: string };
   createdAt: string;
   isLikedByUser: boolean;
+  isBookmarkedByUser: boolean;
+  userReaction: string | null;
+  emojiCounts: Record<string, number>;
+  comments: IComment[];
 }
 
-const MyFeed = () => {
-  const [postOptions, setPostOptions] = useState<Post[]>([]);
+const DEFAULT_AVATAR = "https://storage.strandcdn.com/avatar.svg";
 
-  const { data, refetch } = useQuery([GET_ALL_POSTS], () => getAllPosts(), {
-    keepPreviousData: false,
-    refetchOnWindowFocus: true,
-    retry: 0,
-  });
+// ─── Emoji Picker (simple inline grid) ───────────────────────────────────────
 
-  const { data:user } = useQuery([GET_USER_BY_ID], () => getUserById(), {
-    keepPreviousData: false,
-    refetchOnWindowFocus: true,
-    retry: 0,
-  });
+const QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "😡", "🎉", "🔥", "👏", "💪"];
 
-  console.log(user)
-
-  
-
-  // console.log(JSON.stringify(data?.data?.data,null,2))
-
-  useEffect(() => {
-    if (data) {
-      const postValues: Post[] = [];
-
-      data?.data?.data.forEach((post: any) => {
-        postValues.push({
-          _id: post.id,
-          desc: post.description,
-          title: post.title,
-          author: post.author,
-          files: post.files,
-          vote: post.count.likes || 0,
-          total_comments: post.count.comments,
-          createdAt: post.createdAt,
-          isLikedByUser: post.isLikedByUser,
-        });
-      });
-
-      setPostOptions(postValues);
-    }
-  }, [data]);
-
-  const likePostFunction = async (id: string) => {
-   await likePost(id);
-  };
+function EmojiPicker({ onSelect, onClose }: { onSelect: (e: string) => void; onClose: () => void }) {
   return (
-    <ScrollView>
-      {postOptions?.map((post) => (
-        <View key={post._id} style={{ marginBottom: 20 }}>
-          {/* User Info */}
-          <View style={styles.flewRow}>
-            <View style={styles.flewRow}>
-              <Image
-                source={{
-                  uri:
-                    post.author.imageUrl ||
-                    "https://img.freepik.com/premium-vector/default-avatar-profile-icon-social-media-user-image-gray-avatar-icon-blank-profile-silhouette-vector-illustration_561158-3407.jpg",
-                }}
-                width={50}
-                height={50}
-                style={{ borderRadius: 100 }}
-              />
-              <View style={{ paddingLeft: 5 }}>
-                <Text style={{ color: "white" }}>
-                  {post.author.firstName} {post.author.lastName}
-                </Text>
-                <Text style={{ color: "gray" }}>{timeAgo(post.createdAt)}</Text>
-              </View>
+    <TouchableWithoutFeedback onPress={onClose}>
+      <View style={ep.overlay}>
+        <TouchableWithoutFeedback>
+          <View style={ep.box}>
+            <View style={ep.grid}>
+              {QUICK_EMOJIS.map((e) => (
+                <TouchableOpacity key={e} style={ep.emojiBtn} onPress={() => onSelect(e)}>
+                  <Text style={ep.emoji}>{e}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
-
-            <Svg
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="white"
-              width={24}
-              height={24}
-            >
-              <Path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z"
-              />
-            </Svg>
           </View>
+        </TouchableWithoutFeedback>
+      </View>
+    </TouchableWithoutFeedback>
+  );
+}
 
-          <Text style={{ color: "gray", paddingTop: 8 }}>{post.desc}</Text>
+const ep = StyleSheet.create({
+  overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100 },
+  box: {
+    position: "absolute", bottom: 60, left: 0,
+    backgroundColor: "#1f2937", borderRadius: 12, padding: 10,
+    borderWidth: 1, borderColor: "#374151", zIndex: 101,
+  },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 6, width: 220 },
+  emojiBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
+  emoji: { fontSize: 22 },
+});
 
-          {post.files && post.files.length > 0 && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={{ marginTop: 12 }}
-            >
-              {post.files.map(
-                (fileUrl: any, id: React.Key | null | undefined) => {
-                  // Check if URL starts with "http" or "https" to ensure it's valid
-                  const validUrl =
-                    fileUrl &&
-                    typeof fileUrl.fileUrl === "string" &&
-                    (fileUrl.fileUrl.startsWith("http") ||
-                      fileUrl.fileUrl.startsWith("https"));
-                  return validUrl ? (
-                    <Image
-                      key={id}
-                      // source={{ uri: fileUrl.fileUrl }}
-                      source={{
-                        uri: "https://cdn.pixabay.com/photo/2018/08/04/11/30/draw-3583548_1280.png",
-                      }}
-                      style={styles.sliderImage}
-                    />
-                  ) : (
-                    <Image
-                      key={id}
-                      source={{ uri: fileUrl.fileUrl }}
-                      style={styles.sliderImage}
-                    />
-                  );
-                }
-              )}
-            </ScrollView>
-          )}
+// ─── Comment Item ─────────────────────────────────────────────────────────────
 
-          <View
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              gap: 10,
-              marginTop: 50,
-            }}
-          >
-            <TouchableOpacity
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                gap: 2,
-                alignItems: "center",
-              }}
-              onPress={() => likePostFunction(post._id)}
-            >
-              <Svg
-                // style={{ marginLeft: 14 }}
-                fill={post.isLikedByUser ? "red" : "none"}
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke={post.isLikedByUser ? "red" : "white"}
-                width={24}
-                height={24}
-              >
-                <Path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
-                />
-              </Svg>
-              <Text style={{ color: "white" }}>{post.vote} </Text>
+function CommentItem({
+  comment, depth = 0, onReply,
+}: {
+  comment: IComment; depth?: number; onReply: (parentId: string, username: string) => void;
+}) {
+  return (
+    <View style={[ci.wrap, { marginLeft: depth * 16 }]}>
+      <View style={ci.row}>
+        <Image
+          source={{ uri: comment.author?.imageUrl || DEFAULT_AVATAR }}
+          style={ci.avatar}
+        />
+        <View style={ci.bubble}>
+          <Text style={ci.name}>
+            {comment.author?.firstName
+              ? `${comment.author.firstName} ${comment.author.lastName ?? ""}`
+              : comment.author?.username}
+          </Text>
+          <Text style={ci.text}>{comment.comment}</Text>
+          <View style={ci.meta}>
+            <Text style={ci.time}>{timeAgo(comment.createdAt)}</Text>
+            <TouchableOpacity onPress={() => onReply(comment.id, comment.author?.username ?? "")}>
+              <Text style={ci.replyBtn}>Reply</Text>
             </TouchableOpacity>
-
-            <View
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                gap: 2,
-                alignItems: "center",
-              }}
-            >
-              <Svg
-                // style={{ marginLeft: 14 }}
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="white"
-                width={24}
-                height={24}
-              >
-                <Path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"
-                />
-              </Svg>
-
-              <Text style={{ color: "white" }}>{post.total_comments}</Text>
-            </View>
-
-            <View
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                gap: 2,
-                alignItems: "center",
-              }}
-            >
-              <Svg
-                // style={{ marginLeft: 14 }}
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="white"
-                width={24}
-                height={24}
-              >
-                <Path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z"
-                />
-              </Svg>
-
-              <Text style={{ color: "white" }}>{post.vote} </Text>
-            </View>
-          </View>
-          <View>
-            <Text >add</Text>
           </View>
         </View>
+      </View>
+      {comment.children?.map((child) => (
+        <CommentItem key={child.id} comment={child} depth={depth + 1} onReply={onReply} />
       ))}
-    </ScrollView>
+    </View>
+  );
+}
+
+const ci = StyleSheet.create({
+  wrap: { marginBottom: 10 },
+  row: { flexDirection: "row", gap: 8, alignItems: "flex-start" },
+  avatar: { width: 28, height: 28, borderRadius: 14, marginTop: 2 },
+  bubble: {
+    flex: 1, backgroundColor: "#1f2937", borderRadius: 10,
+    padding: 10, gap: 4,
+  },
+  name: { color: "#2ecc71", fontSize: 12, fontWeight: "700" },
+  text: { color: "#d1d5db", fontSize: 13, lineHeight: 18 },
+  meta: { flexDirection: "row", gap: 12, marginTop: 2 },
+  time: { color: "#6b7280", fontSize: 11 },
+  replyBtn: { color: "#2ecc71", fontSize: 11, fontWeight: "600" },
+});
+
+// ─── Post Card ────────────────────────────────────────────────────────────────
+
+function PostCard({ post, userId, onUpdate }: {
+  post: Post; userId?: string; onUpdate: (id: string, patch: Partial<Post>) => void;
+}) {
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [comments, setComments] = useState<IComment[]>(post.comments ?? []);
+  const [commentText, setCommentText] = useState("");
+  const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleLike = async () => {
+    onUpdate(post._id, {
+      isLikedByUser: !post.isLikedByUser,
+      vote: post.isLikedByUser ? post.vote - 1 : post.vote + 1,
+    });
+    try {
+      await likePost(post._id);
+    } catch {
+      // revert
+      onUpdate(post._id, {
+        isLikedByUser: post.isLikedByUser,
+        vote: post.vote,
+      });
+    }
+  };
+
+  const handleReact = async (emoji: string) => {
+    setShowEmoji(false);
+    const hadReaction = !!post.userReaction;
+    onUpdate(post._id, {
+      userReaction: emoji,
+      total_reactions: hadReaction ? post.total_reactions : post.total_reactions + 1,
+    });
+    try {
+      await reactToPost(post._id, emoji);
+    } catch {
+      onUpdate(post._id, { userReaction: post.userReaction, total_reactions: post.total_reactions });
+    }
+  };
+
+  const handleBookmark = async () => {
+    onUpdate(post._id, { isBookmarkedByUser: !post.isBookmarkedByUser });
+    try {
+      await bookmarkPost(post._id);
+    } catch {
+      onUpdate(post._id, { isBookmarkedByUser: post.isBookmarkedByUser });
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `Check out this post on Sporty Expats!\n\n${post.title ?? post.desc}`,
+      });
+    } catch { /* ignore */ }
+  };
+
+  const loadComments = async () => {
+    if (showComments) { setShowComments(false); return; }
+    setShowComments(true);
+    if (comments.length > 0) return;
+    setCommentsLoading(true);
+    try {
+      const data = await getPostComments(post._id);
+      setComments(data?.data ?? []);
+    } catch { /* ignore */ }
+    finally { setCommentsLoading(false); }
+  };
+
+  const handleSubmitComment = async () => {
+    if (!userId) { Alert.alert("Sign in required", "Please sign in to comment."); return; }
+    if (!commentText.trim()) return;
+    setSubmitting(true);
+    try {
+      await addComment(userId, post._id, commentText.trim(), replyTo?.id);
+      setCommentText("");
+      setReplyTo(null);
+      onUpdate(post._id, { total_comments: post.total_comments + 1 });
+      // Refresh comments
+      const data = await getPostComments(post._id);
+      setComments(data?.data ?? []);
+    } catch {
+      Alert.alert("Error", "Could not post comment. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReply = (parentId: string, username: string) => {
+    setReplyTo({ id: parentId, username });
+    setShowComments(true);
+  };
+
+  return (
+    <View style={pc.card}>
+      {/* Author row */}
+      <View style={pc.authorRow}>
+        <Image source={{ uri: post.author?.imageUrl || DEFAULT_AVATAR }} style={pc.avatar} />
+        <View style={pc.authorInfo}>
+          <Text style={pc.authorName}>
+            {post.author?.firstName
+              ? `${post.author.firstName} ${post.author.lastName ?? ""}`
+              : post.author?.username}
+          </Text>
+          <Text style={pc.time}>{timeAgo(post.createdAt)}</Text>
+        </View>
+        {/* Bookmark */}
+        <TouchableOpacity onPress={handleBookmark} hitSlop={8}>
+          <Ionicons
+            name={post.isBookmarkedByUser ? "bookmark" : "bookmark-outline"}
+            size={20}
+            color={post.isBookmarkedByUser ? "#2ecc71" : "#6b7280"}
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Content */}
+      {post.title ? <Text style={pc.postTitle}>{post.title}</Text> : null}
+      {post.desc ? <Text style={pc.postDesc}>{post.desc}</Text> : null}
+
+      {/* Media */}
+      {post.files.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={pc.mediaScroll}>
+          {post.files.map((file, i) =>
+            file.fileUrl?.startsWith("http") ? (
+              <Image key={i} source={{ uri: file.fileUrl }} style={pc.mediaImage} />
+            ) : null
+          )}
+        </ScrollView>
+      )}
+
+      {/* Counts row */}
+      <View style={pc.countsRow}>
+        <Text style={pc.countText}>{post.vote} likes</Text>
+        <TouchableOpacity onPress={loadComments}>
+          <Text style={pc.countText}>{post.total_comments} comments</Text>
+        </TouchableOpacity>
+        <Text style={pc.countText}>{post.total_reactions} reactions</Text>
+      </View>
+
+      {/* Actions bar */}
+      <View style={pc.divider} />
+      <View style={pc.actions}>
+        {/* Like */}
+        <TouchableOpacity style={pc.actionBtn} onPress={handleLike}>
+          <Ionicons
+            name={post.isLikedByUser ? "heart" : "heart-outline"}
+            size={20}
+            color={post.isLikedByUser ? "#EF4444" : "#9CA3AF"}
+          />
+          <Text style={[pc.actionLabel, post.isLikedByUser && { color: "#EF4444" }]}>Like</Text>
+        </TouchableOpacity>
+
+        {/* React */}
+        <View style={{ position: "relative" }}>
+          <TouchableOpacity style={pc.actionBtn} onPress={() => setShowEmoji((p) => !p)}>
+            <Text style={pc.emojiIcon}>{post.userReaction ?? "😀"}</Text>
+            <Text style={pc.actionLabel}>React</Text>
+          </TouchableOpacity>
+          {showEmoji && (
+            <EmojiPicker onSelect={handleReact} onClose={() => setShowEmoji(false)} />
+          )}
+        </View>
+
+        {/* Comment */}
+        <TouchableOpacity style={pc.actionBtn} onPress={loadComments}>
+          <Ionicons name="chatbubble-outline" size={20} color="#9CA3AF" />
+          <Text style={pc.actionLabel}>Comment</Text>
+        </TouchableOpacity>
+
+        {/* Share */}
+        <TouchableOpacity style={pc.actionBtn} onPress={handleShare}>
+          <Ionicons name="share-social-outline" size={20} color="#9CA3AF" />
+          <Text style={pc.actionLabel}>Share</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Comments section */}
+      {showComments && (
+        <View style={pc.commentsSection}>
+          <View style={pc.divider} />
+
+          {/* Comment input */}
+          {replyTo && (
+            <View style={pc.replyBanner}>
+              <Text style={pc.replyBannerText}>Replying to @{replyTo.username}</Text>
+              <TouchableOpacity onPress={() => setReplyTo(null)}>
+                <Ionicons name="close" size={14} color="#9ca3af" />
+              </TouchableOpacity>
+            </View>
+          )}
+          <View style={pc.commentInputRow}>
+            <TextInput
+              style={pc.commentInput}
+              placeholder={replyTo ? `Reply to @${replyTo.username}…` : "Add a comment…"}
+              placeholderTextColor="#6b7280"
+              value={commentText}
+              onChangeText={setCommentText}
+              multiline
+            />
+            <TouchableOpacity
+              style={[pc.sendBtn, (!commentText.trim() || submitting) && pc.sendBtnDisabled]}
+              onPress={handleSubmitComment}
+              disabled={!commentText.trim() || submitting}
+            >
+              {submitting
+                ? <ActivityIndicator size="small" color="#fff" />
+                : <Ionicons name="send" size={16} color="#fff" />
+              }
+            </TouchableOpacity>
+          </View>
+
+          {/* Comments list */}
+          {commentsLoading ? (
+            <ActivityIndicator color="#2ecc71" style={{ marginTop: 12 }} />
+          ) : comments.length === 0 ? (
+            <Text style={pc.noComments}>No comments yet. Be the first!</Text>
+          ) : (
+            <View style={{ marginTop: 8 }}>
+              {comments.map((c) => (
+                <CommentItem key={c.id} comment={c} onReply={handleReply} />
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
+
+const pc = StyleSheet.create({
+  card: {
+    backgroundColor: "#111827", borderRadius: 14,
+    padding: 14, borderWidth: 1, borderColor: "#1f2937",
+  },
+  authorRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
+  avatar: { width: 40, height: 40, borderRadius: 20 },
+  authorInfo: { flex: 1 },
+  authorName: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  time: { color: "#6B7280", fontSize: 12, marginTop: 1 },
+  postTitle: { color: "#fff", fontWeight: "700", fontSize: 15, marginBottom: 4 },
+  postDesc: { color: "#9CA3AF", fontSize: 14, lineHeight: 20, marginBottom: 8 },
+  mediaScroll: { marginBottom: 10 },
+  mediaImage: { width: 220, height: 160, borderRadius: 10, marginRight: 8 },
+  countsRow: {
+    flexDirection: "row", gap: 12, paddingVertical: 6,
+  },
+  countText: { color: "#6b7280", fontSize: 12 },
+  divider: { height: 1, backgroundColor: "#1f2937", marginVertical: 6 },
+  actions: { flexDirection: "row", justifyContent: "space-between", paddingTop: 2 },
+  actionBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 4, paddingHorizontal: 2 },
+  actionLabel: { color: "#9CA3AF", fontSize: 12, fontWeight: "500" },
+  emojiIcon: { fontSize: 18 },
+  commentsSection: { marginTop: 4 },
+  replyBanner: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    backgroundColor: "#1f2937", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6,
+    marginBottom: 6,
+  },
+  replyBannerText: { color: "#9ca3af", fontSize: 12 },
+  commentInputRow: { flexDirection: "row", gap: 8, alignItems: "flex-end", marginBottom: 10 },
+  commentInput: {
+    flex: 1, backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 10, color: "#fff", fontSize: 14,
+    maxHeight: 80,
+  },
+  sendBtn: {
+    width: 40, height: 40, borderRadius: 12,
+    backgroundColor: "#166534", alignItems: "center", justifyContent: "center",
+  },
+  sendBtnDisabled: { opacity: 0.4 },
+  noComments: { color: "#6b7280", fontSize: 13, textAlign: "center", paddingVertical: 12 },
+});
+
+// ─── MyFeed ───────────────────────────────────────────────────────────────────
+
+const MyFeed = () => {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const { userDb } = useUserDb();
+  const userId: string | undefined = userDb?.data?.id ?? userDb?.id;
+
+  const { data, isLoading, refetch } = useQuery([GET_ALL_POSTS], () => getAllPosts(), {
+    keepPreviousData: false,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+
+  useEffect(() => {
+    if (!data) return;
+    const mapped: Post[] = (data?.data?.data ?? []).map((post: any) => ({
+      _id: post.id,
+      desc: post.description,
+      title: post.title,
+      author: post.author,
+      files: post.files ?? [],
+      vote: post.count?.likes ?? 0,
+      total_comments: post.count?.comments ?? 0,
+      total_reactions: post.count?.reactions ?? 0,
+      createdAt: post.createdAt,
+      isLikedByUser: post.isLikedByUser ?? false,
+      isBookmarkedByUser: post.isBookmarkedByUser ?? false,
+      userReaction: post.reactions?.userReaction ?? null,
+      emojiCounts: post.reactions?.emojiCounts ?? {},
+      comments: [],
+    }));
+    setPosts(mapped);
+  }, [data]);
+
+  const handleUpdate = (id: string, patch: Partial<Post>) => {
+    setPosts((prev) => prev.map((p) => p._id === id ? { ...p, ...patch } : p));
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#2ecc71" />
+      </View>
+    );
+  }
+
+  if (posts.length === 0) {
+    return (
+      <View style={styles.centered}>
+        <Ionicons name="newspaper-outline" size={48} color="#374151" />
+        <Text style={styles.emptyText}>No posts yet</Text>
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      data={posts}
+      keyExtractor={(item) => item._id}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.list}
+      keyboardShouldPersistTaps="handled"
+      ListHeaderComponent={<PostStatusBar />}
+      renderItem={({ item }) => (
+        <PostCard post={item} userId={userId} onUpdate={handleUpdate} />
+      )}
+    />
   );
 };
 
 const styles = StyleSheet.create({
-  flewRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  sliderImage: {
-    width: 340,
-    height: 250,
-    borderRadius: 10,
-    marginRight: 10,
-  },
+  list: { paddingBottom: 20, gap: 12 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingTop: 60 },
+  emptyText: { color: "#6B7280", fontSize: 14 },
 });
 
 export default MyFeed;

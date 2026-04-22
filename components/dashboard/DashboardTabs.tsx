@@ -1,11 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-} from 'react-native';
+import React, { useEffect, useState } from "react";
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 
 type TabItem = {
   key: string;
@@ -18,86 +12,66 @@ type Props = {
   setCurrentTab?: React.Dispatch<React.SetStateAction<string>>;
 };
 
-const TabsComponent: React.FC<Props> = ({ tabs,setCurrentTab }) => {
+const TabsComponent: React.FC<Props> = ({ tabs, setCurrentTab }) => {
   const [activeTab, setActiveTab] = useState(tabs[0].key);
-  const ActiveComponent = tabs.find(tab => tab.key === activeTab)?.component;
+  const ActiveComponent = tabs.find((tab) => tab.key === activeTab)?.component;
 
   useEffect(() => {
+    setCurrentTab?.(activeTab);
+  }, [activeTab]);
 
-    setCurrentTab!(activeTab)
-
-
-  }, [activeTab])
-  
   return (
-    <View>
-
+    <View style={styles.container}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.tabRow}
+        style={styles.tabScroll}
       >
-        {tabs.map(tab => (
+        {tabs.map((tab) => (
           <TouchableOpacity
             key={tab.key}
             onPress={() => setActiveTab(tab.key)}
-            style={[
-              styles.tabItem,
-              activeTab === tab.key && styles.activeTabItem,
-            ]}
+            style={[styles.tabItem, activeTab === tab.key && styles.tabItemActive]}
           >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === tab.key && styles.activeTabText,
-              ]}
-            >
+            <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>
               {tab.label}
             </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      {/* Render Active Tab Content */}
-      <View style={styles.contentContainer}>
-        {ActiveComponent ? <ActiveComponent /> : <Text>No component found</Text>}
+      <View style={styles.content}>
+        {ActiveComponent ? <ActiveComponent /> : <Text style={{ color: "#fff" }}>No component</Text>}
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: { flex: 1 },
+  tabScroll: { flexGrow: 0, flexShrink: 0 },
   tabRow: {
-    paddingHorizontal: 10,
-    // paddingVertical: 12,
-    alignItems: 'center',
-    color:'#ffff'
-
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    alignItems: "center",
+    gap: 8,
   },
   tabItem: {
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
-    marginRight: 10,
-    backgroundColor: '#071E10',
+    backgroundColor: "#071E10",
+    borderWidth: 1,
+    borderColor: "#1f2937",
   },
-  activeTabItem: {
-    backgroundColor: '#166534',
+  tabItemActive: {
+    backgroundColor: "#166534",
+    borderColor: "#2ecc71",
   },
-  tabText: {
-    fontSize: 14,
-    color:'white'
-  },
-  activeTabText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  contentContainer: {
-    // flex: 1,
-    padding: 20,
-    color:'white',
-    height:'90%',
-  },
+  tabText: { fontSize: 13, color: "#9CA3AF", fontWeight: "500" },
+  tabTextActive: { color: "#fff", fontWeight: "700" },
+  content: { flex: 1, paddingHorizontal: 12, paddingTop: 8 },
 });
 
 export default TabsComponent;

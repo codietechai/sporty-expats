@@ -18,6 +18,7 @@ export const getEvents = async (
     if (params.creator) cleanParams.creator = params.creator;
     if (params.minimumPrice != null) cleanParams.minimumPrice = params.minimumPrice;
     if (params.maximumPrice != null) cleanParams.maximumPrice = params.maximumPrice;
+    if (params.timeFilter) cleanParams.timeFilter = params.timeFilter;
 
     const response = await backendClient.get<EventsResponse>("/events", {
         params: cleanParams,

@@ -1,5 +1,5 @@
 import { useOAuth, useSignIn, useSignUp, useUser } from "@clerk/clerk-expo";
-import { useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import React, { useState } from "react";
 import {
   Modal,
@@ -44,7 +44,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
     isLoaded: loginLoaded,
   } = useSignIn();
   const { user } = useUser();
-  const router = useRouter();
+  const navigation = useNavigation<any>();
 
   const onSignInPress = async () => {
     if (!loginLoaded) return;
@@ -60,6 +60,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
         await setLoginActive({ session: signInAttempt.createdSessionId });
         await user?.reload();
         onClose();
+        navigation.navigate("Dashboard");
         ToastAndroid.show("Logged in successfully", 2);
       }
     } catch (err: any) {
@@ -93,6 +94,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
         await setActive({ session: result.createdSessionId });
         await user?.reload();
         onClose();
+        navigation.navigate("Dashboard");
         ToastAndroid.show("Signed up successfully", 2);
       }
     } catch (err: any) {
@@ -120,6 +122,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
         await user?.reload();
         ToastAndroid.show("Email verified successfully", 2);
         onClose();
+        navigation.navigate("Dashboard");
         setMode("Login");
       }
     } catch {
@@ -175,6 +178,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
         await setLoginActive!({ session: result.createdSessionId });
         ToastAndroid.show("Password reset successfully", 2);
         onClose();
+        navigation.navigate("Dashboard");
         setMode("Login");
       }
     } catch (err: any) {

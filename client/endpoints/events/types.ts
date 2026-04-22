@@ -8,6 +8,7 @@ export type GetEventsQueryParams = {
     creator?: string;
     minimumPrice?: number;
     maximumPrice?: number;
+    timeFilter?: "upcoming" | "ongoing" | "past";
 };
 
 export type EventCoverImage = {

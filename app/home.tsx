@@ -18,16 +18,17 @@ import Footer from "@/components/Footer";
 import { useTranslation } from "react-i18next";
 import Header from "@/components/Header";
 
-
+type RootDrawerParamList = {
+  Home: undefined;
+  Events: undefined;
+};
+export type HomeScreenNavigationProp = DrawerNavigationProp<
+  RootDrawerParamList,
+  "Home"
+>;
 export default function Home() {
-  type RootDrawerParamList = {
-    Home: undefined;
-    Events: undefined;
-  };
-  type HomeScreenNavigationProp = DrawerNavigationProp<
-    RootDrawerParamList,
-    "Home"
-  >;
+
+
 
   const navigation = useNavigation<HomeScreenNavigationProp>();
 
@@ -38,7 +39,7 @@ export default function Home() {
     setActiveIndex(index === activeIndex ? null : index);
   };
 
-  
+
   const accordionData = [
     { title: 'accordion.events', content: 'accordion.events_content' },
     { title: 'accordion.community', content: 'accordion.community_content' },
@@ -46,14 +47,14 @@ export default function Home() {
     { title: 'accordion.host_activities', content: 'accordion.host_activities_content' },
     { title: 'accordion.market', content: 'accordion.market_content' },
   ];
-  
+
 
   const { t } = useTranslation('webHome');
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <Header/>
+      <Header />
       <ScrollView
         className="bg-black px-5"
         contentContainerStyle={{ paddingBottom: 40 }}
@@ -157,20 +158,19 @@ export default function Home() {
             <TouchableOpacity
               onPress={() => toggleAccordion(index)}
               key={index}
-              className={`px-5 py-10 border-b-2 border-white ${
-                activeIndex === index ? "bg-green-800" : ""
-              }`}
+              className={`px-5 py-10 border-b-2 border-white ${activeIndex === index ? "bg-green-800" : ""
+                }`}
             >
               <>
                 <Text className="text-white pt-5 text-5xl font-oswald">
-                {t(item.title)}
+                  {t(item.title)}
                 </Text>
               </>
 
               {activeIndex === index && (
                 <View className="pt-5 pb-6">
-              <Text className="text-white">{t(item.content)}</Text>
-              </View>
+                  <Text className="text-white">{t(item.content)}</Text>
+                </View>
               )}
             </TouchableOpacity>
           ))}
@@ -204,7 +204,7 @@ export default function Home() {
             </View>
             <View className="w-full min-h-[400px] pb-12 overflow-hidden">
               <Text className="text-white text-6xl leading-[70px]  font-oswald pb-8">
-              {t("NETWORK_AND_TRUE_COMMUNITY")}
+                {t("NETWORK_AND_TRUE_COMMUNITY")}
               </Text>
               <Image
                 source={{

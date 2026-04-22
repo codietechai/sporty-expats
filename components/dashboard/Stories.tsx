@@ -1,23 +1,35 @@
-import {
-  GET_ALL_STORIES,
-  getAllStories,
-} from "@/client/endpoints/posts/getAllStories";
+import { GET_ALL_STORIES, getAllStories } from "@/client/endpoints/posts/getAllStories";
+import { createStory } from "@/client/endpoints/posts/addStories";
+import { useUserDb } from "@/app/hooks/useUserDb";
+import { backendClient } from "@/client/backendClient";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
+  ActivityIndicator,
+  Alert,
   FlatList,
   Image,
-  TouchableOpacity,
   Modal,
-  TouchableWithoutFeedback,
   StyleSheet,
-  Alert,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
-
-import * as ImagePicker from "expo-image-picker";
 import { useQuery } from "react-query";
-import { useAuth, useUser } from "@clerk/clerk-expo";
+import { useNavigation } from "@react-navigation/native";
+
+const DEFAULT_AVATAR = "https://storage.strandcdn.com/avatar.svg";
+
+export type Story = {
+  authorId: string;
+  id: string;
+  file: { filename: string; fileUrl: string };
+  creationTime: string;
+  name: string;
+  imageUrl: string;
+};
 
 type GroupedStory = {
   authorId: string;
@@ -26,295 +38,490 @@ type GroupedStory = {
   stories: Story[];
 };
 
-export type Story = {
-  authorId: string;
-  id: string;
-  file: {
-    filename: string;
-    fileUrl: string;
-  };
-  creationTime: string;
-  name: string;
-  imageUrl: string;
+type StoryStatus = {
+  pending: Story[];
+  rejected: Story[];
 };
 
-const stories: Story[] = [
-  {
-    authorId: "dummy-author-1",
-    id: "1",
-    file: {
-      filename: "john_doe.jpg",
-      fileUrl:
-        "https://media.istockphoto.com/id/1223189654/photo/boy-playing-a-game-throwing-rings-outdoors-in-summer-park.jpg?s=612x612&w=0&k=20&c=ecaDpFnnVTbsUbOlqnn3ebNRSuNpbAJIAlwfKdSN23w=",
-    },
-    creationTime: "12:00 PM",
-    name: "john_doe",
-    imageUrl: "",
-  },
-  {
-    authorId: "dummy-author-2",
-    id: "2",
-    file: {
-      filename: "jane_doe.jpg",
-      fileUrl:
-        "https://st3.depositphotos.com/1001201/17455/i/450/depositphotos_174558338-stock-photo-goalkeeper-kicks-the-ball-in.jpgCsR/9k=",
-    },
-    creationTime: "1:00 PM",
-    name: "jane_doe",
-    imageUrl: "",
-  },
-  {
-    authorId: "dummy-author-3",
-    id: "3",
-    file: {
-      filename: "alex_smith.jpg",
-      fileUrl:
-        "https://images.unsplash.com/photo-1577471488278-16eec37ffcc2?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fGJhc2tldGJhbGx8ZW58MHx8MHx8fDA%3D",
-    },
-    creationTime: "2:00 PM",
-    name: "alex_smith",
-    imageUrl: "",
-  },
-  {
-    authorId: "dummy-author-4",
-    id: "4",
-    file: {
-      filename: "lisa_ray.jpg",
-      fileUrl:
-        "https://www.shutterstock.com/image-photo/tennis-serve-sport-woman-on-600nw-2262358097.jpg",
-    },
-    creationTime: "3:00 PM",
-    name: "lisa_ray",
-    imageUrl: "",
-  },
-  {
-    authorId: "dummy-author-5",
-    id: "5",
-    file: {
-      filename: "emma_ross.jpg",
-      fileUrl:
-        "https://www.shutterstock.com/image-photo/man-portrait-cricket-player-bat-600nw-2440988429.jpg",
-    },
-    creationTime: "4:00 PM",
-    name: "emma_ross",
-    imageUrl: "",
-  },
-];
+function groupByAuthor(stories: Story[]): GroupedStory[] {
+  const map = new Map<string, GroupedStory>();
+  stories.forEach((s) => {
+    if (!map.has(s.authorId)) {
+      map.set(s.authorId, { authorId: s.authorId, name: s.name, imageUrl: s.imageUrl, stories: [] });
+    }
+    map.get(s.authorId)!.stories.push(s);
+  });
+  return Array.from(map.values());
+}
 
+// ── Story Upload Modal ────────────────────────────────────────────────────────
+function StoryUploadModal({
+  userId,
+  userAvatar,
+  onClose,
+  onSuccess,
+}: {
+  userId: string;
+  userAvatar?: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [pickedUri, setPickedUri] = useState<string | null>(null);
+  const [pickedFile, setPickedFile] = useState<{ uri: string; name: string; type: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const pickImage = async () => {
+    const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!granted) {
+      Alert.alert("Permission required", "Please allow media access.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: false,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets?.length) {
+      const a = result.assets[0];
+      setPickedUri(a.uri);
+      setPickedFile({
+        uri: a.uri,
+        name: a.fileName ?? a.uri.split("/").pop() ?? "story.jpg",
+        type: a.mimeType ?? "image/jpeg",
+      });
+      setError(null);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!pickedFile) { setError("Please select a file to upload."); return; }
+    setUploading(true);
+    setError(null);
+    try {
+      await createStory(userId, pickedFile);
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      setError(err?.response?.data?.error ?? "Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <Modal visible transparent animationType="fade">
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={um.overlay}>
+          <TouchableWithoutFeedback>
+            <View style={um.sheet}>
+              <Text style={um.title}>Upload New Story</Text>
+
+              {/* Preview / pick area */}
+              <TouchableOpacity style={um.previewArea} onPress={pickImage} activeOpacity={0.8}>
+                {pickedUri ? (
+                  <Image source={{ uri: pickedUri }} style={um.preview} resizeMode="cover" />
+                ) : (
+                  <View style={um.previewPlaceholder}>
+                    <Ionicons name="image-outline" size={32} color="#6b7280" />
+                    <Text style={um.previewHint}>Tap to select image</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {pickedFile && (
+                <Text style={um.fileName} numberOfLines={1}>{pickedFile.name}</Text>
+              )}
+
+              {error && <Text style={um.errorText}>{error}</Text>}
+
+              <View style={um.btnRow}>
+                <TouchableOpacity style={um.cancelBtn} onPress={onClose} disabled={uploading}>
+                  <Text style={um.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[um.uploadBtn, uploading && um.uploadBtnDisabled]}
+                  onPress={handleUpload}
+                  disabled={uploading}
+                >
+                  {uploading
+                    ? <ActivityIndicator color="#fff" size="small" />
+                    : <Text style={um.uploadText}>Upload</Text>
+                  }
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
+  );
+}
+
+const um = StyleSheet.create({
+  overlay: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center", alignItems: "center",
+  },
+  sheet: {
+    width: 320, backgroundColor: "#111",
+    borderRadius: 16, padding: 20,
+    borderWidth: 1, borderColor: "#2ecc71", gap: 12,
+  },
+  title: { color: "#fff", fontSize: 18, fontWeight: "700" },
+  previewArea: {
+    width: "100%", height: 200, borderRadius: 12,
+    overflow: "hidden", backgroundColor: "#1f2937",
+  },
+  preview: { width: "100%", height: "100%" },
+  previewPlaceholder: {
+    flex: 1, alignItems: "center", justifyContent: "center", gap: 8,
+  },
+  previewHint: { color: "#6b7280", fontSize: 13 },
+  fileName: { color: "#9ca3af", fontSize: 12 },
+  errorText: { color: "#f87171", fontSize: 13 },
+  btnRow: { flexDirection: "row", gap: 10, justifyContent: "flex-end", marginTop: 4 },
+  cancelBtn: {
+    paddingVertical: 10, paddingHorizontal: 20,
+    borderRadius: 10, borderWidth: 1, borderColor: "#2ecc71",
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  cancelText: { color: "#fff", fontWeight: "600" },
+  uploadBtn: {
+    paddingVertical: 10, paddingHorizontal: 24,
+    borderRadius: 10, backgroundColor: "#166534",
+    borderWidth: 1, borderColor: "#2ecc71",
+    minWidth: 90, alignItems: "center",
+  },
+  uploadBtnDisabled: { opacity: 0.6 },
+  uploadText: { color: "#fff", fontWeight: "700" },
+});
+
+// ── Main Stories component ────────────────────────────────────────────────────
 export default function Stories() {
-  const [selectedStory, setSelectedStory] = useState<any>(null);
+  const navigation = useNavigation<any>();
+  const { userDb } = useUserDb();
+  const userId: string | undefined = userDb?.data?.id ?? userDb?.id;
+  const userAvatar: string | undefined = userDb?.data?.imageUrl ?? userDb?.imageUrl;
 
-  const [storiesOptions, setStoriesOptions] = useState<Story[]>([]);
-  const { user } = useUser();
+  const [grouped, setGrouped] = useState<GroupedStory[]>([]);
+  const [storyStatus, setStoryStatus] = useState<StoryStatus>({ pending: [], rejected: [] });
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<GroupedStory | null>(null);
+  const [storyIndex, setStoryIndex] = useState(0);
+
   const { data, refetch } = useQuery([GET_ALL_STORIES], () => getAllStories(), {
     keepPreviousData: false,
     refetchOnWindowFocus: true,
     retry: 0,
   });
 
-  console.log("stories", JSON.stringify(data?.data?.data, null, 2));
+  // Fetch story statuses (pending / rejected)
+  const fetchStatus = () => {
+    if (!userId) return;
+    backendClient
+      .get(`/users/${userId}/stories/status`)
+      .then((res) => setStoryStatus({
+        pending: res.data?.pending ?? [],
+        rejected: res.data?.rejected ?? [],
+      }))
+      .catch(() => { });
+  };
+
+  useEffect(() => { fetchStatus(); }, [userId]);
 
   useEffect(() => {
-    if (data) {
-      const storiesValues: Story[] = [];
-
-      data?.data?.data.forEach((post: any) => {
-        storiesValues.push({
-          authorId: post.authorId,
-          id: post.id,
-          file: post.file,
-          name: post.name,
-          creationTime: post.creationTime,
-          imageUrl: post.imageUrl,
-        });
-      });
-
-      setStoriesOptions(storiesValues);
-    }
+    if (!data) return;
+    const raw: Story[] = (data?.data?.data ?? []).map((s: any) => ({
+      authorId: s.authorId,
+      id: s.id,
+      file: s.file,
+      name: s.name,
+      creationTime: s.creationTime,
+      imageUrl: s.imageUrl,
+    }));
+    setGrouped(groupByAuthor(raw));
   }, [data]);
 
-  const openStory = (story: any) => {
-    setSelectedStory(story);
+  const handleUploadSuccess = () => {
+    refetch();
+    fetchStatus();
   };
 
-  const closeStory = () => {
-    setSelectedStory(null);
+  // ── Story viewer ─────────────────────────────────────────────────────────────
+  const openGroup = (group: GroupedStory) => {
+    setSelectedGroup(group);
+    setStoryIndex(0);
   };
 
-  const storyListWithUpload = [{ id: "upload", upload: true }, ...stories];
-
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
-  const groupStoriesByAuthor = (stories: Story[]): GroupedStory[] => {
-    const groupedMap = new Map<string, GroupedStory>();
-  
-    stories.forEach((story) => {
-      if (!groupedMap.has(story.authorId)) {
-        groupedMap.set(story.authorId, {
-          authorId: story.authorId,
-          name: story.name,
-          imageUrl: story.imageUrl,
-          stories: [],
-        });
-      }
-  
-      groupedMap.get(story.authorId)!.stories.push(story);
-    });
-  
-    return Array.from(groupedMap.values());
-  };
-  
-
-  const pickImage = async () => {
-    // Request permission
-    const permissionResult =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      Alert.alert(
-        "Permission required",
-        "Permission to access gallery is required!"
-      );
-      return;
-    }
-
-    // Open image picker
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: false, // true if you want multi-image
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      const imageUri = result.assets[0].uri;
-      setSelectedImage(imageUri);
-      console.log("Selected Image URI:", imageUri);
-    }
+  const nextStory = () => {
+    if (!selectedGroup) return;
+    if (storyIndex < selectedGroup.stories.length - 1) setStoryIndex((i) => i + 1);
+    else setSelectedGroup(null);
   };
 
-  console.log(user?.username);
+  const prevStory = () => {
+    if (storyIndex > 0) setStoryIndex((i) => i - 1);
+  };
+
+  // ── List items ───────────────────────────────────────────────────────────────
+  type ListItem =
+    | { type: "add_post" }
+    | { type: "upload" }
+    | { type: "status" }
+    | { type: "story"; group: GroupedStory };
+
+  const hasStatus = storyStatus.pending.length > 0 || storyStatus.rejected.length > 0;
+
+  const listData: ListItem[] = [
+    { type: "add_post" },
+    { type: "upload" },
+    ...(hasStatus ? [{ type: "status" as const }] : []),
+    ...grouped.map((g) => ({ type: "story" as const, group: g })),
+  ];
+
   return (
     <View style={styles.container}>
       <FlatList
-        data={storyListWithUpload}
+        data={listData}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.storyList}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) =>
-          (item as any).upload ? (
-            <TouchableOpacity style={styles.uploadStory} onPress={pickImage}>
-              {selectedImage ? (
-                <>
-                  <Image
-                    source={{ uri: selectedImage }}
-                    style={styles.avatar}
-                  />
-                  <Text style={styles.username}>{user?.username}</Text>
-                </>
-              ) : (
-                <Text style={styles.plusIcon}>+</Text>
-              )}
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={() => openStory(item)}
-              style={styles.storyItem}
-            >
-              <Image
-                source={{ uri: (item as any).file.fileUrl }}
-                style={styles.avatar}
-              />
-              <Text style={styles.username}>{(item as any).name}</Text>
-            </TouchableOpacity>
-          )
+        contentContainerStyle={styles.list}
+        keyExtractor={(item, i) =>
+          item.type === "story" ? item.group.authorId : `${item.type}-${i}`
         }
+        renderItem={({ item }) => {
+          // ── Add Post tile ──
+          if (item.type === "add_post") {
+            return (
+              <TouchableOpacity
+                style={styles.addPostTile}
+                onPress={() => navigation.navigate("Add Feed")}
+              >
+                <View style={styles.addPostIcon}>
+                  <Ionicons name="add" size={22} color="#2ecc71" />
+                </View>
+                <Text style={styles.tileLabel}>New Post</Text>
+              </TouchableOpacity>
+            );
+          }
+
+          // ── Upload Story tile ──
+          if (item.type === "upload") {
+            return (
+              <TouchableOpacity
+                style={styles.uploadTile}
+                onPress={() => setShowUploadModal(true)}
+              >
+                <Image
+                  source={{ uri: userAvatar || DEFAULT_AVATAR }}
+                  style={styles.uploadAvatar}
+                />
+                <View style={styles.uploadBadge}>
+                  <Ionicons name="add" size={12} color="#fff" />
+                </View>
+                <Text style={styles.tileLabel}>Upload{"\n"}New Story</Text>
+              </TouchableOpacity>
+            );
+          }
+
+          // ── Status tile ──
+          if (item.type === "status") {
+            const isRejected = storyStatus.rejected.length > 0;
+            const count = isRejected ? storyStatus.rejected.length : storyStatus.pending.length;
+            const previewUrl = isRejected
+              ? storyStatus.rejected[0]?.file?.fileUrl
+              : storyStatus.pending[0]?.file?.fileUrl;
+
+            return (
+              <View style={[styles.statusTile, isRejected ? styles.statusTileRejected : styles.statusTilePending]}>
+                {previewUrl && (
+                  <Image source={{ uri: previewUrl }} style={styles.statusBg} blurRadius={4} />
+                )}
+                <View style={styles.statusOverlay}>
+                  <Ionicons
+                    name={isRejected ? "alert-circle-outline" : "time-outline"}
+                    size={18}
+                    color={isRejected ? "#f87171" : "rgba(255,255,255,0.4)"}
+                  />
+                  <Text style={[styles.statusLabel, isRejected && styles.statusLabelRejected]}>
+                    {isRejected ? "Rejected" : "Under\nreview"}
+                  </Text>
+                </View>
+                {/* Count badge */}
+                <View style={[styles.countBadge, isRejected && styles.countBadgeRejected]}>
+                  <Text style={styles.countBadgeText}>{count}</Text>
+                </View>
+              </View>
+            );
+          }
+
+          // ── Story tile ──
+          const { group } = item;
+          const cover = group.stories[0]?.file?.fileUrl;
+          return (
+            <TouchableOpacity style={styles.storyTile} onPress={() => openGroup(group)}>
+              <Image source={{ uri: cover || DEFAULT_AVATAR }} style={styles.storyThumb} />
+              <View style={styles.storyRing} />
+              <Text style={styles.storyLabel} numberOfLines={1}>{group.name}</Text>
+            </TouchableOpacity>
+          );
+        }}
       />
 
-      <Modal visible={!!selectedStory} transparent animationType="fade">
-        {selectedStory && (
-          <TouchableWithoutFeedback onPress={closeStory}>
-            <View style={styles.storyModal}>
-              <View style={styles.storyContent}>
-                <Image
-                  source={{ uri: selectedStory.file.fileUrl }}
-                  style={styles.fullScreenImage}
-                />
-                <Text style={styles.storyUsername}>{selectedStory.name}</Text>
-              </View>
+      {/* ── Upload modal ── */}
+      {showUploadModal && userId && (
+        <StoryUploadModal
+          userId={userId}
+          userAvatar={userAvatar}
+          onClose={() => setShowUploadModal(false)}
+          onSuccess={handleUploadSuccess}
+        />
+      )}
+
+      {/* ── Story viewer modal ── */}
+      <Modal visible={!!selectedGroup} transparent animationType="fade">
+        {selectedGroup && (
+          <View style={styles.viewerBg}>
+            <View style={styles.progressRow}>
+              {selectedGroup.stories.map((_, i) => (
+                <View key={i} style={[styles.progressDot, i === storyIndex && styles.progressDotActive]} />
+              ))}
             </View>
-          </TouchableWithoutFeedback>
+            <View style={styles.viewerHeader}>
+              <Image source={{ uri: selectedGroup.imageUrl || DEFAULT_AVATAR }} style={styles.viewerAvatar} />
+              <Text style={styles.viewerName}>{selectedGroup.name}</Text>
+              <TouchableOpacity onPress={() => setSelectedGroup(null)} hitSlop={12}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <Image
+              source={{ uri: selectedGroup.stories[storyIndex]?.file?.fileUrl }}
+              style={styles.viewerImage}
+              resizeMode="cover"
+            />
+            <View style={styles.tapZones}>
+              <TouchableWithoutFeedback onPress={prevStory}>
+                <View style={styles.tapLeft} />
+              </TouchableWithoutFeedback>
+              <TouchableWithoutFeedback onPress={nextStory}>
+                <View style={styles.tapRight} />
+              </TouchableWithoutFeedback>
+            </View>
+          </View>
         )}
       </Modal>
     </View>
   );
 }
 
+const TILE_W = 68;
+const TILE_H = 90;
+
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "black",
-    paddingTop: 15,
+  container: { backgroundColor: "#0d0d0d", paddingVertical: 10 },
+  list: { paddingHorizontal: 12, gap: 10 },
+
+  addPostTile: {
+    width: TILE_W, height: TILE_H, borderRadius: 14,
+    backgroundColor: "#0f1f14",
+    borderWidth: 1.5, borderColor: "#2ecc71",
+    alignItems: "center", justifyContent: "center", gap: 4,
   },
-  storyList: {
-    paddingHorizontal: 10,
+  addPostIcon: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: "rgba(46,204,113,0.15)",
+    alignItems: "center", justifyContent: "center",
   },
-  storyItem: {
-    alignItems: "center",
-    marginHorizontal: 7,
+
+  uploadTile: {
+    width: TILE_W, height: TILE_H, borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",
+    alignItems: "center", justifyContent: "flex-end",
+    paddingBottom: 6, position: "relative",
   },
-  avatar: {
-    width: 60,
-    height: 80,
-    borderRadius: 15,
-    borderWidth: 1,
-    // borderColor: "#166534",
+  uploadAvatar: {
+    position: "absolute", top: 0, left: 0, right: 0,
+    width: TILE_W, height: TILE_H / 2, borderTopLeftRadius: 14, borderTopRightRadius: 14,
   },
-  username: {
-    marginTop: 5,
-    fontSize: 12,
-    color: "white",
+  uploadBadge: {
+    position: "absolute", bottom: 28, right: 4,
+    width: 18, height: 18, borderRadius: 9,
+    backgroundColor: "#166534", borderWidth: 1.5, borderColor: "#0d0d0d",
+    alignItems: "center", justifyContent: "center",
   },
-  uploadStory: {
-    width: 60,
-    height: 80,
-    borderRadius: 15,
-    borderWidth: 1,
-    // borderColor: "#22c55e",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#1f2937",
-    marginHorizontal: 5,
+
+  // Status tile
+  statusTile: {
+    width: TILE_W, height: TILE_H, borderRadius: 14,
+    overflow: "hidden", position: "relative",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(255,255,255,0.05)",
   },
-  plusIcon: {
-    fontSize: 32,
-    color: "#22c55e",
-    fontWeight: "bold",
+  statusTilePending: { borderColor: "rgba(255,255,255,0.1)" },
+  statusTileRejected: { borderColor: "rgba(239,68,68,0.6)", borderWidth: 2 },
+  statusBg: { position: "absolute", width: "100%", height: "100%", opacity: 0.25 },
+  statusOverlay: {
+    position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+    alignItems: "center", justifyContent: "center", gap: 4,
   },
-  storyModal: {
-    flex: 1,
-    backgroundColor: "black",
-    justifyContent: "center",
-    alignItems: "center",
+  statusLabel: {
+    color: "rgba(255,255,255,0.4)", fontSize: 10,
+    fontWeight: "600", textAlign: "center",
   },
-  storyContent: {
-    width: "100%",
-    height: "100%",
-    position: "relative",
+  statusLabelRejected: { color: "#fca5a5" },
+  countBadge: {
+    position: "absolute", top: 6, right: 6,
+    width: 18, height: 18, borderRadius: 9,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center", justifyContent: "center",
   },
-  fullScreenImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
+  countBadgeRejected: { backgroundColor: "#ef4444" },
+  countBadgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+
+  storyTile: {
+    width: TILE_W, height: TILE_H, borderRadius: 14,
+    overflow: "hidden", position: "relative",
+    alignItems: "center", justifyContent: "flex-end",
   },
-  storyUsername: {
-    position: "absolute",
-    bottom: 40,
-    left: 20,
-    color: "white",
-    fontSize: 24,
-    fontWeight: "bold",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
+  storyThumb: {
+    position: "absolute", top: 0, left: 0,
+    width: TILE_W, height: TILE_H, borderRadius: 14,
   },
+  storyRing: {
+    position: "absolute", top: 0, left: 0,
+    width: TILE_W, height: TILE_H, borderRadius: 14,
+    borderWidth: 2, borderColor: "#2ecc71",
+  },
+  storyLabel: {
+    color: "#fff", fontSize: 10, fontWeight: "600",
+    textAlign: "center", paddingHorizontal: 2, marginBottom: 4,
+    textShadowColor: "rgba(0,0,0,0.8)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+
+  tileLabel: {
+    color: "#fff", fontSize: 10, fontWeight: "600",
+    textAlign: "center", paddingHorizontal: 2,
+  },
+
+  viewerBg: { flex: 1, backgroundColor: "#000" },
+  progressRow: {
+    flexDirection: "row", gap: 4,
+    position: "absolute", top: 50, left: 12, right: 12, zIndex: 10,
+  },
+  progressDot: { flex: 1, height: 3, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.35)" },
+  progressDotActive: { backgroundColor: "#fff" },
+  viewerHeader: {
+    position: "absolute", top: 62, left: 12, right: 12,
+    flexDirection: "row", alignItems: "center", gap: 10, zIndex: 10,
+  },
+  viewerAvatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: "#2ecc71" },
+  viewerName: { flex: 1, color: "#fff", fontWeight: "700", fontSize: 14 },
+  viewerImage: { width: "100%", height: "100%" },
+  tapZones: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, flexDirection: "row" },
+  tapLeft: { flex: 1 },
+  tapRight: { flex: 1 },
 });
