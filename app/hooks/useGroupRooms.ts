@@ -26,9 +26,26 @@ function sortByActivity(rooms: ChatRoom[]): ChatRoom[] {
 
 export function useGroupRooms() {
     const { userDb } = useUserDb();
+
+    // userDb is the axios response — unwrap to actual user object
+    const user = userDb?.data?.data ?? userDb?.data ?? null;
+    const userId = user?.id;
+    const userInfo = user ? {
+        userId: user.id,
+        displayName: user.personalDetails?.firstName
+            ? `${user.personalDetails.firstName} ${user.personalDetails.lastName ?? ""}`.trim()
+            : user.firstName
+                ? `${user.firstName} ${user.lastName ?? ""}`.trim()
+                : undefined,
+        name: user.username ?? undefined,
+        image: user.imageUrl ?? undefined,
+        role: user.role === "Host" ? "moderator" : user.role === "Admin" ? "admin" : "user",
+        banned: false, invisible: false, online: false, hideOnlineStatus: false,
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    } : null;
     const [token, setToken] = useState<string | null>(null);
     const [allRooms, setAllRooms] = useState<ChatRoom[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
@@ -41,20 +58,12 @@ export function useGroupRooms() {
     }, []);
 
     useEffect(() => {
-        if (!token || !userDb?.id) return;
-        connectUser(token, {
-            userId: userDb.id,
-            displayName: userDb.firstName ? `${userDb.firstName} ${userDb.lastName ?? ""}`.trim() : undefined,
-            name: userDb.username ?? undefined,
-            image: userDb.imageUrl ?? undefined,
-            role: userDb.role === "Host" ? "moderator" : userDb.role === "Admin" ? "admin" : "user",
-            banned: false, invisible: false, online: false, hideOnlineStatus: false,
-            createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-        }).catch(() => { });
-    }, [token, userDb]);
+        if (!token || !userId || !userInfo) return;
+        connectUser(token, userInfo).catch(() => { });
+    }, [token, userId]);
 
     const fetchRooms = useCallback(async (p: number) => {
-        if (!token || fetchingRef.current) return;
+        if (!token || !userId || fetchingRef.current) return;
         fetchingRef.current = true;
         setIsLoading(true);
         setError(null);
@@ -68,11 +77,11 @@ export function useGroupRooms() {
             setIsLoading(false);
             fetchingRef.current = false;
         }
-    }, [token]);
+    }, [token, userId]);
 
     useEffect(() => {
-        if (token) fetchRooms(page);
-    }, [token, page, fetchRooms]);
+        if (token && userId) fetchRooms(page);
+    }, [token, userId, page, fetchRooms]);
 
     useEffect(() => {
         const onNewMsg = (msg: any) => {

@@ -17,7 +17,7 @@ export function sortByActivity(rooms: ChatRoom[]): ChatRoom[] {
 export function useGroupRooms() {
     const { client, connectionState } = useChatClient();
     const [allRooms, setAllRooms] = useState<ChatRoom[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
@@ -48,6 +48,9 @@ export function useGroupRooms() {
         }
     }, [client]);
 
+    // Show loading while connecting so the UI doesn't flash empty state
+    const isConnecting = connectionState === "connecting" || connectionState === "disconnected";
+
     useEffect(() => {
         if (connectionState === "connected") fetchRooms(page);
     }, [fetchRooms, page, connectionState]);
@@ -74,7 +77,7 @@ export function useGroupRooms() {
     return {
         pastRooms,
         upcomingRooms,
-        isLoading,
+        isLoading: isLoading || isConnecting,
         error,
         total,
         page,

@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StatusBar, StyleSheet } from "react-native";
-import { Stack, useRouter } from "expo-router";
+import { Stack } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
+import { useUserDb } from "@/app/hooks/useUserDb";
 import { useForm, FormProvider } from "react-hook-form";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -35,8 +36,10 @@ export type EventFormValues = {
 };
 
 const CreateEvents = () => {
-  const router = useRouter();
   const navigation = useNavigation();
+  const { userDb } = useUserDb();
+  const userId: string = userDb?.data?.id ?? userDb?.id ?? "";
+
   const { control, handleSubmit, ...methods } = useForm<EventFormValues>({
     defaultValues: {
       title: "",
@@ -100,7 +103,7 @@ const CreateEvents = () => {
     if (data.isPaidEvent && ticketPrice <= 0) { Alert.alert("Validation", "Ticket price must be > 0 for paid events."); return; }
 
     try {
-      const res = await createEvent({
+      await createEvent({
         title: data.title,
         description: data.description,
         coverImage: { filename: data.coverImage.filename, fileUrl: data.coverImage.fileUrl },
@@ -117,7 +120,7 @@ const CreateEvents = () => {
         refundDeadline: refundDeadline ? toISO(refundDeadline) : toISO(endDate),
         isPaidEvent: data.isPaidEvent,
         organizers: data.organizers,
-        creatorId: data.creatorId,
+        creatorId: userId,
       });
       Alert.alert("Success", "Event created successfully!", [
         { text: "OK", onPress: () => navigation.goBack() },

@@ -19,7 +19,21 @@ export default function GroupChatsScreen() {
         getChatToken().then(setToken).catch(console.error);
     }, []);
 
-    if (!token || !userDb?.id) {
+    if (!token || !userDb) {
+        return (
+            <View style={styles.loading}>
+                <ActivityIndicator size="large" color="#4ade80" />
+            </View>
+        );
+    }
+
+    // userDb is the axios response — user data is at .data or .data.data
+    const user = userDb?.data?.data ?? userDb?.data ?? {};
+    const userId = user?.id;
+    const firstName = user?.personalDetails?.firstName ?? user?.firstName;
+    const lastName = user?.personalDetails?.lastName ?? user?.lastName;
+
+    if (!userId) {
         return (
             <View style={styles.loading}>
                 <ActivityIndicator size="large" color="#4ade80" />
@@ -28,16 +42,16 @@ export default function GroupChatsScreen() {
     }
 
     const chatUser = {
-        userId: userDb.id,
-        displayName: userDb.firstName
-            ? `${userDb.firstName} ${userDb.lastName ?? ""}`.trim()
+        userId,
+        displayName: firstName
+            ? `${firstName} ${lastName ?? ""}`.trim()
             : undefined,
-        name: userDb.username ?? undefined,
-        image: userDb.imageUrl ?? clerkUser?.imageUrl ?? undefined,
+        name: user?.username ?? undefined,
+        image: user?.imageUrl ?? clerkUser?.imageUrl ?? undefined,
         role:
-            userDb.role === "Host"
+            user?.role === "Host"
                 ? ChatUserRole.moderator
-                : userDb.role === "Admin"
+                : user?.role === "Admin"
                     ? ChatUserRole.admin
                     : ChatUserRole.user,
         banned: false,

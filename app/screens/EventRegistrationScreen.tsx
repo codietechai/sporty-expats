@@ -113,33 +113,47 @@ export default function EventRegistrationScreen({ route }: any) {
 
     const handleSubmit = async () => {
         if (!userId || !event?.id) return;
+
+        if (!isFree) {
+            Alert.alert(
+                "Payment Required",
+                `This event costs €${totalPrice.toFixed(2)}. Please complete payment on the web app to confirm your registration.`,
+                [{ text: "OK" }]
+            );
+            return;
+        }
+
         setSubmitting(true);
         try {
-            // For free events — register directly
-            // For paid events — payment is handled via web (PayPal not available in RN yet)
-            if (isFree) {
-                await backendClient.post(`/events/${event.id}/register`, {
-                    userId,
-                    participants: tickets.map((t) => ({
-                        name: t.name,
-                        email: t.email,
-                        phone: t.phone,
-                        note: t.note,
-                        numTickets: 1,
-                    })),
-                    quantity: participants,
-                });
-                Alert.alert("Success!", "You have been registered for this event.", [
-                    { text: "OK", onPress: () => navigation.goBack() },
-                ]);
-            } else {
-                // Paid event — direct to web for payment
-                Alert.alert(
-                    "Payment Required",
-                    `This event costs €${totalPrice.toFixed(2)}. Please complete payment on the web app to confirm your registration.`,
-                    [{ text: "OK", onPress: () => navigation.goBack() }]
-                );
-            }
+            // Free events use the same POST /payments endpoint as the web (amount: 0)
+            // This triggers allocateTickets + createAttendee on the backend
+            const firstTicket = tickets[0];
+            const payerName = firstTicket.name.trim() || "Guest";
+            const payerEmail = firstTicket.email.trim() || `${userId}@sportyexpats.app`;
+            const transactionId = `free-${event.id}-${userId}-${Date.now()}`;
+
+            const ticketsInfo = tickets.map((t) => ({
+                name: t.name || payerName,
+                email: t.email || payerEmail,
+                phone: t.phone ?? "",
+                numTickets: 1,
+                note: t.note ?? "",
+            }));
+
+            await backendClient.post(`/payments`, {
+                userId,
+                amount: 0,
+                paymentType: "paypal",
+                transactionId,
+                refundTransactionId: transactionId,
+                payer: { name: payerName, email: payerEmail },
+                products: [{ purchaseType: "events", productId: event.id, quantity: participants }],
+                metaData: { ticketsInfo },
+            });
+
+            Alert.alert("Registered!", "You have been registered for this event.", [
+                { text: "OK", onPress: () => navigation.goBack() },
+            ]);
         } catch (err: any) {
             const msg = err?.response?.data?.error ?? err?.message ?? "Registration failed. Please try again.";
             Alert.alert("Error", msg);
