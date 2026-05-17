@@ -35,7 +35,7 @@ const Drawer = createDrawerNavigator();
 export default function AppNavigator() {
   const { t } = useTranslation();
 
-  const { getToken } = useAuth();
+  const { getToken, isSignedIn } = useAuth();
 
   useEffect(() => {
     // Set up immediately, then refresh every 3 seconds
@@ -49,7 +49,7 @@ export default function AppNavigator() {
 
   return (
     <Drawer.Navigator
-      initialRouteName="Home"
+      initialRouteName={isSignedIn ? "Dashboard" : "Home"}
       screenOptions={{
         headerShown: true,
         headerStyle: {

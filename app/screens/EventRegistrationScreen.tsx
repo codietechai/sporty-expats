@@ -1,24 +1,27 @@
 import React, { useState } from "react";
 import {
     View, Text, ScrollView, TouchableOpacity,
-    StyleSheet, ActivityIndicator, Alert, TextInput,
+    StyleSheet, ActivityIndicator, Alert, TextInput, Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
 import { useUserDb } from "@/app/hooks/useUserDb";
-import { backendClient } from "@/client/backendClient";
+import { registerFreeEvent, TicketInfo } from "@/client/endpoints/events/eventRegistration";
+import InlineAlert from "@/components/Create-Events/InlineAlert";
 import type { Event } from "@/client/endpoints/events/types";
 
 type Step = "Select Ticket" | "Assign Participants" | "Review & Confirm";
 
-type Ticket = {
+type LocalTicket = {
     name: string;
     email: string;
     phone: string;
     note: string;
 };
+
+const STEPS: Step[] = ["Select Ticket", "Assign Participants", "Review & Confirm"];
 
 export default function EventRegistrationScreen({ route }: any) {
     const navigation = useNavigation<any>();
@@ -26,31 +29,32 @@ export default function EventRegistrationScreen({ route }: any) {
 
     const { userDb } = useUserDb();
     const userId: string | undefined = userDb?.data?.id ?? userDb?.id;
-    const userEmail: string | undefined = userDb?.data?.personalDetails?.email ?? userDb?.personalDetails?.email;
-    const firstName: string | undefined = userDb?.data?.personalDetails?.firstName ?? userDb?.personalDetails?.firstName;
-    const lastName: string | undefined = userDb?.data?.personalDetails?.lastName ?? userDb?.personalDetails?.lastName;
+    // /users/me returns a flat object: { id, email, firstName, lastName, username, ... }
+    const userEmail: string | undefined = userDb?.data?.email ?? userDb?.email;
+    const firstName: string | undefined = userDb?.data?.firstName ?? userDb?.firstName;
+    const lastName: string | undefined = userDb?.data?.lastName ?? userDb?.lastName;
     const username: string | undefined = userDb?.data?.username ?? userDb?.username;
 
     const [activeStep, setActiveStep] = useState<Step>("Select Ticket");
     const [participants, setParticipants] = useState(1);
     const [attending, setAttending] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [tickets, setTickets] = useState<Ticket[]>([
+    const [stepError, setStepError] = useState<string | null>(null);
+    const [tickets, setTickets] = useState<LocalTicket[]>([
         { name: "", email: "", phone: "", note: "" },
     ]);
 
     const totalPrice = (event?.ticketPrice ?? 0) * participants;
     const isFree = !event?.isPaidEvent || event?.ticketPrice === 0;
 
-    const STEPS: Step[] = ["Select Ticket", "Assign Participants", "Review & Confirm"];
+    // ── Participant counter ──────────────────────────────────────────────────
 
     const incrementParticipants = () => {
         if (participants < (event?.availableTickets ?? 1)) {
-            const newCount = participants + 1;
-            setParticipants(newCount);
+            setParticipants((p) => p + 1);
             setTickets((prev) => [...prev, { name: "", email: "", phone: "", note: "" }]);
         } else {
-            Alert.alert("Maximum reached", "No more tickets available.");
+            setStepError("No more tickets available for this event.");
         }
     };
 
@@ -58,10 +62,14 @@ export default function EventRegistrationScreen({ route }: any) {
         if (participants > 1) {
             setParticipants((p) => p - 1);
             setTickets((prev) => prev.slice(0, -1));
+            setStepError(null);
         }
     };
 
-    const updateTicket = (index: number, field: keyof Ticket, value: string) => {
+    // ── Ticket field helpers ─────────────────────────────────────────────────
+
+    const updateTicket = (index: number, field: keyof LocalTicket, value: string) => {
+        setStepError(null);
         setTickets((prev) => {
             const updated = [...prev];
             updated[index] = { ...updated[index], [field]: value };
@@ -77,6 +85,7 @@ export default function EventRegistrationScreen({ route }: any) {
             return updated;
         });
         setAttending(true);
+        setStepError(null);
     };
 
     const clearSelf = () => {
@@ -88,11 +97,22 @@ export default function EventRegistrationScreen({ route }: any) {
         setAttending(false);
     };
 
+    // ── Step navigation ──────────────────────────────────────────────────────
+
     const validateStep = (): boolean => {
         if (activeStep === "Assign Participants") {
             const first = tickets[0];
-            if (!first.name.trim() || !first.email.trim()) {
-                Alert.alert("Required", "Please fill in name and email for the first participant.");
+            if (!first.name.trim()) {
+                setStepError("Full name is required for Participant 1.");
+                return false;
+            }
+            if (!first.email.trim()) {
+                setStepError("Email is required for Participant 1.");
+                return false;
+            }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(first.email.trim())) {
+                setStepError("Please enter a valid email address for Participant 1.");
                 return false;
             }
         }
@@ -100,67 +120,84 @@ export default function EventRegistrationScreen({ route }: any) {
     };
 
     const goNext = () => {
+        setStepError(null);
         if (!validateStep()) return;
         const idx = STEPS.indexOf(activeStep);
         if (idx < STEPS.length - 1) setActiveStep(STEPS[idx + 1]);
     };
 
     const goBack = () => {
+        setStepError(null);
         const idx = STEPS.indexOf(activeStep);
         if (idx > 0) setActiveStep(STEPS[idx - 1]);
         else navigation.goBack();
     };
 
+    // ── Submit ───────────────────────────────────────────────────────────────
+
     const handleSubmit = async () => {
         if (!userId || !event?.id) return;
 
+        // Paid events: redirect to web app
         if (!isFree) {
             Alert.alert(
                 "Payment Required",
-                `This event costs €${totalPrice.toFixed(2)}. Please complete payment on the web app to confirm your registration.`,
-                [{ text: "OK" }]
+                `This event costs €${totalPrice.toFixed(2)}. Complete payment on the web app via PayPal.`,
+                [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                        text: "Open Web App",
+                        onPress: () =>
+                            Linking.openURL(
+                                `https://www.sportyexpats.fr/event-registration/${event.id}`
+                            ),
+                    },
+                ]
             );
             return;
         }
 
         setSubmitting(true);
+        setStepError(null);
         try {
-            // Free events use the same POST /payments endpoint as the web (amount: 0)
-            // This triggers allocateTickets + createAttendee on the backend
             const firstTicket = tickets[0];
-            const payerName = firstTicket.name.trim() || "Guest";
-            const payerEmail = firstTicket.email.trim() || `${userId}@sportyexpats.app`;
-            const transactionId = `free-${event.id}-${userId}-${Date.now()}`;
+            const payerName = firstTicket.name.trim() || username || "Guest";
+            const payerEmail = firstTicket.email.trim() || userEmail || `${userId}@sportyexpats.app`;
 
-            const ticketsInfo = tickets.map((t) => ({
-                name: t.name || payerName,
-                email: t.email || payerEmail,
+            const ticketsInfo: TicketInfo[] = tickets.map((t) => ({
+                name: t.name.trim() || payerName,
+                email: t.email.trim() || payerEmail,
                 phone: t.phone ?? "",
                 numTickets: 1,
                 note: t.note ?? "",
             }));
 
-            await backendClient.post(`/payments`, {
+            await registerFreeEvent({
                 userId,
-                amount: 0,
-                paymentType: "paypal",
-                transactionId,
-                refundTransactionId: transactionId,
-                payer: { name: payerName, email: payerEmail },
-                products: [{ purchaseType: "events", productId: event.id, quantity: participants }],
-                metaData: { ticketsInfo },
+                eventId: event.id,
+                participants,
+                tickets: ticketsInfo,
+                payerName,
+                payerEmail,
             });
 
-            Alert.alert("Registered!", "You have been registered for this event.", [
-                { text: "OK", onPress: () => navigation.goBack() },
-            ]);
+            Alert.alert(
+                "Registered!",
+                "You have been registered for this event.",
+                [{ text: "OK", onPress: () => navigation.goBack() }]
+            );
         } catch (err: any) {
-            const msg = err?.response?.data?.error ?? err?.message ?? "Registration failed. Please try again.";
-            Alert.alert("Error", msg);
+            const msg =
+                err?.response?.data?.error ??
+                err?.message ??
+                "Registration failed. Please try again.";
+            setStepError(Array.isArray(msg) ? msg.join("\n") : msg);
         } finally {
             setSubmitting(false);
         }
     };
+
+    // ── Guard ────────────────────────────────────────────────────────────────
 
     if (!event) {
         return (
@@ -171,6 +208,8 @@ export default function EventRegistrationScreen({ route }: any) {
             </SafeAreaView>
         );
     }
+
+    // ── Render ───────────────────────────────────────────────────────────────
 
     return (
         <>
@@ -187,23 +226,43 @@ export default function EventRegistrationScreen({ route }: any) {
 
                 {/* Step tabs */}
                 <View style={styles.stepRow}>
-                    {STEPS.map((step, i) => (
-                        <View key={step} style={styles.stepItem}>
-                            <View style={[styles.stepDot, activeStep === step && styles.stepDotActive,
-                            STEPS.indexOf(activeStep) > i && styles.stepDotDone]}>
-                                {STEPS.indexOf(activeStep) > i
-                                    ? <Ionicons name="checkmark" size={12} color="#fff" />
-                                    : <Text style={styles.stepDotText}>{i + 1}</Text>
-                                }
-                            </View>
-                            <Text style={[styles.stepLabel, activeStep === step && styles.stepLabelActive]}>
-                                {step}
-                            </Text>
-                        </View>
-                    ))}
+                    {STEPS.map((step, i) => {
+                        const activeIdx = STEPS.indexOf(activeStep);
+                        const isDone = activeIdx > i;
+                        const isActive = activeStep === step;
+                        return (
+                            <TouchableOpacity
+                                key={step}
+                                style={styles.stepItem}
+                                onPress={() => { setStepError(null); setActiveStep(step); }}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[
+                                    styles.stepDot,
+                                    isActive && styles.stepDotActive,
+                                    isDone && styles.stepDotDone,
+                                ]}>
+                                    {isDone
+                                        ? <Ionicons name="checkmark" size={12} color="#fff" />
+                                        : <Text style={styles.stepDotText}>{i + 1}</Text>
+                                    }
+                                </View>
+                                <Text style={[styles.stepLabel, isActive && styles.stepLabelActive]}>
+                                    {step}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
 
-                <ScrollView style={styles.scroll} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+                {/* keyboardShouldPersistTaps="handled" ensures taps on inputs
+                    inside a ScrollView correctly focus the input and open the keyboard */}
+                <ScrollView
+                    style={styles.scroll}
+                    contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
 
                     {/* ── Step 1: Select Ticket ── */}
                     {activeStep === "Select Ticket" && (
@@ -238,6 +297,8 @@ export default function EventRegistrationScreen({ route }: any) {
                                 <Text style={styles.participantLabel}>{participants} Participant(s)</Text>
                             </View>
 
+                            <InlineAlert message={stepError} />
+
                             <TouchableOpacity style={styles.primaryBtn} onPress={goNext}>
                                 <Text style={styles.primaryBtnText}>Continue</Text>
                             </TouchableOpacity>
@@ -267,57 +328,84 @@ export default function EventRegistrationScreen({ route }: any) {
                                 <Text style={styles.selfLabel}>I am attending this event</Text>
                             </TouchableOpacity>
 
-                            {tickets.map((ticket, index) => (
-                                <View key={index} style={styles.ticketForm}>
-                                    <Text style={styles.ticketFormTitle}>
-                                        Participant {index + 1}
-                                        {ticket.name ? <Text style={styles.ticketName}> — {ticket.name}</Text> : null}
-                                    </Text>
+                            {tickets.map((ticket, index) => {
+                                // Only lock a field if "I am attending" is checked AND
+                                // the field actually has a value — if the profile is
+                                // incomplete the user must still be able to type.
+                                const isSelf = attending && index === 0;
+                                const nameEditable = !(isSelf && !!ticket.name);
+                                const emailEditable = !(isSelf && !!ticket.email);
+                                return (
+                                    <View key={index} style={styles.ticketForm}>
+                                        <Text style={styles.ticketFormTitle}>
+                                            Participant {index + 1}
+                                            {ticket.name
+                                                ? <Text style={styles.ticketName}> — {ticket.name}</Text>
+                                                : null}
+                                        </Text>
 
-                                    <Text style={styles.fieldLabel}>Full Name <Text style={styles.required}>*</Text></Text>
-                                    <TextInput
-                                        style={[styles.input, !ticket.name && styles.inputError]}
-                                        value={ticket.name}
-                                        onChangeText={(v) => updateTicket(index, "name", v)}
-                                        placeholder="Full name"
-                                        placeholderTextColor="#6b7280"
-                                        editable={!(attending && index === 0)}
-                                    />
+                                        <Text style={styles.fieldLabel}>
+                                            Full Name <Text style={styles.required}>*</Text>
+                                        </Text>
+                                        <TextInput
+                                            style={[
+                                                styles.input,
+                                                !nameEditable && styles.inputLocked,
+                                            ]}
+                                            value={ticket.name}
+                                            onChangeText={(v) => updateTicket(index, "name", v)}
+                                            placeholder="Full name"
+                                            placeholderTextColor="#6b7280"
+                                            editable={nameEditable}
+                                            returnKeyType="next"
+                                        />
 
-                                    <Text style={styles.fieldLabel}>Email <Text style={styles.required}>*</Text></Text>
-                                    <TextInput
-                                        style={[styles.input, !ticket.email && styles.inputError]}
-                                        value={ticket.email}
-                                        onChangeText={(v) => updateTicket(index, "email", v)}
-                                        placeholder="Email address"
-                                        placeholderTextColor="#6b7280"
-                                        keyboardType="email-address"
-                                        autoCapitalize="none"
-                                        editable={!(attending && index === 0)}
-                                    />
+                                        <Text style={styles.fieldLabel}>
+                                            Email <Text style={styles.required}>*</Text>
+                                        </Text>
+                                        <TextInput
+                                            style={[
+                                                styles.input,
+                                                !emailEditable && styles.inputLocked,
+                                            ]}
+                                            value={ticket.email}
+                                            onChangeText={(v) => updateTicket(index, "email", v)}
+                                            placeholder="Email address"
+                                            placeholderTextColor="#6b7280"
+                                            keyboardType="email-address"
+                                            autoCapitalize="none"
+                                            autoCorrect={false}
+                                            editable={emailEditable}
+                                            returnKeyType="next"
+                                        />
 
-                                    <Text style={styles.fieldLabel}>Phone (optional)</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        value={ticket.phone}
-                                        onChangeText={(v) => updateTicket(index, "phone", v)}
-                                        placeholder="Phone number"
-                                        placeholderTextColor="#6b7280"
-                                        keyboardType="phone-pad"
-                                    />
+                                        <Text style={styles.fieldLabel}>Phone (optional)</Text>
+                                        <TextInput
+                                            style={styles.input}
+                                            value={ticket.phone}
+                                            onChangeText={(v) => updateTicket(index, "phone", v)}
+                                            placeholder="Phone number"
+                                            placeholderTextColor="#6b7280"
+                                            keyboardType="phone-pad"
+                                            returnKeyType="next"
+                                        />
 
-                                    <Text style={styles.fieldLabel}>Note (optional)</Text>
-                                    <TextInput
-                                        style={[styles.input, styles.inputMultiline]}
-                                        value={ticket.note}
-                                        onChangeText={(v) => updateTicket(index, "note", v)}
-                                        placeholder="Any notes..."
-                                        placeholderTextColor="#6b7280"
-                                        multiline
-                                        numberOfLines={2}
-                                    />
-                                </View>
-                            ))}
+                                        <Text style={styles.fieldLabel}>Note (optional)</Text>
+                                        <TextInput
+                                            style={[styles.input, styles.inputMultiline]}
+                                            value={ticket.note}
+                                            onChangeText={(v) => updateTicket(index, "note", v)}
+                                            placeholder="Any notes..."
+                                            placeholderTextColor="#6b7280"
+                                            multiline
+                                            numberOfLines={2}
+                                            returnKeyType="done"
+                                        />
+                                    </View>
+                                );
+                            })}
+
+                            <InlineAlert message={stepError} />
 
                             <TouchableOpacity style={styles.primaryBtn} onPress={goNext}>
                                 <Text style={styles.primaryBtnText}>Continue</Text>
@@ -346,7 +434,7 @@ export default function EventRegistrationScreen({ route }: any) {
                                     <View style={styles.paymentNotice}>
                                         <Ionicons name="information-circle-outline" size={16} color="#fbbf24" />
                                         <Text style={styles.paymentNoticeText}>
-                                            Payment will be completed on the web app via PayPal.
+                                            Payment is completed via PayPal on the web app. Tapping "Proceed" will open it in your browser.
                                         </Text>
                                     </View>
                                 )}
@@ -358,8 +446,11 @@ export default function EventRegistrationScreen({ route }: any) {
                                     <Text style={styles.reviewTicketDetail}>{t.name}</Text>
                                     <Text style={styles.reviewTicketDetail}>{t.email}</Text>
                                     {t.phone ? <Text style={styles.reviewTicketDetail}>{t.phone}</Text> : null}
+                                    {t.note ? <Text style={[styles.reviewTicketDetail, { color: "#6b7280" }]}>{t.note}</Text> : null}
                                 </View>
                             ))}
+
+                            <InlineAlert message={stepError} />
 
                             <TouchableOpacity
                                 style={[styles.primaryBtn, submitting && styles.primaryBtnDisabled]}
@@ -423,9 +514,7 @@ const styles = StyleSheet.create({
     priceBadge: { backgroundColor: "rgba(47,165,102,0.2)", paddingHorizontal: 14, paddingVertical: 6, borderRadius: 8 },
     priceText: { color: "#2ecc71", fontWeight: "700", fontSize: 15 },
 
-    card: {
-        backgroundColor: "#1f1f1f", borderRadius: 12, padding: 16, gap: 12,
-    },
+    card: { backgroundColor: "#1f1f1f", borderRadius: 12, padding: 16, gap: 12 },
     counterRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     counter: { flexDirection: "row", alignItems: "center", gap: 16 },
     counterBtn: {
@@ -448,24 +537,28 @@ const styles = StyleSheet.create({
     checkboxChecked: { backgroundColor: "#166534", borderColor: "#2ecc71" },
     selfLabel: { color: "#d1d5db", fontSize: 14 },
 
-    ticketForm: {
-        backgroundColor: "#1f1f1f", borderRadius: 12, padding: 14, gap: 4,
-    },
+    ticketForm: { backgroundColor: "#1f1f1f", borderRadius: 12, padding: 14, gap: 4 },
     ticketFormTitle: { color: "#9ca3af", fontSize: 13, fontWeight: "600", marginBottom: 8 },
     ticketName: { color: "#2ecc71" },
     fieldLabel: { color: "#9ca3af", fontSize: 12, marginTop: 6 },
     required: { color: "#ef4444" },
     input: {
-        backgroundColor: "#2a2a2a", borderWidth: 1, borderColor: "#374151",
-        borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
-        color: "#fff", fontSize: 14, marginBottom: 2,
+        backgroundColor: "#111827",
+        borderWidth: 1,
+        borderColor: "#2a2a2a",
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        color: "#fff",
+        fontSize: 14,
+        marginBottom: 2,
     },
-    inputError: { borderColor: "#ef4444" },
+    inputLocked: {
+        opacity: 0.5,
+    },
     inputMultiline: { height: 64, textAlignVertical: "top" },
 
-    summaryCard: {
-        backgroundColor: "#1f1f1f", borderRadius: 12, padding: 16, gap: 10,
-    },
+    summaryCard: { backgroundColor: "#1f1f1f", borderRadius: 12, padding: 16, gap: 10 },
     summaryTitle: { color: "#fff", fontSize: 16, fontWeight: "700", marginBottom: 4 },
     summaryRow: { flexDirection: "row", alignItems: "center", gap: 8 },
     summaryText: { color: "#d1d5db", fontSize: 14 },
@@ -476,9 +569,7 @@ const styles = StyleSheet.create({
     },
     paymentNoticeText: { color: "#fbbf24", fontSize: 12, flex: 1, lineHeight: 18 },
 
-    reviewTicket: {
-        backgroundColor: "#1f1f1f", borderRadius: 10, padding: 12, gap: 2,
-    },
+    reviewTicket: { backgroundColor: "#1f1f1f", borderRadius: 10, padding: 12, gap: 2 },
     reviewTicketTitle: { color: "#9ca3af", fontSize: 12, fontWeight: "600", marginBottom: 4 },
     reviewTicketDetail: { color: "#d1d5db", fontSize: 13 },
 

@@ -22,8 +22,9 @@ export const addComment = async (
 
     const response = await backendClient.post(
         `/users/${userId}/posts/${postId}/comments`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        formData
+        // Do NOT set Content-Type manually — Axios + React Native sets the
+        // multipart/form-data boundary automatically when it's omitted.
     );
     return response.data;
 };

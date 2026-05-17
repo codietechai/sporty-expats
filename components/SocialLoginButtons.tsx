@@ -55,8 +55,8 @@ const SocialLoginButton = ({
   const navigation = useNavigation<any>();
 
 
-const onSocialLoginPress = useCallback(async () => {
-  try {
+  const onSocialLoginPress = useCallback(async () => {
+    try {
       setIsLoading(true);
 
       const { createdSessionId, setActive } = await startOAuthFlow({});
@@ -68,14 +68,15 @@ const onSocialLoginPress = useCallback(async () => {
         const userData = await getUserDetailsByClerkId(user?.id as string);
         console.log("User data from backend:", userData);
 
+        onClose();
         navigation.navigate("Dashboard");
       }
     } catch (err) {
-    console.error("OAuth SSO error:", JSON.stringify(err, null, 2));
-  } finally {
-    setIsLoading(false);
-  }
-}, [startSSOFlow, strategy]);
+      console.error("OAuth SSO error:", JSON.stringify(err, null, 2));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [startSSOFlow, strategy]);
 
   useEffect(() => {
     const name = async () => {

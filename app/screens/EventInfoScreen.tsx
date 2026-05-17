@@ -8,7 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
 import { getEventById } from "@/client/endpoints/events/getEventById";
-import { getUserEventStatus, withdrawParticipation } from "@/client/endpoints/events/eventRegistration";
+import { getAttendee, withdrawParticipation, AttendeeData } from "@/client/endpoints/events/eventRegistration";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import type { Event } from "@/client/endpoints/events/types";
 import { HomeScreenNavigationProp } from "../home";
@@ -39,8 +39,7 @@ export default function EventInfoScreen({ route }: any) {
 
     const [event, setEvent] = useState<Event | null>(eventFromRoute ?? null);
     const [loading, setLoading] = useState(!eventFromRoute);
-    const [registrationStatus, setRegistrationStatus] = useState<string>("not present");
-    const [isRegistered, setIsRegistered] = useState(false);
+    const [attendee, setAttendee] = useState<AttendeeData | null>(null);
     const [isOrganizer, setIsOrganizer] = useState(false);
     const [statusLoading, setStatusLoading] = useState(true);
     const [withdrawing, setWithdrawing] = useState(false);
@@ -49,6 +48,7 @@ export default function EventInfoScreen({ route }: any) {
     const userId: string | undefined = userDb?.data?.id ?? userDb?.id;
     const username: string | undefined = userDb?.data?.username ?? userDb?.username;
 
+    // Refresh event data to get latest availableTickets
     useEffect(() => {
         if (eventFromRoute) {
             getEventById(eventFromRoute.id)
@@ -57,29 +57,26 @@ export default function EventInfoScreen({ route }: any) {
         }
     }, [eventFromRoute?.id]);
 
-    // Fetch registration status once we have both event and userId
+    // Fetch attendee record — mirrors GET /api/users/{id}/events/{eventId}/attendee
     useEffect(() => {
         if (!userId || !event?.id) {
             setStatusLoading(false);
             return;
         }
-        // Check if user is an organizer
         if (username && event.organizers?.includes(username)) {
             setIsOrganizer(true);
             setStatusLoading(false);
             return;
         }
         setStatusLoading(true);
-        getUserEventStatus(userId, event.id)
-            .then((data) => {
-                setRegistrationStatus(data.status);
-                setIsRegistered(data.status !== "not present");
-            })
-            .catch(() => {
-                // silently fail — treat as not registered
-            })
+        getAttendee(userId, event.id)
+            .then(setAttendee)
+            .catch(() => setAttendee(null))
             .finally(() => setStatusLoading(false));
     }, [userId, event?.id, username]);
+
+    const isRegistered = !!attendee && attendee.attendantStatus !== "Withdrew";
+    const hasWithdrawn = attendee?.attendantStatus === "Withdrew";
 
     const handleWithdraw = () => {
         if (!userId || !event?.id) return;
@@ -95,8 +92,9 @@ export default function EventInfoScreen({ route }: any) {
                         setWithdrawing(true);
                         try {
                             await withdrawParticipation(userId, event.id);
-                            setIsRegistered(false);
-                            setRegistrationStatus("Withdrew");
+                            setAttendee((prev) =>
+                                prev ? { ...prev, attendantStatus: "Withdrew" } : null
+                            );
                             Alert.alert("Done", "You have withdrawn from this event.");
                         } catch {
                             Alert.alert("Error", "Could not withdraw. Please try again.");
@@ -174,11 +172,9 @@ export default function EventInfoScreen({ route }: any) {
                                 <Ionicons name="image-outline" size={48} color="#374151" />
                             </View>
                         )}
-                        {/* Category badge */}
                         <View style={styles.categoryBadge}>
                             <Text style={styles.categoryBadgeText}>{event.category}</Text>
                         </View>
-                        {/* Visibility badge */}
                         <View style={styles.visibilityBadge}>
                             <Ionicons name={event.visibility === "Public" ? "globe-outline" : "lock-closed-outline"} size={11} color="#9CA3AF" />
                             <Text style={styles.visibilityText}>{event.visibility}</Text>
@@ -284,7 +280,7 @@ export default function EventInfoScreen({ route }: any) {
                             <Text style={styles.description}>{event.description}</Text>
                         </View>
 
-                        {/* Register / Status CTA */}
+                        {/* CTA block — only shown when registration is open */}
                         {canRegister && (
                             <View style={styles.ctaBlock}>
                                 {statusLoading ? (
@@ -294,40 +290,49 @@ export default function EventInfoScreen({ route }: any) {
                                         <Text style={styles.registerBtnText}>Event Sold Out</Text>
                                     </View>
                                 ) : isRegistered ? (
+                                    /* ── Already registered ── */
                                     <View style={styles.registeredBlock}>
                                         <View style={styles.registeredBadge}>
                                             <Ionicons name="checkmark-circle" size={16} color="#2ecc71" />
-                                            <Text style={styles.registeredText}>You're registered</Text>
+                                            <Text style={styles.registeredText}>
+                                                You're registered · {attendee?.ticketsAssigned ?? 1} ticket(s)
+                                            </Text>
                                         </View>
-                                        {registrationStatus.toLowerCase() === "withdrew" ? (
-                                            <TouchableOpacity
-                                                style={styles.registerBtn}
-                                                onPress={() => navigation.navigate("EventRegistration" as any, { event })}
-                                            >
-                                                <Text style={styles.registerBtnText}>Participate Again</Text>
-                                            </TouchableOpacity>
-                                        ) : (
-                                            <TouchableOpacity
-                                                style={[styles.registerBtn, styles.withdrawBtn]}
-                                                onPress={handleWithdraw}
-                                                disabled={withdrawing}
-                                            >
-                                                {withdrawing
-                                                    ? <ActivityIndicator color="#fff" size="small" />
-                                                    : <Text style={styles.registerBtnText}>Withdraw Participation</Text>
-                                                }
-                                            </TouchableOpacity>
-                                        )}
-                                        {registrationStatus.toLowerCase() === "withdrew" && (
-                                            <TouchableOpacity
-                                                style={[styles.registerBtn, styles.refundBtn]}
-                                                onPress={() => Alert.alert("Refund", "Please request a refund via the web app.")}
-                                            >
-                                                <Text style={styles.registerBtnText}>Request Refund</Text>
-                                            </TouchableOpacity>
-                                        )}
+                                        <TouchableOpacity
+                                            style={[styles.registerBtn, styles.withdrawBtn]}
+                                            onPress={handleWithdraw}
+                                            disabled={withdrawing}
+                                        >
+                                            {withdrawing
+                                                ? <ActivityIndicator color="#fff" size="small" />
+                                                : <Text style={styles.registerBtnText}>Withdraw Participation</Text>
+                                            }
+                                        </TouchableOpacity>
+                                    </View>
+                                ) : hasWithdrawn ? (
+                                    /* ── Previously withdrew — can re-register ── */
+                                    <View style={styles.registeredBlock}>
+                                        <View style={[styles.registeredBadge, styles.withdrewBadge]}>
+                                            <Ionicons name="close-circle-outline" size={16} color="#f87171" />
+                                            <Text style={[styles.registeredText, { color: "#f87171" }]}>
+                                                You withdrew from this event
+                                            </Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            style={styles.registerBtn}
+                                            onPress={() => navigation.navigate("EventRegistration" as any, { event })}
+                                        >
+                                            <Text style={styles.registerBtnText}>Participate Again</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.registerBtn, styles.refundBtn]}
+                                            onPress={() => Alert.alert("Refund", "Please request a refund via the web app.")}
+                                        >
+                                            <Text style={styles.registerBtnText}>Request Refund</Text>
+                                        </TouchableOpacity>
                                     </View>
                                 ) : (
+                                    /* ── Not registered ── */
                                     <TouchableOpacity
                                         style={styles.registerBtn}
                                         onPress={() => navigation.navigate("EventRegistration" as any, { event })}
@@ -452,10 +457,11 @@ const styles = StyleSheet.create({
     withdrawBtn: { backgroundColor: "#7f1d1d", borderColor: "#ef4444" },
     refundBtn: { backgroundColor: "#1e3a5f", borderColor: "#3b82f6" },
     ctaBlock: { marginTop: 8 },
-    registeredBlock: {},
+    registeredBlock: { gap: 0 },
     registeredBadge: {
         flexDirection: "row", alignItems: "center", gap: 6,
         marginTop: 12, marginBottom: 4,
     },
+    withdrewBadge: {},
     registeredText: { color: "#2ecc71", fontSize: 14, fontWeight: "600" },
 });
