@@ -42,7 +42,10 @@
       "router": {
         "origin": false
       },
-      "eas": {}
-    }
+      "eas": {
+        "projectId": "01498f5f-eae3-4fde-9a9f-24a223096a59"
+      }
+    },
+    "owner": "newshine1354"
   }
 }
