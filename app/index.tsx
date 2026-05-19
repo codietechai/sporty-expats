@@ -38,13 +38,7 @@ export default function AppNavigator() {
   const { getToken, isSignedIn } = useAuth();
 
   useEffect(() => {
-    // Set up immediately, then refresh every 3 seconds
     setUpAuthInterceptor(getToken);
-    const interval = setInterval(() => {
-      setUpAuthInterceptor(getToken);
-    }, 3000);
-
-    return () => clearInterval(interval);
   }, [getToken]);
 
   return (

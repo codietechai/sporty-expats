@@ -14,8 +14,10 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { createPost } from "@/client/endpoints/posts/createPost";
+import { GET_ALL_POSTS } from "@/client/endpoints/posts/getAllPosts";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { useNavigation } from "@react-navigation/native";
+import { useQueryClient } from "react-query";
 
 type Privacy = "Public" | "Private";
 
@@ -29,8 +31,9 @@ const MAX_FILES = 4;
 
 const AddFeedForm = () => {
   const navigation = useNavigation<any>();
-  const { userDb } = useUserDb();
-  const userId: string | undefined = userDb?.data?.id ?? userDb?.id;
+  const queryClient = useQueryClient();
+  const { userDb, loading: userLoading } = useUserDb();
+  const userId: string | undefined = userDb?.data?.data?.id ?? userDb?.data?.id ?? userDb?.id;
 
   const [description, setDescription] = useState("");
   const [privacy, setPrivacy] = useState<Privacy>("Public");
@@ -72,6 +75,11 @@ const AddFeedForm = () => {
 
   // ── Submit ──────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
+    if (userLoading) {
+      Alert.alert("Please wait", "Your profile is still loading.");
+      return;
+    }
+
     if (!userId) {
       Alert.alert("Error", "User not found. Please sign in again.");
       return;
@@ -84,12 +92,13 @@ const AddFeedForm = () => {
     setLoading(true);
     try {
       await createPost(userId, { description: description.trim(), privacy, files });
+      await queryClient.invalidateQueries(GET_ALL_POSTS);
       Alert.alert("Success", "Post published!", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch (err: any) {
-      const msg = err?.response?.data?.error ?? err?.message ?? "Something went wrong.";
-      Alert.alert("Error", msg);
+      const msg = err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? "Something went wrong.";
+      Alert.alert("Error", Array.isArray(msg) ? msg.map((item) => typeof item === "string" ? item : Object.values(item).join(", ")).join("\n") : msg);
     } finally {
       setLoading(false);
     }
@@ -119,11 +128,7 @@ const AddFeedForm = () => {
     >
       <Text style={styles.pageTitle}>New Post</Text>
 
-      {/* ── Post-to section (My Feed / Story) ── */}
-      <View style={styles.sectionCard}>
-        <CheckRow label="My Feed" checked={true} onPress={() => { }} disabled />
-        <CheckRow label="Story" checked={false} onPress={() => { }} disabled />
-      </View>
+
 
       {/* ── Post details card ── */}
       <View style={styles.detailsCard}>
@@ -207,7 +212,7 @@ const AddFeedForm = () => {
         <TouchableOpacity
           style={[styles.publishBtn, loading && styles.publishBtnDisabled]}
           onPress={handleSubmit}
-          disabled={loading}
+          disabled={loading || userLoading}
         >
           {loading
             ? <ActivityIndicator color="#fff" size="small" />

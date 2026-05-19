@@ -1,5 +1,4 @@
-import { useOAuth, useSignIn, useSignUp, useUser } from "@clerk/clerk-expo";
-import { useNavigation } from "@react-navigation/native";
+import { useSignIn, useSignUp, useUser } from "@clerk/clerk-expo";
 import React, { useState } from "react";
 import {
   Modal,
@@ -16,9 +15,11 @@ import SocialLoginButton from "./SocialLoginButtons";
 interface AuthModalProps {
   visible: boolean;
   onClose: () => void;
+  /** Called after any successful login / sign-up so the parent can navigate. */
+  onSuccess?: () => void;
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
+const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose, onSuccess }) => {
   const [mode, setMode] = useState<
     | "Login"
     | "Sign Up"
@@ -44,69 +45,58 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
     isLoaded: loginLoaded,
   } = useSignIn();
   const { user } = useUser();
-  const navigation = useNavigation<any>();
+
+  /** Close the modal then navigate via the parent's callback. */
+  const handleSuccess = (message: string) => {
+    ToastAndroid.show(message, 2);
+    onClose();
+    onSuccess?.();
+  };
 
   const onSignInPress = async () => {
     if (!loginLoaded) return;
-
     try {
       const signInAttempt = await signIn!.create({
         identifier: emailAddress,
         password,
       });
-
-      console.log(signInAttempt)
       if (signInAttempt.status === "complete") {
         await setLoginActive({ session: signInAttempt.createdSessionId });
         await user?.reload();
-        onClose();
-        navigation.navigate("Dashboard");
-        ToastAndroid.show("Logged in successfully", 2);
+        handleSuccess("Logged in successfully");
       }
     } catch (err: any) {
-      const message =
-        err?.errors?.[0]?.message || err.message || "Login failed";
+      const message = err?.errors?.[0]?.message || err.message || "Login failed";
       ToastAndroid.show(message, 2);
     }
   };
 
   const onSignUpPress = async () => {
     if (!isLoaded) return;
-
     setEmailError("");
     setUsernameError("");
     setPasswordError("");
-
     try {
       const result = await signUp.create({
         emailAddress,
         password,
         username,
       });
-
       if (result.status === "missing_requirements") {
-        await signUp.prepareEmailAddressVerification({
-          strategy: "email_code",
-        });
+        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
         ToastAndroid.show("Verification code sent to your email.", 2);
         setMode("verification");
       } else if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
         await user?.reload();
-        onClose();
-        navigation.navigate("Dashboard");
-        ToastAndroid.show("Signed up successfully", 2);
+        handleSuccess("Signed up successfully");
       }
     } catch (err: any) {
       const errors = err?.errors || [];
       errors.forEach((e: any) => {
-        if (e.meta?.paramName === "email_address") {
-          setEmailError(e.message);
-        } else if (e.meta?.paramName === "username") {
-          setUsernameError(e.message);
-        } else if (e.meta?.paramName === "password") {
-          setPasswordError(e.message);
-        }
+        if (e.meta?.paramName === "email_address") setEmailError(e.message);
+        else if (e.meta?.paramName === "username") setUsernameError(e.message);
+        else if (e.meta?.paramName === "password") setPasswordError(e.message);
       });
     }
   };
@@ -116,38 +106,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
       const result = await signUp!.attemptEmailAddressVerification({
         code: verificationCode,
       });
-
       if (result.status === "complete") {
         await setActive!({ session: result.createdSessionId });
         await user?.reload();
-        ToastAndroid.show("Email verified successfully", 2);
-        onClose();
-        navigation.navigate("Dashboard");
         setMode("Login");
+        handleSuccess("Email verified successfully");
       }
     } catch {
       ToastAndroid.show("Invalid or expired code.", 2);
     }
   };
-
-  const renderCloseButton = () => (
-    <TouchableOpacity onPress={onClose}>
-      <Svg
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth={1.5}
-        stroke="black"
-        width={24}
-        height={24}
-      >
-        <Path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M6 18L18 6M6 6l12 12"
-        />
-      </Svg>
-    </TouchableOpacity>
-  );
 
   const onSendResetEmail = async () => {
     try {
@@ -159,9 +127,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
       setMode("Reset Verification");
     } catch (err: any) {
       const message =
-        err?.errors?.[0]?.message ||
-        err.message ||
-        "Failed to send reset email";
+        err?.errors?.[0]?.message || err.message || "Failed to send reset email";
       ToastAndroid.show(message, 2);
     }
   };
@@ -173,13 +139,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
         code: resetCode,
         password: newPassword,
       });
-
       if (result.status === "complete") {
         await setLoginActive!({ session: result.createdSessionId });
-        ToastAndroid.show("Password reset successfully", 2);
-        onClose();
-        navigation.navigate("Dashboard");
         setMode("Login");
+        handleSuccess("Password reset successfully");
       }
     } catch (err: any) {
       const message =
@@ -187,6 +150,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
       ToastAndroid.show(message, 2);
     }
   };
+
+  const renderCloseButton = () => (
+    <TouchableOpacity onPress={onClose}>
+      <Svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="black" width={24} height={24}>
+        <Path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </Svg>
+    </TouchableOpacity>
+  );
 
   return (
     <Modal visible={visible} animationType="none" transparent>
@@ -198,11 +169,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                 <Text style={styles.title}>Login</Text>
                 {renderCloseButton()}
               </View>
-              <Text>
-                By continuing, you agree to our Terms and Privacy Policy.
-              </Text>
-              <SocialLoginButton strategy="google" onClose={onClose} />
-              <SocialLoginButton strategy="facebook" onClose={onClose} />
+              <Text>By continuing, you agree to our Terms and Privacy Policy.</Text>
+              <SocialLoginButton strategy="google" onClose={onClose} onSuccess={onSuccess} />
+              <SocialLoginButton strategy="facebook" onClose={onClose} onSuccess={onSuccess} />
               <TextInput
                 placeholder="Email"
                 value={emailAddress}
@@ -217,21 +186,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                 style={styles.input}
                 secureTextEntry
               />
-              <TouchableOpacity
-                onPress={onSignInPress}
-                style={styles.loginButton}
-              >
+              <TouchableOpacity onPress={onSignInPress} style={styles.loginButton}>
                 <Text style={styles.closeButtonText}>Login</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setMode("Reset Password")}>
-                <Text style={[styles.switchText, { marginTop: 10 }]}>
-                  Forgot password?
-                </Text>
+                <Text style={[styles.switchText, { marginTop: 10 }]}>Forgot password?</Text>
               </TouchableOpacity>
-
               <TouchableOpacity onPress={() => setMode("Sign Up")}>
                 <Text style={styles.switchText}>
-                  Don’t have an account?{" "}
+                  Don't have an account?{" "}
                   <Text style={styles.linkText}>Join SportyExpats</Text>
                 </Text>
               </TouchableOpacity>
@@ -244,31 +207,23 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                 <Text style={styles.title}>Join Community</Text>
                 {renderCloseButton()}
               </View>
-              <Text>
-                By continuing, you agree to our Terms and Privacy Policy.
-              </Text>
-              <SocialLoginButton strategy="google" onClose={onClose} />
-              <SocialLoginButton strategy="facebook" onClose={onClose} />
+              <Text>By continuing, you agree to our Terms and Privacy Policy.</Text>
+              <SocialLoginButton strategy="google" onClose={onClose} onSuccess={onSuccess} />
+              <SocialLoginButton strategy="facebook" onClose={onClose} onSuccess={onSuccess} />
               <TextInput
                 placeholder="Email"
                 style={styles.input}
                 value={emailAddress}
                 onChangeText={setEmailAddress}
               />
-              {emailError ? (
-                <Text style={styles.errorText}>{emailError}</Text>
-              ) : null}
-
+              {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
               <TextInput
                 placeholder="Username"
                 style={styles.input}
                 value={username}
                 onChangeText={setUsername}
               />
-              {usernameError ? (
-                <Text style={styles.errorText}>{usernameError}</Text>
-              ) : null}
-
+              {usernameError ? <Text style={styles.errorText}>{usernameError}</Text> : null}
               <TextInput
                 placeholder="Password"
                 style={styles.input}
@@ -276,17 +231,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                 onChangeText={setPassword}
                 secureTextEntry
               />
-              {passwordError ? (
-                <Text style={styles.errorText}>{passwordError}</Text>
-              ) : null}
-
-              <TouchableOpacity
-                onPress={onSignUpPress}
-                style={styles.loginButton}
-              >
+              {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+              <TouchableOpacity onPress={onSignUpPress} style={styles.loginButton}>
                 <Text style={styles.closeButtonText}>Sign up</Text>
               </TouchableOpacity>
-
               <TouchableOpacity onPress={() => setMode("Login")}>
                 <Text style={styles.switchText}>
                   Already have an account?{" "}
@@ -310,10 +258,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                 style={styles.input}
                 keyboardType="number-pad"
               />
-              <TouchableOpacity
-                style={styles.loginButton}
-                onPress={onVerifyPress}
-              >
+              <TouchableOpacity style={styles.loginButton} onPress={onVerifyPress}>
                 <Text style={styles.closeButtonText}>Verify</Text>
               </TouchableOpacity>
             </>
@@ -332,10 +277,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                 value={emailAddress}
                 onChangeText={setEmailAddress}
               />
-              <TouchableOpacity
-                style={styles.loginButton}
-                onPress={onSendResetEmail}
-              >
+              <TouchableOpacity style={styles.loginButton} onPress={onSendResetEmail}>
                 <Text style={styles.closeButtonText}>Send Reset Code</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setMode("Login")}>
@@ -345,6 +287,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
               </TouchableOpacity>
             </>
           )}
+
           {mode === "Reset Verification" && (
             <>
               <View style={styles.headerRow}>
@@ -366,10 +309,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                 onChangeText={setNewPassword}
                 secureTextEntry
               />
-              <TouchableOpacity
-                style={styles.loginButton}
-                onPress={onResetPassword}
-              >
+              <TouchableOpacity style={styles.loginButton} onPress={onResetPassword}>
                 <Text style={styles.closeButtonText}>Reset Password</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setMode("Login")}>
@@ -406,10 +346,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 10,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-  },
+  title: { fontSize: 22, fontWeight: "bold" },
   input: {
     backgroundColor: "#f1f1f1",
     borderRadius: 25,
@@ -423,21 +360,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: "center",
   },
-  closeButtonText: {
-    color: "#fff",
-    fontSize: 16,
-  },
-  errorText: {
-    color: "red",
-    fontSize: 12,
-    marginLeft: 4,
-  },
-  switchText: {
-    marginTop: 15,
-    textAlign: "center",
-  },
-  linkText: {
-    color: "#166534",
-    fontWeight: "bold",
-  },
+  closeButtonText: { color: "#fff", fontSize: 16 },
+  errorText: { color: "red", fontSize: 12, marginLeft: 4 },
+  switchText: { marginTop: 15, textAlign: "center" },
+  linkText: { color: "#166534", fontWeight: "bold" },
 });

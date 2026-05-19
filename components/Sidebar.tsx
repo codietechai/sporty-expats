@@ -215,7 +215,14 @@ export default function Sidebar(props: DrawerContentComponentProps) {
         )}
       </View>
 
-      <AuthModal visible={modalVisible} onClose={() => setModalVisible(false)} />
+      <AuthModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onSuccess={() => {
+          setModalVisible(false);
+          props.navigation.navigate("Dashboard");
+        }}
+      />
 
       {/* Language modal */}
       <Modal visible={isLanguageModalVisible} transparent animationType="fade">

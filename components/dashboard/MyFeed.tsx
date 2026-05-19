@@ -7,11 +7,11 @@ import { timeAgo } from "@/helpers/date";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView,
-  Modal, Platform, ScrollView, Share, StyleSheet, Text,
+  ActivityIndicator, Alert, FlatList, Image,
+  ScrollView, Share, StyleSheet, Text,
   TextInput, TouchableOpacity, TouchableWithoutFeedback, View,
 } from "react-native";
-import { useQuery } from "react-query";
+import { useQuery, useQueryClient } from "react-query";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,7 +51,7 @@ interface Post {
 
 const DEFAULT_AVATAR = "https://storage.strandcdn.com/avatar.svg";
 
-// ─── Emoji Picker (simple inline grid) ───────────────────────────────────────
+// ─── Emoji Picker ─────────────────────────────────────────────────────────────
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "😡", "🎉", "🔥", "👏", "💪"];
 
@@ -152,14 +152,21 @@ function PostCard({ post, userId, onUpdate }: {
   const [submitting, setSubmitting] = useState(false);
 
   const handleLike = async () => {
+    const nextLiked = !post.isLikedByUser;
     onUpdate(post._id, {
-      isLikedByUser: !post.isLikedByUser,
-      vote: post.isLikedByUser ? post.vote - 1 : post.vote + 1,
+      isLikedByUser: nextLiked,
+      vote: nextLiked ? post.vote + 1 : Math.max(post.vote - 1, 0),
     });
     try {
-      await likePost(post._id);
+      const result = await likePost(post._id);
+      if (typeof result?.liked === "boolean" && result.liked !== nextLiked) {
+        onUpdate(post._id, {
+          isLikedByUser: result.liked,
+          vote: result.liked ? post.vote + 1 : Math.max(post.vote - 1, 0),
+        });
+      }
     } catch {
-      // revert
+      // revert on failure
       onUpdate(post._id, {
         isLikedByUser: post.isLikedByUser,
         vote: post.vote,
@@ -170,12 +177,33 @@ function PostCard({ post, userId, onUpdate }: {
   const handleReact = async (emoji: string) => {
     setShowEmoji(false);
     const hadReaction = !!post.userReaction;
+    const isRemovingReaction = post.userReaction === emoji;
     onUpdate(post._id, {
-      userReaction: emoji,
-      total_reactions: hadReaction ? post.total_reactions : post.total_reactions + 1,
+      userReaction: isRemovingReaction ? null : emoji,
+      total_reactions: isRemovingReaction
+        ? Math.max(post.total_reactions - 1, 0)
+        : hadReaction
+          ? post.total_reactions
+          : post.total_reactions + 1,
     });
     try {
-      await reactToPost(post._id, emoji);
+      const result = await reactToPost(post._id, emoji);
+      if (result?.action === "removed") {
+        onUpdate(post._id, {
+          userReaction: null,
+          total_reactions: Math.max(post.total_reactions - 1, 0),
+        });
+      } else if (result?.action === "added") {
+        onUpdate(post._id, {
+          userReaction: emoji,
+          total_reactions: hadReaction ? post.total_reactions : post.total_reactions + 1,
+        });
+      } else if (result?.action === "updated") {
+        onUpdate(post._id, {
+          userReaction: emoji,
+          total_reactions: post.total_reactions,
+        });
+      }
     } catch {
       onUpdate(post._id, { userReaction: post.userReaction, total_reactions: post.total_reactions });
     }
@@ -198,6 +226,7 @@ function PostCard({ post, userId, onUpdate }: {
     } catch { /* ignore */ }
   };
 
+  // Reverted: original single-param getPostComments — route is /posts/:postId/comments
   const loadComments = async () => {
     if (showComments) { setShowComments(false); return; }
     setShowComments(true);
@@ -219,7 +248,7 @@ function PostCard({ post, userId, onUpdate }: {
       setCommentText("");
       setReplyTo(null);
       onUpdate(post._id, { total_comments: post.total_comments + 1 });
-      // Refresh comments
+      // Refresh comments after posting
       const data = await getPostComments(post._id);
       setComments(data?.data ?? []);
     } catch {
@@ -323,7 +352,7 @@ function PostCard({ post, userId, onUpdate }: {
         <View style={pc.commentsSection}>
           <View style={pc.divider} />
 
-          {/* Comment input */}
+          {/* Reply banner */}
           {replyTo && (
             <View style={pc.replyBanner}>
               <Text style={pc.replyBannerText}>Replying to @{replyTo.username}</Text>
@@ -332,6 +361,8 @@ function PostCard({ post, userId, onUpdate }: {
               </TouchableOpacity>
             </View>
           )}
+
+          {/* Comment input */}
           <View style={pc.commentInputRow}>
             <TextInput
               style={pc.commentInput}
@@ -385,9 +416,7 @@ const pc = StyleSheet.create({
   postDesc: { color: "#9CA3AF", fontSize: 14, lineHeight: 20, marginBottom: 8 },
   mediaScroll: { marginBottom: 10 },
   mediaImage: { width: 220, height: 160, borderRadius: 10, marginRight: 8 },
-  countsRow: {
-    flexDirection: "row", gap: 12, paddingVertical: 6,
-  },
+  countsRow: { flexDirection: "row", gap: 12, paddingVertical: 6 },
   countText: { color: "#6b7280", fontSize: 12 },
   divider: { height: 1, backgroundColor: "#1f2937", marginVertical: 6 },
   actions: { flexDirection: "row", justifyContent: "space-between", paddingTop: 2 },
@@ -419,10 +448,13 @@ const pc = StyleSheet.create({
 
 const MyFeed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
-  const { userDb } = useUserDb();
-  const userId: string | undefined = userDb?.data?.id ?? userDb?.id;
+  const queryClient = useQueryClient();
+  const { userDb, loading: userLoading } = useUserDb();
+  const userId: string | undefined = userDb?.data?.data?.id ?? userDb?.data?.id ?? userDb?.id;
+  const initializedRef = useRef(false);
 
-  const { data, isLoading, refetch } = useQuery([GET_ALL_POSTS], () => getAllPosts(), {
+  const { data, isLoading } = useQuery([GET_ALL_POSTS, userId], () => getAllPosts(userId), {
+    enabled: !!userId,
     keepPreviousData: false,
     refetchOnWindowFocus: false,
     retry: 1,
@@ -430,7 +462,8 @@ const MyFeed = () => {
 
   useEffect(() => {
     if (!data) return;
-    const mapped: Post[] = (data?.data?.data ?? []).map((post: any) => ({
+
+    const incoming: Post[] = (data?.data?.data ?? []).map((post: any) => ({
       _id: post.id,
       desc: post.description,
       title: post.title,
@@ -446,14 +479,70 @@ const MyFeed = () => {
       emojiCounts: post.reactions?.emojiCounts ?? {},
       comments: [],
     }));
-    setPosts(mapped);
+
+    if (!initializedRef.current) {
+      // First load — use server data as-is (includes correct isLikedByUser etc.)
+      initializedRef.current = true;
+      setPosts(incoming);
+    } else {
+      // Subsequent refetch — preserve the user's local interaction state
+      // so optimistic like/reaction/bookmark updates aren't wiped.
+      setPosts((prev) =>
+        incoming.map((serverPost) => {
+          const local = prev.find((p) => p._id === serverPost._id);
+          if (!local) return serverPost;
+          return {
+            ...serverPost,
+            isLikedByUser: local.isLikedByUser,
+            vote: local.vote,
+            isBookmarkedByUser: local.isBookmarkedByUser,
+            userReaction: local.userReaction,
+            total_reactions: local.total_reactions,
+            total_comments: local.total_comments,
+            comments: local.comments,
+          };
+        })
+      );
+    }
   }, [data]);
 
   const handleUpdate = (id: string, patch: Partial<Post>) => {
     setPosts((prev) => prev.map((p) => p._id === id ? { ...p, ...patch } : p));
+    queryClient.setQueriesData(GET_ALL_POSTS, (oldData: any) => {
+      const serverPosts = oldData?.data?.data;
+      if (!Array.isArray(serverPosts)) return oldData;
+
+      return {
+        ...oldData,
+        data: {
+          ...oldData.data,
+          data: serverPosts.map((post: any) => {
+            if (post.id !== id) return post;
+
+            return {
+              ...post,
+              count: {
+                ...post.count,
+                likes: patch.vote ?? post.count?.likes,
+                comments: patch.total_comments ?? post.count?.comments,
+                reactions: patch.total_reactions ?? post.count?.reactions,
+              },
+              isLikedByUser: patch.isLikedByUser ?? post.isLikedByUser,
+              isBookmarkedByUser: patch.isBookmarkedByUser ?? post.isBookmarkedByUser,
+              reactions: {
+                ...(post.reactions ?? {}),
+                userReaction: patch.userReaction !== undefined
+                  ? patch.userReaction
+                  : post.reactions?.userReaction,
+              },
+            };
+          }),
+        },
+      };
+    });
   };
 
-  if (isLoading) {
+  if (userLoading || isLoading) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#2ecc71" />

@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 // Both Item Sales and My Purchases show the same market card layout on web
 // Static placeholder — replace with real market API call when available
 interface MarketItem {
+  image: string;
   title: string;
   condition: string;
   description: string;
@@ -21,8 +23,11 @@ interface MarketItem {
   price: string;
 }
 
+const WEB_IMAGE_BASE_URL = "https://staging.sportyexpats.fr";
+
 const MARKET_DATA: MarketItem[] = [
   {
+    image: `${WEB_IMAGE_BASE_URL}/images/dashboardImages/myevent1.png`,
     title: "Item Name Can Take Up To Two Lines",
     condition: "Used",
     description: "Description: can take up to two lines. Continues on the full view...",
@@ -31,6 +36,7 @@ const MARKET_DATA: MarketItem[] = [
     price: "300",
   },
   {
+    image: `${WEB_IMAGE_BASE_URL}/images/dashboardImages/myevent1.png`,
     title: "Item Name Can Take Up To Two Lines",
     condition: "Used",
     description: "Description: can take up to two lines. Continues on the full view...",
@@ -39,6 +45,7 @@ const MARKET_DATA: MarketItem[] = [
     price: "300",
   },
   {
+    image: `${WEB_IMAGE_BASE_URL}/images/dashboardImages/myevent3.png`,
     title: "Item Name Can Take Up To Two Lines",
     condition: "Brand New",
     description: "Description: can take up to two lines. Continues on the full view...",
@@ -47,6 +54,7 @@ const MARKET_DATA: MarketItem[] = [
     price: "300",
   },
   {
+    image: `${WEB_IMAGE_BASE_URL}/images/dashboardImages/myevent2.png`,
     title: "Item Name Can Take Up To Two Lines",
     condition: "Brand New",
     description: "Description: can take up to two lines. Continues on the full view...",
@@ -59,9 +67,7 @@ const MARKET_DATA: MarketItem[] = [
 const MarketCard = ({ item }: { item: MarketItem }) => (
   <TouchableOpacity style={styles.card} activeOpacity={0.85}>
     {/* Image placeholder — no real image URL yet */}
-    <View style={styles.imagePlaceholder}>
-      <Ionicons name="image-outline" size={36} color="#374151" />
-    </View>
+    <Image source={{ uri: item.image }} style={styles.cardImage} resizeMode="cover" />
     <View style={styles.cardBody}>
       <View style={styles.row}>
         <Text style={styles.conditionLabel}>Condition:</Text>
@@ -115,12 +121,10 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.1)",
     overflow: "hidden",
   },
-  imagePlaceholder: {
+  cardImage: {
     width: "100%",
     height: 169,
     backgroundColor: "#1f2937",
-    alignItems: "center",
-    justifyContent: "center",
   },
   cardBody: { padding: 12, gap: 6 },
   row: { flexDirection: "row", alignItems: "center", gap: 4 },
