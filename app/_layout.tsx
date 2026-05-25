@@ -7,6 +7,7 @@ import i18n from "@/translations/i18n";
 import { ClerkLoaded, ClerkProvider } from '@clerk/clerk-expo'
 import { tokenCache } from '@clerk/clerk-expo/token-cache'
 import { QueryClient, QueryClientProvider } from "react-query";
+import { DrawerProvider } from "@/contexts/DrawerContext";
 
 
 export default function RootLayout() {
@@ -23,12 +24,14 @@ export default function RootLayout() {
     <I18nextProvider i18n={i18n}>
       <ClerkProvider tokenCache={tokenCache} publishableKey={Publishable_key}>
         <ClerkLoaded>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      />
-      </ClerkLoaded>
+          <DrawerProvider>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+              }}
+            />
+          </DrawerProvider>
+        </ClerkLoaded>
       </ClerkProvider>
     </I18nextProvider>
     </QueryClientProvider>

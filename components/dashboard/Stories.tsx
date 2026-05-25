@@ -19,6 +19,7 @@ import {
 } from "react-native";
 import { useQuery } from "react-query";
 import { useNavigation } from "@react-navigation/native";
+import { useUser } from "@clerk/clerk-expo";
 
 const DEFAULT_AVATAR = "https://storage.strandcdn.com/avatar.svg";
 
@@ -72,11 +73,14 @@ function StoryUploadModal({
   const [error, setError] = useState<string | null>(null);
 
   const pickImage = async () => {
+    console.log('Attempting to pick image...');
     const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!granted) {
+      console.log('Media permission denied');
       Alert.alert("Permission required", "Please allow media access.");
       return;
     }
+    console.log('Media permission granted, launching image picker...');
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: false,
@@ -84,6 +88,7 @@ function StoryUploadModal({
     });
     if (!result.canceled && result.assets?.length) {
       const a = result.assets[0];
+      console.log('Image selected:', a.uri);
       setPickedUri(a.uri);
       setPickedFile({
         uri: a.uri,
@@ -91,6 +96,8 @@ function StoryUploadModal({
         type: a.mimeType ?? "image/jpeg",
       });
       setError(null);
+    } else {
+      console.log('Image selection cancelled or failed');
     }
   };
 
@@ -118,7 +125,12 @@ function StoryUploadModal({
               <Text style={um.title}>Upload New Story</Text>
 
               {/* Preview / pick area */}
-              <TouchableOpacity style={um.previewArea} onPress={pickImage} activeOpacity={0.8}>
+              <TouchableOpacity 
+                style={um.previewArea} 
+                onPress={pickImage} 
+                activeOpacity={0.8}
+                disabled={uploading}
+              >
                 {pickedUri ? (
                   <Image source={{ uri: pickedUri }} style={um.preview} resizeMode="cover" />
                 ) : (
@@ -200,15 +212,56 @@ const um = StyleSheet.create({
 // ── Main Stories component ────────────────────────────────────────────────────
 export default function Stories() {
   const navigation = useNavigation<any>();
-  const { userDb } = useUserDb();
-  const userId: string | undefined = userDb?.data?.id ?? userDb?.id;
-  const userAvatar: string | undefined = userDb?.data?.imageUrl ?? userDb?.imageUrl;
+  const { userDb, loading } = useUserDb();
+  const { user } = useUser(); // Add Clerk user as fallback
+  
+  // Try multiple ways to get userId with proper fallback
+  const userId: string | undefined = 
+    userDb?.id || 
+    userDb?.userId || 
+    userDb?.clerkId ||
+    user?.id;
+    
+  const userAvatar: string | undefined = 
+    userDb?.imageUrl || 
+    userDb?.profileImageUrl ||
+    user?.imageUrl;
+
+  console.log('Stories component - userDb:', userDb);
+  console.log('Stories component - user:', user);
+  console.log('Stories component - userId:', userId);
+  console.log('Stories component - userAvatar:', userAvatar);
+  console.log('Stories component - loading:', loading);
 
   const [grouped, setGrouped] = useState<GroupedStory[]>([]);
   const [storyStatus, setStoryStatus] = useState<StoryStatus>({ pending: [], rejected: [] });
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<GroupedStory | null>(null);
   const [storyIndex, setStoryIndex] = useState(0);
+
+  const handleOpenUploadModal = () => {
+    console.log('Opening upload modal, userId:', userId, 'loading:', loading);
+    
+    if (loading) {
+      console.log('Still loading user data, please wait...');
+      Alert.alert("Loading", "Please wait while we load your profile...");
+      return;
+    }
+    
+    if (!userId) {
+      console.log('No userId available, user needs to log in');
+      Alert.alert("Error", "Please log in to upload stories");
+      return;
+    }
+    
+    console.log('Opening upload modal with userId:', userId);
+    setShowUploadModal(true);
+  };
+
+  const handleCloseUploadModal = () => {
+    console.log('Closing upload modal');
+    setShowUploadModal(false);
+  };
 
   const { data, refetch } = useQuery([GET_ALL_STORIES], () => getAllStories(), {
     keepPreviousData: false,
@@ -244,8 +297,11 @@ export default function Stories() {
   }, [data]);
 
   const handleUploadSuccess = () => {
+    console.log('Story upload successful, refreshing data');
     refetch();
     fetchStatus();
+    // Show success feedback
+    Alert.alert("Success", "Your story has been uploaded successfully!");
   };
 
   // ── Story viewer ─────────────────────────────────────────────────────────────
@@ -309,19 +365,26 @@ export default function Stories() {
           // ── Upload Story tile ──
           if (item.type === "upload") {
             return (
-              <TouchableOpacity
-                style={styles.uploadTile}
-                onPress={() => setShowUploadModal(true)}
-              >
-                <Image
-                  source={{ uri: userAvatar || DEFAULT_AVATAR }}
-                  style={styles.uploadAvatar}
-                />
-                <View style={styles.uploadBadge}>
-                  <Ionicons name="add" size={12} color="#fff" />
-                </View>
-                <Text style={styles.tileLabel}>Upload{"\n"}New Story</Text>
-              </TouchableOpacity>
+              <View style={styles.uploadTileContainer}>
+                <TouchableOpacity
+                  style={styles.uploadTile}
+                  onPress={() => {
+                    console.log('Upload story button pressed');
+                    handleOpenUploadModal();
+                  }}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+                >
+                  <Image
+                    source={{ uri: userAvatar || DEFAULT_AVATAR }}
+                    style={styles.uploadAvatar}
+                  />
+                  <View style={styles.uploadBadge}>
+                    <Ionicons name="add" size={12} color="#fff" />
+                  </View>
+                  <Text style={styles.tileLabel}>Upload{"\n"}New Story</Text>
+                </TouchableOpacity>
+              </View>
             );
           }
 
@@ -374,7 +437,7 @@ export default function Stories() {
         <StoryUploadModal
           userId={userId}
           userAvatar={userAvatar}
-          onClose={() => setShowUploadModal(false)}
+          onClose={handleCloseUploadModal}
           onSuccess={handleUploadSuccess}
         />
       )}
@@ -434,22 +497,28 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
 
+  uploadTileContainer: {
+    width: TILE_W, height: TILE_H,
+  },
   uploadTile: {
     width: TILE_W, height: TILE_H, borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.05)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",
     alignItems: "center", justifyContent: "flex-end",
     paddingBottom: 6, position: "relative",
+    overflow: "hidden",
   },
   uploadAvatar: {
     position: "absolute", top: 0, left: 0, right: 0,
     width: TILE_W, height: TILE_H / 2, borderTopLeftRadius: 14, borderTopRightRadius: 14,
+    pointerEvents: "none", // Prevent image from intercepting touches
   },
   uploadBadge: {
     position: "absolute", bottom: 28, right: 4,
     width: 18, height: 18, borderRadius: 9,
     backgroundColor: "#166534", borderWidth: 1.5, borderColor: "#0d0d0d",
     alignItems: "center", justifyContent: "center",
+    pointerEvents: "none", // Prevent badge from intercepting touches
   },
 
   // Status tile

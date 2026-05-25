@@ -33,17 +33,21 @@ import GroupChatsScreen from "./screens/GroupChatsScreen";
 const Drawer = createDrawerNavigator();
 
 export default function AppNavigator() {
-  const { t } = useTranslation();
-
+  const { t } = useTranslation("sidebar");
   const { getToken, isSignedIn } = useAuth();
 
   useEffect(() => {
     setUpAuthInterceptor(getToken);
   }, [getToken]);
 
+  // Update initial route based on auth state
+  const getInitialRouteName = () => {
+    return isSignedIn ? "Dashboard" : "Home";
+  };
+
   return (
     <Drawer.Navigator
-      initialRouteName={isSignedIn ? "Dashboard" : "Home"}
+      initialRouteName={getInitialRouteName()}
       screenOptions={{
         headerShown: true,
         headerStyle: {
@@ -62,7 +66,7 @@ export default function AppNavigator() {
       <Drawer.Screen
         name="Home"
         component={Home}
-        options={{ drawerLabel: t("Home") }}
+        options={{ drawerLabel: t("home") }}
       />
       <Drawer.Screen
         name="Group Chat"
@@ -87,7 +91,7 @@ export default function AppNavigator() {
       <Drawer.Screen
         name="Events"
         component={Event}
-        options={{ drawerLabel: t("Events") }}
+        options={{ drawerLabel: t("events") }}
       />
       <Drawer.Screen
         name="Events List"
@@ -102,18 +106,18 @@ export default function AppNavigator() {
       <Drawer.Screen
         name="EventRegistration"
         component={EventRegistrationScreen}
-        options={{ drawerLabel: "Event Registration", drawerItemStyle: { display: "none" } }}
+        options={{ drawerLabel: t("Event Registration"), drawerItemStyle: { display: "none" } }}
       />
 
       <Drawer.Screen
         name="Dashboard"
         component={Dashboard}
-        options={{ drawerLabel: t("Dashboard") }}
+        options={{ drawerLabel: t("dashboard") }}
       />
       <Drawer.Screen
         name="Market"
         component={Market}
-        options={{ drawerLabel: t("Market") }}
+        options={{ drawerLabel: t("market") }}
       />
       <Drawer.Screen
         name="Contact Us"
@@ -138,13 +142,13 @@ export default function AppNavigator() {
       <Drawer.Screen
         name="Add Feed"
         component={AddFeed}
-        options={{ drawerLabel: t("add_feed") }}
+        options={{ drawerLabel: t("Add Feed") }}
       />
       <Drawer.Screen
 
         name="profile"
         component={Profile as any}
-        options={{ drawerLabel: t("Profile") }}
+        options={{ drawerLabel: t("profile") }}
       />
       <Drawer.Screen
         name="Personal Info"

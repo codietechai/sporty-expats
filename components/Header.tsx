@@ -1,8 +1,10 @@
+
 import React from "react";
 import { Text, View, TouchableOpacity, StyleSheet } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useNavigation } from "@react-navigation/native";
 import { DrawerNavigationProp } from "@react-navigation/drawer";
+import { useDrawer } from "@/contexts/DrawerContext";
 
 type RootDrawerParamList = {
   Home: undefined;
@@ -17,8 +19,38 @@ type RootDrawerParamList = {
 type HeaderProps = {
   myFeed?: boolean;
 };
+
 const Header: React.FC<HeaderProps> = ({ myFeed }) => {
   const navigation = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
+  const { openDrawer } = useDrawer();
+
+  const handleMenuPress = () => {
+    try {
+      // Try to open drawer if available
+      if (navigation && typeof navigation.openDrawer === 'function') {
+        navigation.openDrawer();
+      } else {
+        // Fallback to custom drawer
+        openDrawer();
+      }
+    } catch (error) {
+      console.error('Error opening drawer:', error);
+      // Fallback to custom drawer
+      openDrawer();
+    }
+  };
+
+  const handleAddFeedPress = () => {
+    try {
+      if (navigation && typeof navigation.navigate === 'function') {
+        navigation.navigate("Add Feed");
+      } else {
+        console.log('Navigation not available');
+      }
+    } catch (error) {
+      console.error('Error navigating to Add Feed:', error);
+    }
+  };
 
   return (
     <View style={styles.headerContainer}>
@@ -32,7 +64,7 @@ const Header: React.FC<HeaderProps> = ({ myFeed }) => {
         }}
       >
         <TouchableOpacity
-          onPress={() => navigation.openDrawer()}
+          onPress={handleMenuPress}
           style={styles.menuButton}
         >
           <Text
@@ -71,8 +103,7 @@ const Header: React.FC<HeaderProps> = ({ myFeed }) => {
                 paddingHorizontal: 12,
                 paddingVertical: 4,
               }}
-              onPress={() => navigation.navigate("Add Feed")}
-
+              onPress={handleAddFeedPress}
             >
               <Svg
                 fill="none"

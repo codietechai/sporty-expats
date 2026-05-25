@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
-  View, Text, TouchableOpacity, Modal, FlatList,
+  View, Text, TouchableOpacity, Modal,
   Image, StyleSheet,
 } from "react-native";
 import { DrawerContentComponentProps, DrawerContentScrollView } from "@react-navigation/drawer";
@@ -40,23 +40,8 @@ type NavItem = {
   screen: keyof RootDrawerParamList;
 };
 
-const MAIN_NAV: NavItem[] = [
-  { label: "Dashboard", icon: "grid-outline", screen: "Dashboard" },
-  { label: "Events", icon: "star-outline", screen: "Events List" },
-  { label: "Market", icon: "storefront-outline", screen: "Market" },
-  { label: "Group Chats", icon: "chatbubbles-outline", screen: "Group Chats" },
-  { label: "Media", icon: "videocam-outline", screen: "Media Uploads" },
-  { label: "Create Event", icon: "add-circle-outline", screen: "Create Event" },
-];
-
-const BOTTOM_NAV: NavItem[] = [
-  { label: "Contact Admin", icon: "desktop-outline", screen: "Contact Us" },
-  { label: "Subscription", icon: "card-outline", screen: "Price" },
-  { label: "Profile", icon: "person-circle-outline", screen: "profile" },
-];
-
 export default function Sidebar(props: DrawerContentComponentProps) {
-  const { i18n } = useTranslation("sidebar");
+  const { t, i18n } = useTranslation("sidebar");
   const [selectedLanguage, setSelectedLanguage] = useState(i18n.language);
   const [isLanguageModalVisible, setLanguageModalVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -70,9 +55,38 @@ export default function Sidebar(props: DrawerContentComponentProps) {
 
   const activeRoute = props.state.routeNames[props.state.index];
 
+  // Define navigation items with translation keys based on login status
+  const MAIN_NAV: NavItem[] = loggedIn ? [
+    { label: t("dashboard"), icon: "grid-outline", screen: "Dashboard" },
+    { label: t("events"), icon: "star-outline", screen: "Events List" },
+    { label: t("market"), icon: "storefront-outline", screen: "Market" },
+    { label: t("group_chat"), icon: "chatbubbles-outline", screen: "Group Chats" },
+    { label: t("media"), icon: "videocam-outline", screen: "Media Uploads" },
+    { label: t("create_event"), icon: "add-circle-outline", screen: "Create Event" },
+  ] : [
+    { label: t("home"), icon: "home-outline", screen: "Home" },
+    { label: t("events"), icon: "star-outline", screen: "Events List" },
+    { label: t("market"), icon: "storefront-outline", screen: "Market" },
+  ];
+
+  const BOTTOM_NAV: NavItem[] = loggedIn ? [
+    { label: t("contact_admin"), icon: "desktop-outline", screen: "Contact Us" },
+    { label: t("subscription"), icon: "card-outline", screen: "Price" },
+    { label: t("profile"), icon: "person-circle-outline", screen: "profile" },
+  ] : [
+    { label: t("contact_us"), icon: "desktop-outline", screen: "Contact Us" },
+    { label: t("about_us"), icon: "information-circle-outline", screen: "About Us" },
+  ];
+
   const navigateTo = (screenName: keyof RootDrawerParamList) => {
-    props.navigation.navigate(screenName);
-    props.navigation.closeDrawer();
+    try {
+      props.navigation.navigate(screenName);
+      if (typeof props.navigation.closeDrawer === 'function') {
+        props.navigation.closeDrawer();
+      }
+    } catch (error) {
+      console.error('Error navigating:', error);
+    }
   };
 
   const changeLanguage = (lang: string) => {
@@ -101,8 +115,37 @@ export default function Sidebar(props: DrawerContentComponentProps) {
   }, [userDb]);
 
   const logOut = async () => {
-    signOut();
-    await AsyncStorage.clear();
+    try {
+      // Close dropdown first
+      setShowDropdown(false);
+      
+      // Sign out from Clerk
+      await signOut();
+      
+      // Clear local storage
+      await AsyncStorage.clear();
+      
+      // Reset user state
+      setLoggedIn(false);
+      setImage(null);
+      
+      // Navigate to home page
+      setTimeout(() => {
+        try {
+          props.navigation.navigate("Home");
+          // Close drawer if it's open
+          if (typeof props.navigation.closeDrawer === 'function') {
+            props.navigation.closeDrawer();
+          }
+        } catch (error) {
+          console.error('Error navigating to Home after logout:', error);
+        }
+      }, 100);
+      
+      console.log('User logged out successfully');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   return (
@@ -195,14 +238,14 @@ export default function Sidebar(props: DrawerContentComponentProps) {
                   onPress={() => { setShowDropdown(false); navigateTo("profile"); }}
                 >
                   <Ionicons name="person-outline" size={16} color="#D1D5DB" />
-                  <Text style={styles.dropdownText}>View Profile</Text>
+                  <Text style={styles.dropdownText}>{t("view_profile")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.dropdownItem}
-                  onPress={() => { logOut(); setShowDropdown(false); }}
+                  onPress={logOut}
                 >
                   <Ionicons name="log-out-outline" size={16} color="#EF4444" />
-                  <Text style={[styles.dropdownText, { color: "#EF4444" }]}>Log Out</Text>
+                  <Text style={[styles.dropdownText, { color: "#EF4444" }]}>{t("log_out")}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -210,7 +253,7 @@ export default function Sidebar(props: DrawerContentComponentProps) {
         ) : (
           <TouchableOpacity style={styles.loginBtn} onPress={() => setModalVisible(true)}>
             <Ionicons name="log-in-outline" size={18} color="#fff" />
-            <Text style={styles.loginText}>Login</Text>
+            <Text style={styles.loginText}>{t("login")}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -220,7 +263,11 @@ export default function Sidebar(props: DrawerContentComponentProps) {
         onClose={() => setModalVisible(false)}
         onSuccess={() => {
           setModalVisible(false);
-          props.navigation.navigate("Dashboard");
+          try {
+            props.navigation.navigate("Dashboard");
+          } catch (error) {
+            console.error('Error navigating to Dashboard:', error);
+          }
         }}
       />
 

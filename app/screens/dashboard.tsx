@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import TabsComponent from "@/components/dashboard/DashboardTabs";
 import Stories from "@/components/dashboard/Stories";
 import MyFeed from "@/components/dashboard/MyFeed";
@@ -10,9 +10,30 @@ import JoinedGroups from "@/components/dashboard/JoinedGroups";
 import ItemSales from "@/components/dashboard/ItemSales";
 import MyPurchases from "@/components/dashboard/MyPurchases";
 import Header from "@/components/Header";
+import CustomDrawer from "@/components/CustomDrawer";
+import { useDrawer } from "@/contexts/DrawerContext";
+import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "@clerk/clerk-expo";
 
 const Dashboard = () => {
   const [currentTab, setCurrentTab] = useState<string>("my_feed");
+  const { isDrawerOpen, closeDrawer } = useDrawer();
+  const navigation = useNavigation();
+  const { isSignedIn } = useAuth();
+  const router = useRouter();
+
+  // Redirect to home if user is not signed in
+  useEffect(() => {
+    if (!isSignedIn) {
+      console.log('User not signed in, redirecting to home');
+      router.replace('/home');
+    }
+  }, [isSignedIn, router]);
+
+  // Don't render dashboard if user is not signed in
+  if (!isSignedIn) {
+    return null;
+  }
 
   const tabs = [
     { key: "my_feed", label: "My Feed", component: MyFeed },
@@ -32,6 +53,13 @@ const Dashboard = () => {
           <TabsComponent tabs={tabs} setCurrentTab={setCurrentTab} />
         </View>
       </SafeAreaView>
+      
+      {/* Custom Drawer */}
+      <CustomDrawer 
+        visible={isDrawerOpen} 
+        onClose={closeDrawer} 
+        navigation={navigation}
+      />
     </>
   );
 };
