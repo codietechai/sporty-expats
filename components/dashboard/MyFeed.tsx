@@ -3,6 +3,7 @@ import { likePost } from "@/client/endpoints/posts/likePost";
 import { reactToPost, bookmarkPost, addComment, getPostComments } from "@/client/endpoints/posts/postActions";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import PostStatusBar from "@/components/dashboard/PostStatusBar";
+import FeedSkeleton from "@/components/dashboard/PostCardSkeleton";
 import { timeAgo } from "@/helpers/date";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from 'expo-image';
@@ -465,18 +466,19 @@ const MyFeed = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const queryClient = useQueryClient();
   const { userDb, loading: userLoading } = useUserDb();
-  const userId: string | undefined = userDb?.data?.data?.id ?? userDb?.data?.id ?? userDb?.id;
+  const userId: string | undefined = userDb?.id;
   const initializedRef = useRef(false);
 
   const { data, isLoading } = useQuery(
     [GET_ALL_POSTS, userId, page], 
     () => getAllPosts(userId, { page, limit: 10 }), 
     {
-      enabled: !!userId,
+      enabled: !!userId && !userLoading,
       keepPreviousData: true,
       refetchOnWindowFocus: false,
+      refetchOnMount: true,
       retry: 1,
-      staleTime: 2 * 60 * 1000, // 2 minutes
+      staleTime: 2 * 60 * 1000,
     }
   );
 
@@ -604,11 +606,7 @@ const MyFeed = () => {
 
   const renderFooter = () => {
     if (!loadingMore) return null;
-    return (
-      <View style={styles.loadingFooter}>
-        <ActivityIndicator size="small" color="#2ecc71" />
-      </View>
-    );
+    return <FeedSkeleton count={2} />;
   };
 
   const keyExtractor = useCallback((item: Post) => item._id, []);
@@ -618,11 +616,7 @@ const MyFeed = () => {
   ), [userId, handleUpdate]);
 
   if (userLoading || (isLoading && page === 1)) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#2ecc71" />
-      </View>
-    );
+    return <FeedSkeleton count={3} />;
   }
 
   if (posts.length === 0 && !isLoading) {

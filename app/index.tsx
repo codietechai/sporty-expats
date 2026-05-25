@@ -10,7 +10,6 @@ import Market from "./screens/market";
 import ContactUs from "./screens/contactus";
 import AboutUs from "./screens/aboutus";
 import Sidebar from "../components/Sidebar";
-import { useEffect } from "react";
 import { useAuth } from "@clerk/clerk-expo";
 import { setUpAuthInterceptor } from "@/client/backendClient";
 import CreateEvents from "./screens/createEvents";
@@ -36,9 +35,10 @@ export default function AppNavigator() {
   const { t } = useTranslation("sidebar");
   const { getToken, isSignedIn } = useAuth();
 
-  useEffect(() => {
-    setUpAuthInterceptor(getToken);
-  }, [getToken]);
+  // Set up interceptor synchronously so it's ready before any child component
+  // makes API calls — avoids the race where useUserDb fires before the Bearer
+  // token interceptor is registered.
+  setUpAuthInterceptor(getToken);
 
   // Update initial route based on auth state
   const getInitialRouteName = () => {
@@ -47,6 +47,7 @@ export default function AppNavigator() {
 
   return (
     <Drawer.Navigator
+      id="MainDrawer"
       initialRouteName={getInitialRouteName()}
       screenOptions={{
         headerShown: true,

@@ -1,39 +1,51 @@
 import { getUserById } from "@/client/endpoints/users/getUserById";
 import { useUser } from "@clerk/clerk-expo";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 
 export function useUserDb() {
   const [userDb, setUserDb] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<any>(null);
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchUserDb = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const fetchUserDb = useCallback(async (retryCount = 0) => {
+    if (retryCount === 0) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const response = await getUserById();
-      console.log('useUserDb - Full response:', JSON.stringify(response, null, 2));
-      
-      // Extract the actual user data from the axios response
-      // The response structure is likely: { data: { data: actualUserData } }
       const userData = response?.data?.data || response?.data || response;
-      console.log('useUserDb - Extracted userData:', JSON.stringify(userData, null, 2));
-      
       setUserDb(userData);
-    } catch (err) {
-      console.error('useUserDb - Error fetching user:', err);
-      setError(err);
-    } finally {
+      setError(null);
       setLoading(false);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      // 401/404 likely means the auth token wasn't attached yet — retry with backoff
+      if ((status === 401 || status === 404) && retryCount < 3) {
+        const delay = (retryCount + 1) * 800;
+        retryTimeoutRef.current = setTimeout(() => fetchUserDb(retryCount + 1), delay);
+      } else {
+        console.error('useUserDb - Error fetching user:', err);
+        setError(err);
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
+    if (!isLoaded) return;
     if (user) {
       fetchUserDb();
+    } else {
+      setUserDb(null);
+      setLoading(false);
     }
-  }, [fetchUserDb, user]);
+    return () => {
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
+    };
+  }, [fetchUserDb, user, isLoaded]);
 
   return { userDb, loading, error, refresh: fetchUserDb };
 }
