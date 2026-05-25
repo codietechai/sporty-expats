@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, View, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { Modal, View, TouchableOpacity, StyleSheet, Dimensions, Animated } from 'react-native';
 import Sidebar from './Sidebar';
 import { DrawerNavigationState, ParamListBase } from '@react-navigation/native';
 import { useAuth } from '@clerk/clerk-expo';
@@ -14,6 +14,8 @@ interface CustomDrawerProps {
 
 const CustomDrawer: React.FC<CustomDrawerProps> = ({ visible, onClose, navigation }) => {
   const { isSignedIn } = useAuth();
+  
+  console.log('CustomDrawer: Rendering with visible =', visible, 'isSignedIn =', isSignedIn);
   
   const drawerState: DrawerNavigationState<ParamListBase> = {
     type: 'drawer',
@@ -35,19 +37,21 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ visible, onClose, navigatio
     history: []
   };
 
+  if (!visible) {
+    console.log('CustomDrawer: Not visible, not rendering');
+    return null;
+  }
+
+  console.log('CustomDrawer: Rendering modal with drawer state:', drawerState);
+
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <TouchableOpacity 
-          style={styles.backdrop} 
-          onPress={onClose}
-          activeOpacity={1}
-        />
         <View style={styles.drawerContainer}>
           <Sidebar 
             navigation={navigation}
@@ -55,6 +59,11 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ visible, onClose, navigatio
             descriptors={{}}
           />
         </View>
+        <TouchableOpacity 
+          style={styles.backdrop} 
+          onPress={onClose}
+          activeOpacity={1}
+        />
       </View>
     </Modal>
   );
@@ -65,14 +74,14 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
   },
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
   drawerContainer: {
     width: width * 0.8,
     backgroundColor: '#18181A',
     height: '100%',
+  },
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
 });
 

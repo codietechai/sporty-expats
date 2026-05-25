@@ -8,6 +8,7 @@ import { ClerkLoaded, ClerkProvider } from '@clerk/clerk-expo'
 import { tokenCache } from '@clerk/clerk-expo/token-cache'
 import { QueryClient, QueryClientProvider } from "react-query";
 import { DrawerProvider } from "@/contexts/DrawerContext";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 
 export default function RootLayout() {
@@ -20,20 +21,22 @@ export default function RootLayout() {
   const queryClient = new QueryClient();
 
   return (
-    <QueryClientProvider client={queryClient}>
-    <I18nextProvider i18n={i18n}>
-      <ClerkProvider tokenCache={tokenCache} publishableKey={Publishable_key}>
-        <ClerkLoaded>
-          <DrawerProvider>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-              }}
-            />
-          </DrawerProvider>
-        </ClerkLoaded>
-      </ClerkProvider>
-    </I18nextProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <I18nextProvider i18n={i18n}>
+          <ClerkProvider tokenCache={tokenCache} publishableKey={Publishable_key}>
+            <ClerkLoaded>
+              <DrawerProvider>
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                  }}
+                />
+              </DrawerProvider>
+            </ClerkLoaded>
+          </ClerkProvider>
+        </I18nextProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }

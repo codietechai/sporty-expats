@@ -17,6 +17,9 @@ import Event from "./screens/event";
 import Footer from "@/components/Footer";
 import { useTranslation } from "react-i18next";
 import Header from "@/components/Header";
+import CustomDrawer from "@/components/CustomDrawer";
+import { useDrawer } from "@/contexts/DrawerContext";
+import TouchSwipeWrapper from "@/components/TouchSwipeWrapper";
 
 type RootDrawerParamList = {
   Home: undefined;
@@ -27,10 +30,8 @@ export type HomeScreenNavigationProp = DrawerNavigationProp<
   "Home"
 >;
 export default function Home() {
-
-
-
   const navigation = useNavigation<HomeScreenNavigationProp>();
+  const { isDrawerOpen, closeDrawer } = useDrawer();
 
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
@@ -54,11 +55,12 @@ export default function Home() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <Header />
-      <ScrollView
-        className="bg-black px-5"
-        contentContainerStyle={{ paddingBottom: 40 }}
-      >
+      <TouchSwipeWrapper>
+        <Header />
+        <ScrollView
+          className="bg-black px-5"
+          contentContainerStyle={{ paddingBottom: 40 }}
+        >
         <View className="flex items-center px-4 pt-20">
           <Text className="mb-2 text-3xl font-bold text-white">
             {t("amazing_sports")}
@@ -217,7 +219,15 @@ export default function Home() {
           </View>
           <Footer />
         </View>
-      </ScrollView>
+          </ScrollView>
+      </TouchSwipeWrapper>
+      
+      {/* Custom Drawer */}
+      <CustomDrawer 
+        visible={isDrawerOpen} 
+        onClose={closeDrawer} 
+        navigation={navigation}
+      />
     </>
   );
 }

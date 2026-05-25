@@ -12,6 +12,7 @@ import { useAuth } from "@clerk/clerk-react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getProfilePhoto } from "@/client/endpoints/users/addProfilePhoto";
 import { useUserDb } from "@/app/hooks/useUserDb";
+import { useDrawer } from "@/contexts/DrawerContext";
 
 export type RootDrawerParamList = {
   Home: undefined;
@@ -52,6 +53,7 @@ export default function Sidebar(props: DrawerContentComponentProps) {
   const { user } = useUser();
   const { userDb } = useUserDb();
   const { signOut } = useAuth();
+  const { closeDrawer } = useDrawer();
 
   const activeRoute = props.state.routeNames[props.state.index];
 
@@ -80,10 +82,13 @@ export default function Sidebar(props: DrawerContentComponentProps) {
 
   const navigateTo = (screenName: keyof RootDrawerParamList) => {
     try {
-      props.navigation.navigate(screenName);
-      if (typeof props.navigation.closeDrawer === 'function') {
-        props.navigation.closeDrawer();
-      }
+      // Close the custom drawer first
+      closeDrawer();
+      
+      // Then navigate
+      setTimeout(() => {
+        props.navigation.navigate(screenName);
+      }, 100);
     } catch (error) {
       console.error('Error navigating:', error);
     }
@@ -119,6 +124,9 @@ export default function Sidebar(props: DrawerContentComponentProps) {
       // Close dropdown first
       setShowDropdown(false);
       
+      // Close drawer
+      closeDrawer();
+      
       // Sign out from Clerk
       await signOut();
       
@@ -133,14 +141,10 @@ export default function Sidebar(props: DrawerContentComponentProps) {
       setTimeout(() => {
         try {
           props.navigation.navigate("Home");
-          // Close drawer if it's open
-          if (typeof props.navigation.closeDrawer === 'function') {
-            props.navigation.closeDrawer();
-          }
         } catch (error) {
           console.error('Error navigating to Home after logout:', error);
         }
-      }, 100);
+      }, 200);
       
       console.log('User logged out successfully');
     } catch (error) {
@@ -263,11 +267,14 @@ export default function Sidebar(props: DrawerContentComponentProps) {
         onClose={() => setModalVisible(false)}
         onSuccess={() => {
           setModalVisible(false);
-          try {
-            props.navigation.navigate("Dashboard");
-          } catch (error) {
-            console.error('Error navigating to Dashboard:', error);
-          }
+          closeDrawer();
+          setTimeout(() => {
+            try {
+              props.navigation.navigate("Dashboard");
+            } catch (error) {
+              console.error('Error navigating to Dashboard:', error);
+            }
+          }, 100);
         }}
       />
 

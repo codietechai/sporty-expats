@@ -9,23 +9,27 @@ import {
   Animated,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import CustomDrawer from "@/components/CustomDrawer";
+import { useDrawer } from "@/contexts/DrawerContext";
+import TouchSwipeWrapper from "@/components/TouchSwipeWrapper";
 
 const { width } = Dimensions.get("window");
 
-import Yoga from "../../assets/images/yoga.jpg";
-// import Soccer from "../../assets/images/soccer.jpg";
-import Group from "../../assets/images/group.jpg";
-import Basketball from "../../assets/images/basketball.jpg";
-import PinkSoccer from "../../assets/images/pinksoccer.jpg";
-import Parade from "../../assets/images/parade.jpg";
-import Runners from "../../assets/images/runners.jpg";
-import Kickboxing from "../../assets/images/kickboxing.png";
-import Hoop from "../../assets/images/hoop.png";
-import Horse from "../../assets/images/horse.jpg";
-import YogaPose from "../../assets/images/yogapose.jpg";
+import Yoga from "@/assets/images/yoga.jpg";
+// import Soccer from "@/assets/images/soccer.jpg";
+import Group from "@/assets/images/group.jpg";
+import Basketball from "@/assets/images/basketball.jpg";
+import PinkSoccer from "@/assets/images/pinksoccer.jpg";
+import Parade from "@/assets/images/parade.jpg";
+import Runners from "@/assets/images/runners.jpg";
+import Kickboxing from "@/assets/images/kickboxing.png";
+import Hoop from "@/assets/images/hoop.png";
+import Horse from "@/assets/images/horse.jpg";
+import YogaPose from "@/assets/images/yogapose.jpg";
 
 export default function Event() {
   const navigation = useNavigation();
+  const { isDrawerOpen, closeDrawer } = useDrawer();
   const marqueeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -44,7 +48,9 @@ export default function Event() {
   }, []);
 
   return (
-    <ScrollView style={styles.container}>
+    <>
+      <TouchSwipeWrapper>
+        <ScrollView style={styles.container}>
       {/* Section 1: Events for Professionals */}
       <Text style={styles.heading}>
         <Text style={styles.highlight}>EVENTS </Text>
@@ -145,6 +151,15 @@ export default function Event() {
       <Text style={styles.sectionTitle}>NETWORK AND TRUE COMMUNITY</Text>
       <Image source={Runners} style={styles.fullWidthImage} />
     </ScrollView>
+      </TouchSwipeWrapper>
+      
+      {/* Custom Drawer */}
+      <CustomDrawer 
+        visible={isDrawerOpen} 
+        onClose={closeDrawer} 
+        navigation={navigation}
+      />
+    </>
   );
 }
 

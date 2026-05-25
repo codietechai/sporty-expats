@@ -25,18 +25,13 @@ const Header: React.FC<HeaderProps> = ({ myFeed }) => {
   const { openDrawer } = useDrawer();
 
   const handleMenuPress = () => {
+    console.log('Menu button pressed, opening custom drawer');
+    console.log('Drawer context available:', !!openDrawer);
     try {
-      // Try to open drawer if available
-      if (navigation && typeof navigation.openDrawer === 'function') {
-        navigation.openDrawer();
-      } else {
-        // Fallback to custom drawer
-        openDrawer();
-      }
-    } catch (error) {
-      console.error('Error opening drawer:', error);
-      // Fallback to custom drawer
       openDrawer();
+      console.log('Custom drawer opened successfully');
+    } catch (error) {
+      console.error('Error opening custom drawer:', error);
     }
   };
 
@@ -66,6 +61,7 @@ const Header: React.FC<HeaderProps> = ({ myFeed }) => {
         <TouchableOpacity
           onPress={handleMenuPress}
           style={styles.menuButton}
+          activeOpacity={0.7}
         >
           <Text
             className="text-white text-2xl font-oswald"

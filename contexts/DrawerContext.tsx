@@ -24,9 +24,22 @@ interface DrawerProviderProps {
 export const DrawerProvider: React.FC<DrawerProviderProps> = ({ children }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const openDrawer = () => setIsDrawerOpen(true);
-  const closeDrawer = () => setIsDrawerOpen(false);
-  const toggleDrawer = () => setIsDrawerOpen(!isDrawerOpen);
+  const openDrawer = () => {
+    console.log('DrawerContext: Opening drawer');
+    setIsDrawerOpen(true);
+  };
+  
+  const closeDrawer = () => {
+    console.log('DrawerContext: Closing drawer');
+    setIsDrawerOpen(false);
+  };
+  
+  const toggleDrawer = () => {
+    console.log('DrawerContext: Toggling drawer, current state:', isDrawerOpen);
+    setIsDrawerOpen(!isDrawerOpen);
+  };
+
+  console.log('DrawerProvider: Current drawer state:', isDrawerOpen);
 
   return (
     <DrawerContext.Provider value={{ isDrawerOpen, openDrawer, closeDrawer, toggleDrawer }}>
