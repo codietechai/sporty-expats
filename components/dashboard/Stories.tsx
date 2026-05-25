@@ -18,8 +18,9 @@ import {
   View,
 } from "react-native";
 import { useQuery } from "react-query";
-import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import { useUser } from "@clerk/clerk-expo";
+import StoriesSkeleton from "@/components/dashboard/StoriesSkeleton";
 
 const DEFAULT_AVATAR = "https://storage.strandcdn.com/avatar.svg";
 
@@ -205,8 +206,8 @@ const um = StyleSheet.create({
 });
 
 // ── Main Stories component ────────────────────────────────────────────────────
-export default function Stories() {
-  const navigation = useNavigation<any>();
+export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
+  const router = useRouter();
   const { userDb, loading } = useUserDb();
   const { user } = useUser(); // Add Clerk user as fallback
   
@@ -245,7 +246,7 @@ export default function Stories() {
     setShowUploadModal(false);
   }, []);
 
-  const { data, refetch } = useQuery([GET_ALL_STORIES], () => getAllStories(), {
+  const { data, refetch, isLoading: storiesLoading } = useQuery([GET_ALL_STORIES], () => getAllStories(), {
     keepPreviousData: false,
     refetchOnWindowFocus: true,
     retry: 0,
@@ -323,99 +324,95 @@ export default function Stories() {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={listData}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.list}
-        keyExtractor={(item, i) =>
-          item.type === "story" ? item.group.authorId : `${item.type}-${i}`
-        }
-        renderItem={({ item }) => {
-          // ── Add Post tile ──
-          if (item.type === "add_post") {
-            return (
-              <TouchableOpacity
-                style={styles.addPostTile}
-                onPress={() => navigation.navigate("Add Feed")}
-              >
-                <View style={styles.addPostIcon}>
-                  <Ionicons name="add" size={22} color="#2ecc71" />
+      {storiesLoading && grouped.length === 0 ? (
+        <StoriesSkeleton count={5} />
+      ) : (
+        <FlatList
+          data={listData}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.list}
+          keyExtractor={(item, i) =>
+            item.type === "story" ? item.group.authorId : `${item.type}-${i}`
+          }
+          renderItem={({ item }) => {
+            if (item.type === "add_post") {
+              return (
+                <TouchableOpacity
+                  style={styles.addPostTile}
+                  onPress={() => onAddPost ? onAddPost() : router.push("/screens/AddFeed")}
+                >
+                  <View style={styles.addPostIcon}>
+                    <Ionicons name="add" size={22} color="#2ecc71" />
+                  </View>
+                  <Text style={styles.tileLabel}>New Post</Text>
+                </TouchableOpacity>
+              );
+            }
+
+            if (item.type === "upload") {
+              return (
+                <View style={styles.uploadTileContainer}>
+                  <TouchableOpacity
+                    style={styles.uploadTile}
+                    onPress={handleOpenUploadModal}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+                  >
+                    <Image
+                      source={{ uri: userAvatar || DEFAULT_AVATAR }}
+                      style={styles.uploadAvatar}
+                    />
+                    <View style={styles.uploadBadge}>
+                      <Ionicons name="add" size={12} color="#fff" />
+                    </View>
+                    <Text style={styles.tileLabel}>Upload{"\n"}New Story</Text>
+                  </TouchableOpacity>
                 </View>
-                <Text style={styles.tileLabel}>New Post</Text>
+              );
+            }
+
+            if (item.type === "status") {
+              const isRejected = storyStatus.rejected.length > 0;
+              const count = isRejected ? storyStatus.rejected.length : storyStatus.pending.length;
+              const previewUrl = isRejected
+                ? storyStatus.rejected[0]?.file?.fileUrl
+                : storyStatus.pending[0]?.file?.fileUrl;
+
+              return (
+                <View style={[styles.statusTile, isRejected ? styles.statusTileRejected : styles.statusTilePending]}>
+                  {previewUrl && (
+                    <Image source={{ uri: previewUrl }} style={styles.statusBg} blurRadius={4} />
+                  )}
+                  <View style={styles.statusOverlay}>
+                    <Ionicons
+                      name={isRejected ? "alert-circle-outline" : "time-outline"}
+                      size={18}
+                      color={isRejected ? "#f87171" : "rgba(255,255,255,0.4)"}
+                    />
+                    <Text style={[styles.statusLabel, isRejected && styles.statusLabelRejected]}>
+                      {isRejected ? "Rejected" : "Under\nreview"}
+                    </Text>
+                  </View>
+                  <View style={[styles.countBadge, isRejected && styles.countBadgeRejected]}>
+                    <Text style={styles.countBadgeText}>{count}</Text>
+                  </View>
+                </View>
+              );
+            }
+
+            const { group } = item;
+            const cover = group.stories[0]?.file?.fileUrl;
+            return (
+              <TouchableOpacity style={styles.storyTile} onPress={() => openGroup(group)}>
+                <Image source={{ uri: cover || DEFAULT_AVATAR }} style={styles.storyThumb} />
+                <View style={styles.storyRing} />
+                <Text style={styles.storyLabel} numberOfLines={1}>{group.name}</Text>
               </TouchableOpacity>
             );
-          }
-
-          // ── Upload Story tile ──
-          if (item.type === "upload") {
-            return (
-              <View style={styles.uploadTileContainer}>
-                <TouchableOpacity
-                  style={styles.uploadTile}
-                  onPress={() => {
-                    console.log('Upload story button pressed');
-                    handleOpenUploadModal();
-                  }}
-                  activeOpacity={0.7}
-                  hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
-                >
-                  <Image
-                    source={{ uri: userAvatar || DEFAULT_AVATAR }}
-                    style={styles.uploadAvatar}
-                  />
-                  <View style={styles.uploadBadge}>
-                    <Ionicons name="add" size={12} color="#fff" />
-                  </View>
-                  <Text style={styles.tileLabel}>Upload{"\n"}New Story</Text>
-                </TouchableOpacity>
-              </View>
-            );
-          }
-
-          // ── Status tile ──
-          if (item.type === "status") {
-            const isRejected = storyStatus.rejected.length > 0;
-            const count = isRejected ? storyStatus.rejected.length : storyStatus.pending.length;
-            const previewUrl = isRejected
-              ? storyStatus.rejected[0]?.file?.fileUrl
-              : storyStatus.pending[0]?.file?.fileUrl;
-
-            return (
-              <View style={[styles.statusTile, isRejected ? styles.statusTileRejected : styles.statusTilePending]}>
-                {previewUrl && (
-                  <Image source={{ uri: previewUrl }} style={styles.statusBg} blurRadius={4} />
-                )}
-                <View style={styles.statusOverlay}>
-                  <Ionicons
-                    name={isRejected ? "alert-circle-outline" : "time-outline"}
-                    size={18}
-                    color={isRejected ? "#f87171" : "rgba(255,255,255,0.4)"}
-                  />
-                  <Text style={[styles.statusLabel, isRejected && styles.statusLabelRejected]}>
-                    {isRejected ? "Rejected" : "Under\nreview"}
-                  </Text>
-                </View>
-                {/* Count badge */}
-                <View style={[styles.countBadge, isRejected && styles.countBadgeRejected]}>
-                  <Text style={styles.countBadgeText}>{count}</Text>
-                </View>
-              </View>
-            );
-          }
-
-          // ── Story tile ──
-          const { group } = item;
-          const cover = group.stories[0]?.file?.fileUrl;
-          return (
-            <TouchableOpacity style={styles.storyTile} onPress={() => openGroup(group)}>
-              <Image source={{ uri: cover || DEFAULT_AVATAR }} style={styles.storyThumb} />
-              <View style={styles.storyRing} />
-              <Text style={styles.storyLabel} numberOfLines={1}>{group.name}</Text>
-            </TouchableOpacity>
-          );
-        }}
-      />
+          }}
+        />
+      )}
 
       {/* ── Upload modal ── */}
       {showUploadModal && userId && (

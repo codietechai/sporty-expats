@@ -10,31 +10,21 @@ import JoinedGroups from "@/components/dashboard/JoinedGroups";
 import ItemSales from "@/components/dashboard/ItemSales";
 import MyPurchases from "@/components/dashboard/MyPurchases";
 import Header from "@/components/Header";
-import CustomDrawer from "@/components/CustomDrawer";
-import { useDrawer } from "@/contexts/DrawerContext";
-import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "@clerk/clerk-expo";
 import TouchSwipeWrapper from "@/components/TouchSwipeWrapper";
 
 const Dashboard = () => {
   const [currentTab, setCurrentTab] = useState<string>("my_feed");
-  const { isDrawerOpen, closeDrawer } = useDrawer();
-  const navigation = useNavigation();
   const { isSignedIn } = useAuth();
   const router = useRouter();
 
-  // Redirect to home if user is not signed in
   useEffect(() => {
     if (!isSignedIn) {
-      console.log('User not signed in, redirecting to home');
       router.replace('/home');
     }
   }, [isSignedIn, router]);
 
-  // Don't render dashboard if user is not signed in
-  if (!isSignedIn) {
-    return null;
-  }
+  if (!isSignedIn) return null;
 
   const tabs = [
     { key: "my_feed", label: "My Feed", component: MyFeed },
@@ -51,18 +41,11 @@ const Dashboard = () => {
         <SafeAreaView style={{ flex: 1, backgroundColor: "#0d0d0d" }} edges={["top"]}>
           <View style={{ flex: 1, backgroundColor: "#0d0d0d" }}>
             <Header myFeed={true} />
-            <Stories />
+            <Stories onAddPost={() => router.push("/screens/AddFeed")} />
             <TabsComponent tabs={tabs} setCurrentTab={setCurrentTab} />
           </View>
         </SafeAreaView>
       </TouchSwipeWrapper>
-      
-      {/* Custom Drawer */}
-      <CustomDrawer 
-        visible={isDrawerOpen} 
-        onClose={closeDrawer} 
-        navigation={navigation}
-      />
     </>
   );
 };

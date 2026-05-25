@@ -2,49 +2,23 @@
 import React from "react";
 import { Text, View, TouchableOpacity, StyleSheet } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { useNavigation } from "@react-navigation/native";
-import { DrawerNavigationProp } from "@react-navigation/drawer";
+import { useRouter } from "expo-router";
 import { useDrawer } from "@/contexts/DrawerContext";
-
-type RootDrawerParamList = {
-  Home: undefined;
-  Events: undefined;
-  Dashboard: undefined;
-  Market: undefined;
-  "Contact Us": undefined;
-  "About Us": undefined;
-  "Add Feed": undefined,
-};
 
 type HeaderProps = {
   myFeed?: boolean;
 };
 
 const Header: React.FC<HeaderProps> = ({ myFeed }) => {
-  const navigation = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
+  const router = useRouter();
   const { openDrawer } = useDrawer();
 
   const handleMenuPress = () => {
-    console.log('Menu button pressed, opening custom drawer');
-    console.log('Drawer context available:', !!openDrawer);
-    try {
-      openDrawer();
-      console.log('Custom drawer opened successfully');
-    } catch (error) {
-      console.error('Error opening custom drawer:', error);
-    }
+    openDrawer();
   };
 
   const handleAddFeedPress = () => {
-    try {
-      if (navigation && typeof navigation.navigate === 'function') {
-        navigation.navigate("Add Feed");
-      } else {
-        console.log('Navigation not available');
-      }
-    } catch (error) {
-      console.error('Error navigating to Add Feed:', error);
-    }
+    router.push("/screens/AddFeed");
   };
 
   return (

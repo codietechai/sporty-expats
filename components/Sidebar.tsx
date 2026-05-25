@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import {
   View, Text, TouchableOpacity, Modal,
-  Image, StyleSheet,
+  Image, StyleSheet, ScrollView,
 } from "react-native";
-import { DrawerContentComponentProps, DrawerContentScrollView } from "@react-navigation/drawer";
+import { DrawerContentComponentProps } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import AuthModal from "@/components/AuthModal";
@@ -13,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getProfilePhoto } from "@/client/endpoints/users/addProfilePhoto";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { useDrawer } from "@/contexts/DrawerContext";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 
 export type RootDrawerParamList = {
   Home: undefined;
@@ -56,9 +56,30 @@ export default function Sidebar(props: DrawerContentComponentProps) {
   const { userDb } = useUserDb();
   const { signOut } = useAuth();
   const { closeDrawer } = useDrawer();
-  const router = useRouter(); // Use Expo Router instead
-
-  const activeRoute = props.state.routeNames[props.state.index];
+  const router = useRouter();
+  const pathname = usePathname();
+  const pathToScreen: Record<string, keyof RootDrawerParamList> = {
+    "/home": "Home",
+    "/screens/dashboard": "Dashboard",
+    "/screens/event": "Events",
+    "/screens/market": "Market",
+    "/screens/contactus": "Contact Us",
+    "/screens/aboutus": "About Us",
+    "/screens/createEvents": "Create Event",
+    "/screens/price": "Price",
+    "/screens/profile": "profile",
+    "/screens/personalInfo": "Personal Info",
+    "/screens/mediaUpload": "Media Uploads",
+    "/screens/passwordSecurity": "Password And Security",
+    "/screens/updateProfilePhoto": "Update Profile Photo",
+    "/screens/ChatScreen": "Group Chat",
+    "/screens/GroupChatsScreen": "Group Chats",
+    "/screens/EditUserScreen": "Edit User Detail",
+    "/screens/Conversations": "Conversations",
+    "/screens/AddFeed": "Add Feed",
+    "/screens/EventsListScreen": "Events List",
+  };
+  const activeRoute: keyof RootDrawerParamList | '' = pathToScreen[pathname] ?? '';
 
   // Define navigation items with translation keys based on login status
   const MAIN_NAV: NavItem[] = loggedIn ? [
@@ -190,7 +211,7 @@ export default function Sidebar(props: DrawerContentComponentProps) {
 
   return (
     <View style={styles.root}>
-      <DrawerContentScrollView {...props} contentContainerStyle={{ flexGrow: 1 }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         <View style={styles.inner}>
           {/* Logo + language */}
           <View style={styles.logoRow}>
@@ -234,7 +255,7 @@ export default function Sidebar(props: DrawerContentComponentProps) {
             })}
           </View>
         </View>
-      </DrawerContentScrollView>
+      </ScrollView>
 
       {/* Bottom section */}
       <View style={styles.bottomSection}>
