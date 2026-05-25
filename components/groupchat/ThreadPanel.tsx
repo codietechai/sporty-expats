@@ -7,7 +7,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { ChatAvatar } from "./ChatAvatar";
 import { MessageBubble } from "./MessageBubble";
 import { MessageInput } from "./MessageInput";
-import type { AnyMessage, ChatRoomMember } from "@sparkstrand/chat-api-client/v2/types";
+import type { AnyMessage, ChatRoomMember, ChatAttachment } from "@sparkstrand/chat-api-client/v2/types";
+import type { MobileFile } from "@/app/chat/core/chatProvider";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const PANEL_WIDTH = Math.min(SCREEN_WIDTH, 360);
@@ -21,7 +22,7 @@ interface Props {
     threadMessages: AnyMessage[];
     members: ChatRoomMember[];
     currentUserId: string;
-    onSendReply: (content: string, replyToId: string | null) => void;
+    onSendReply: (content: string, attachments?: ChatAttachment[], replyToId?: string | null) => void;
     onTypingStart: () => void;
     onTypingStop: () => void;
     onClose: () => void;
@@ -29,6 +30,7 @@ interface Props {
     onDeleteReaction: (messageId: string, emoji: string) => void;
     onEdit: (message: AnyMessage) => void;
     onDelete: (messageId: string) => void;
+    uploadFiles?: (files: MobileFile[], type?: string) => Promise<ChatAttachment[]>;
 }
 
 export function ThreadPanel({
@@ -44,6 +46,7 @@ export function ThreadPanel({
     onDeleteReaction,
     onEdit,
     onDelete,
+    uploadFiles,
 }: Props) {
     const slideAnim = useRef(new Animated.Value(PANEL_WIDTH)).current;
 
@@ -138,10 +141,11 @@ export function ThreadPanel({
 
                 <View style={styles.inputWrapper}>
                     <MessageInput
-                        onSend={(content) => onSendReply(content, parentMessage.id)}
+                        onSend={(content, attachments) => onSendReply(content, attachments, parentMessage.id)}
                         onTypingStart={onTypingStart}
                         onTypingStop={onTypingStop}
                         placeholder="Reply in thread…"
+                        uploadFiles={uploadFiles}
                     />
                 </View>
             </Animated.View>

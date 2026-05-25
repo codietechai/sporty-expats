@@ -135,9 +135,9 @@ export default function GroupChatsContent() {
                         keyExtractor={(item) => item.roomId}
                         contentContainerStyle={[
                             styles.list,
-                            { 
+                            {
                                 paddingHorizontal: isSmallScreen ? 12 : 16,
-                                paddingTop: isSmallScreen ? 8 : 12 
+                                paddingTop: isSmallScreen ? 8 : 12
                             }
                         ]}
                         showsVerticalScrollIndicator={false}
@@ -166,11 +166,11 @@ export default function GroupChatsContent() {
                                 ]}>
                                     <TouchableOpacity
                                         style={[
-                                            styles.pageBtn, 
+                                            styles.pageBtn,
                                             page === 1 && styles.pageBtnDisabled,
-                                            { 
+                                            {
                                                 paddingVertical: isSmallScreen ? 10 : 12,
-                                                paddingHorizontal: isSmallScreen ? 12 : 16 
+                                                paddingHorizontal: isSmallScreen ? 12 : 16
                                             }
                                         ]}
                                         onPress={() => setPage(Math.max(1, page - 1))}
@@ -178,7 +178,7 @@ export default function GroupChatsContent() {
                                     >
                                         <Ionicons name="chevron-back" size={16} color={page === 1 ? "#374151" : "#fff"} />
                                         <Text style={[
-                                            styles.pageBtnText, 
+                                            styles.pageBtnText,
                                             page === 1 && styles.pageBtnTextDisabled,
                                             { fontSize: isSmallScreen ? 12 : 14 }
                                         ]}>Prev</Text>
@@ -189,18 +189,18 @@ export default function GroupChatsContent() {
                                     ]}>{page} / {totalPages}</Text>
                                     <TouchableOpacity
                                         style={[
-                                            styles.pageBtn, 
+                                            styles.pageBtn,
                                             page === totalPages && styles.pageBtnDisabled,
-                                            { 
+                                            {
                                                 paddingVertical: isSmallScreen ? 10 : 12,
-                                                paddingHorizontal: isSmallScreen ? 12 : 16 
+                                                paddingHorizontal: isSmallScreen ? 12 : 16
                                             }
                                         ]}
                                         onPress={() => setPage(Math.min(totalPages, page + 1))}
                                         disabled={page === totalPages}
                                     >
                                         <Text style={[
-                                            styles.pageBtnText, 
+                                            styles.pageBtnText,
                                             page === totalPages && styles.pageBtnTextDisabled,
                                             { fontSize: isSmallScreen ? 12 : 14 }
                                         ]}>Next</Text>
@@ -218,128 +218,128 @@ export default function GroupChatsContent() {
 
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: "#0d0d0d" },
-    header: { 
-        flexDirection: "column", 
-        paddingHorizontal: isSmallScreen ? 16 : 20, 
-        paddingTop: 16, 
-        paddingBottom: 10, 
-        gap: 10 
+    header: {
+        flexDirection: "column",
+        paddingHorizontal: isSmallScreen ? 16 : 20,
+        paddingTop: 16,
+        paddingBottom: 10,
+        gap: 10
     },
     headerTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-    title: { 
-        fontSize: isSmallScreen ? 20 : 24, 
-        fontWeight: "700", 
-        color: "#fff", 
-        letterSpacing: 0.3 
+    title: {
+        fontSize: isSmallScreen ? 20 : 24,
+        fontWeight: "700",
+        color: "#fff",
+        letterSpacing: 0.3
     },
     searchContainer: {
-        flexDirection: "row", 
-        alignItems: "center", 
+        flexDirection: "row",
+        alignItems: "center",
         backgroundColor: "#1a1a1a",
-        borderWidth: 1, 
-        borderColor: "#2a2a2a", 
+        borderWidth: 1,
+        borderColor: "#2a2a2a",
         borderRadius: 10,
-        paddingHorizontal: 10, 
-        paddingVertical: isSmallScreen ? 8 : 10, 
+        paddingHorizontal: 10,
+        paddingVertical: isSmallScreen ? 8 : 10,
         gap: 6,
     },
-    searchInput: { 
-        flex: 1, 
-        fontSize: isSmallScreen ? 12 : 13, 
+    searchInput: {
+        flex: 1,
+        fontSize: isSmallScreen ? 12 : 13,
         color: "#D1D5DB",
         minHeight: isSmallScreen ? 16 : 18,
     },
     tabRow: {
-        flexDirection: "row", 
-        marginHorizontal: isSmallScreen ? 12 : 16, 
-        borderRadius: 12, 
+        flexDirection: "row",
+        marginHorizontal: isSmallScreen ? 12 : 16,
+        borderRadius: 12,
         overflow: "hidden",
-        borderWidth: 1, 
-        borderColor: "#2a2a2a", 
-        backgroundColor: "#161616", 
+        borderWidth: 1,
+        borderColor: "#2a2a2a",
+        backgroundColor: "#161616",
         marginBottom: 12,
     },
-    tab: { 
-        flex: 1, 
-        paddingVertical: isSmallScreen ? 10 : 12, 
-        alignItems: "center" 
+    tab: {
+        flex: 1,
+        paddingVertical: isSmallScreen ? 10 : 12,
+        alignItems: "center"
     },
     tabActive: { backgroundColor: "#2d5a2d" },
-    tabText: { 
-        fontSize: isSmallScreen ? 12 : 13, 
-        fontWeight: "600", 
-        color: "#9CA3AF" 
+    tabText: {
+        fontSize: isSmallScreen ? 12 : 13,
+        fontWeight: "600",
+        color: "#9CA3AF"
     },
     tabTextActive: { color: "#fff" },
-    countRow: { 
-        paddingHorizontal: isSmallScreen ? 16 : 20, 
-        paddingBottom: 10, 
-        borderBottomWidth: 1, 
-        borderBottomColor: "#2a2a2a" 
+    countRow: {
+        paddingHorizontal: isSmallScreen ? 16 : 20,
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#2a2a2a"
     },
-    countText: { 
-        fontSize: isSmallScreen ? 12 : 13, 
-        fontWeight: "600", 
-        color: "#9CA3AF" 
+    countText: {
+        fontSize: isSmallScreen ? 12 : 13,
+        fontWeight: "600",
+        color: "#9CA3AF"
     },
-    centered: { 
-        flex: 1, 
-        alignItems: "center", 
-        justifyContent: "center", 
+    centered: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
         gap: 12,
         paddingHorizontal: 20,
     },
     flatList: { flex: 1 },
-    stateText: { 
-        fontSize: isSmallScreen ? 13 : 14, 
+    stateText: {
+        fontSize: isSmallScreen ? 13 : 14,
         color: "#6B7280",
         textAlign: "center",
     },
     emptyEmoji: { fontSize: isSmallScreen ? 36 : 40 },
-    retryBtn: { 
-        paddingHorizontal: isSmallScreen ? 20 : 24, 
-        paddingVertical: isSmallScreen ? 8 : 10, 
-        borderRadius: 10, 
-        backgroundColor: "#166534" 
+    retryBtn: {
+        paddingHorizontal: isSmallScreen ? 20 : 24,
+        paddingVertical: isSmallScreen ? 8 : 10,
+        borderRadius: 10,
+        backgroundColor: "#166534"
     },
-    retryText: { 
-        color: "#fff", 
+    retryText: {
+        color: "#fff",
         fontWeight: "600",
         fontSize: isSmallScreen ? 13 : 14,
     },
-    list: { 
+    list: {
         // paddingHorizontal and paddingTop are now dynamic
-        paddingBottom: 32 
+        paddingBottom: 32
     },
-    pagination: { 
-        flexDirection: "row", 
-        alignItems: "center", 
-        justifyContent: "space-between", 
-        paddingTop: 8, 
-        gap: 12 
+    pagination: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingTop: 8,
+        gap: 12
     },
     pageBtn: {
-        flex: 1, 
-        flexDirection: "row", 
-        alignItems: "center", 
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
         justifyContent: "center",
-        gap: 4, 
+        gap: 4,
         // paddingVertical and paddingHorizontal are now dynamic
-        borderRadius: 12, 
+        borderRadius: 12,
         backgroundColor: "#166534",
-        borderWidth: 1, 
+        borderWidth: 1,
         borderColor: "#2ecc71",
     },
     pageBtnDisabled: { backgroundColor: "#1a1a1a", borderColor: "#2a2a2a" },
-    pageBtnText: { 
+    pageBtnText: {
         // fontSize is now dynamic
-        color: "#fff", 
-        fontWeight: "600" 
+        color: "#fff",
+        fontWeight: "600"
     },
     pageBtnTextDisabled: { color: "#374151" },
-    pageIndicator: { 
+    pageIndicator: {
         // fontSize is now dynamic
-        color: "#9CA3AF", 
-        fontWeight: "600" 
+        color: "#9CA3AF",
+        fontWeight: "600"
     },
 });

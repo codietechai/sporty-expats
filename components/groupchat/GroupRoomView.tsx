@@ -15,7 +15,8 @@ import { ChatAvatar, AvatarStack } from "./ChatAvatar";
 import { ThreadPanel } from "./ThreadPanel";
 import { useRoom } from "@/app/chat/core/useRoom";
 import { useRoomCoverImage } from "@/app/hooks/useRoomCoverImage";
-import type { ChatRoom, AnyMessage, ChatRoomMember } from "@sparkstrand/chat-api-client/v2/types";
+import { useChatClient } from "@/app/chat/core/chatProvider";
+import type { ChatRoom, AnyMessage, ChatRoomMember, ChatAttachment } from "@sparkstrand/chat-api-client/v2/types";
 import type { EventRoomMetadata } from "@/app/chat/group/eventMetadata";
 import { formatEventDate, isEventPast } from "@/app/chat/group/eventMetadata";
 
@@ -27,8 +28,8 @@ interface Props {
 
 export function GroupRoomView({ room, currentUserId, onClose }: Props) {
     const meta = room.metadata as EventRoomMetadata | undefined;
-    const past = meta ? isEventPast(meta) : false;
     const coverImage = useRoomCoverImage(room.roomId, meta?.coverImage?.fileUrl);
+    const { uploadFiles } = useChatClient();
 
     const {
         messages,
@@ -74,17 +75,17 @@ export function GroupRoomView({ room, currentUserId, onClose }: Props) {
     }, [threadMessages]);
 
     const handleSend = useCallback(
-        (content: string, replyToId?: string | null) => {
+        (content: string, attachments?: ChatAttachment[], replyToId?: string | null) => {
             if (editingMsg) {
                 updateMessage(editingMsg.id, content);
                 setEditingMsg(null);
             } else {
-                sendMessage({ content, replyToId: replyToId ?? null, roomId: room.roomId });
+                sendMessage({ content: content || undefined, attachments, replyToId: replyToId ?? null });
                 setReplyTo(null);
             }
             setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
         },
-        [editingMsg, updateMessage, sendMessage, room.roomId]
+        [editingMsg, updateMessage, sendMessage]
     );
 
     const shouldShowHeader = (index: number, data: AnyMessage[]): boolean => {
@@ -142,9 +143,9 @@ export function GroupRoomView({ room, currentUserId, onClose }: Props) {
                 </View>
             </View>
 
-            {coverImage && (
+            {/* {coverImage && (
                 <Image source={{ uri: coverImage }} style={styles.coverImage} resizeMode="cover" />
-            )}
+            )} */}
 
             {isLoading ? (
                 <View style={styles.centered}>
@@ -210,6 +211,7 @@ export function GroupRoomView({ room, currentUserId, onClose }: Props) {
                 onCancelEdit={() => setEditingMsg(null)}
                 disabled={isLoading || !!error}
                 placeholder={editingMsg ? "Edit message…" : `Message ${meta?.title ?? ""}…`}
+                uploadFiles={uploadFiles}
             />
 
             {showMembers && (
@@ -278,7 +280,7 @@ export function GroupRoomView({ room, currentUserId, onClose }: Props) {
                     threadMessages={threadMessages}
                     members={members}
                     currentUserId={currentUserId}
-                    onSendReply={(content, replyToId) => sendMessage({ content, replyToId, roomId: room.roomId })}
+                    onSendReply={(content, attachments) => sendMessage({ content: content || undefined, attachments, replyToId: activeThread.id })}
                     onTypingStart={sendTypingStart}
                     onTypingStop={sendTypingStop}
                     onClose={() => setActiveThread(null)}
@@ -286,6 +288,7 @@ export function GroupRoomView({ room, currentUserId, onClose }: Props) {
                     onDeleteReaction={deleteReaction}
                     onEdit={(msg) => { setEditingMsg(msg); setActiveThread(null); }}
                     onDelete={deleteMessage}
+                    uploadFiles={uploadFiles}
                 />
             )}
         </View>

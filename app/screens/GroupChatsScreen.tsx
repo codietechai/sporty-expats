@@ -70,14 +70,14 @@ function LoadingShell({ error }: { error?: string | null }) {
 export default function GroupChatsScreen() {
     const { user: clerkUser } = useUser();
     const { userDb, loading: userDbLoading } = useUserDb();
-    const [token, setToken] = useState<string | null>(null);
+    const [tokenError, setTokenError] = useState<string | null>(null);
     const [tokenLoading, setTokenLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
+    // Pre-warm: verify token works before rendering ChatProvider
     useEffect(() => {
         getChatToken()
-            .then((t) => { setToken(t); setError(null); })
-            .catch((e) => setError(e.message || "Failed to load chat"))
+            .then(() => { setTokenError(null); })
+            .catch((e) => setTokenError(e.message || "Failed to load chat"))
             .finally(() => setTokenLoading(false));
     }, []);
 
@@ -85,14 +85,14 @@ export default function GroupChatsScreen() {
 
     if (isLoading) return <LoadingShell />;
 
-    if (error || !CHAT_API_KEY || !CHAT_SERVER_URL) {
-        return <LoadingShell error={error ?? "Chat configuration missing."} />;
+    if (tokenError || !CHAT_API_KEY || !CHAT_SERVER_URL) {
+        return <LoadingShell error={tokenError ?? "Chat configuration missing."} />;
     }
 
     const user = userDb?.data?.data ?? userDb?.data ?? userDb ?? {};
     const userId = user?.id;
 
-    if (!userId || !token) return <LoadingShell />;
+    if (!userId) return <LoadingShell />;
 
     const firstName = user?.personalDetails?.firstName ?? user?.firstName;
     const lastName = user?.personalDetails?.lastName ?? user?.lastName;
@@ -104,8 +104,8 @@ export default function GroupChatsScreen() {
         image: user?.imageUrl ?? clerkUser?.imageUrl ?? undefined,
         role:
             user?.role === "Host" ? ChatUserRole.moderator
-            : user?.role === "Admin" ? ChatUserRole.admin
-            : ChatUserRole.user,
+                : user?.role === "Admin" ? ChatUserRole.admin
+                    : ChatUserRole.user,
         banned: false,
         invisible: false,
         online: false,
@@ -114,12 +114,19 @@ export default function GroupChatsScreen() {
         updatedAt: new Date().toISOString(),
     };
 
+    // Use a token provider function (not a static string) so the client
+    // can refresh the token automatically — same pattern as the web frontend
+    const tokenProvider = async () => {
+        const freshToken = await getChatToken();
+        return freshToken;
+    };
+
     return (
         <ChatProvider
             apiKey={CHAT_API_KEY}
             baseURL={CHAT_SERVER_URL}
             user={chatUser}
-            tokenOrProvider={token}
+            tokenOrProvider={tokenProvider}
         >
             <GroupChatsContent />
         </ChatProvider>
