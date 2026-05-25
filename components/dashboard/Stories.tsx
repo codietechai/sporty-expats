@@ -3,13 +3,13 @@ import { createStory } from "@/client/endpoints/posts/addStories";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { backendClient } from "@/client/backendClient";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from 'expo-image';
 import * as ImagePicker from "expo-image-picker";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Image,
   Modal,
   StyleSheet,
   Text,
@@ -44,7 +44,8 @@ type StoryStatus = {
   rejected: Story[];
 };
 
-function groupByAuthor(stories: Story[]): GroupedStory[] {
+// Memoized grouping function to prevent recalculation on every render
+const groupByAuthor = (stories: Story[]): GroupedStory[] => {
   const map = new Map<string, GroupedStory>();
   stories.forEach((s) => {
     if (!map.has(s.authorId)) {
@@ -53,7 +54,7 @@ function groupByAuthor(stories: Story[]): GroupedStory[] {
     map.get(s.authorId)!.stories.push(s);
   });
   return Array.from(map.values());
-}
+};
 
 // ── Story Upload Modal ────────────────────────────────────────────────────────
 function StoryUploadModal({
@@ -73,14 +74,11 @@ function StoryUploadModal({
   const [error, setError] = useState<string | null>(null);
 
   const pickImage = async () => {
-    console.log('Attempting to pick image...');
     const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!granted) {
-      console.log('Media permission denied');
       Alert.alert("Permission required", "Please allow media access.");
       return;
     }
-    console.log('Media permission granted, launching image picker...');
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: false,
@@ -88,7 +86,6 @@ function StoryUploadModal({
     });
     if (!result.canceled && result.assets?.length) {
       const a = result.assets[0];
-      console.log('Image selected:', a.uri);
       setPickedUri(a.uri);
       setPickedFile({
         uri: a.uri,
@@ -96,8 +93,6 @@ function StoryUploadModal({
         type: a.mimeType ?? "image/jpeg",
       });
       setError(null);
-    } else {
-      console.log('Image selection cancelled or failed');
     }
   };
 
@@ -227,50 +222,38 @@ export default function Stories() {
     userDb?.profileImageUrl ||
     user?.imageUrl;
 
-  console.log('Stories component - userDb:', userDb);
-  console.log('Stories component - user:', user);
-  console.log('Stories component - userId:', userId);
-  console.log('Stories component - userAvatar:', userAvatar);
-  console.log('Stories component - loading:', loading);
-
-  const [grouped, setGrouped] = useState<GroupedStory[]>([]);
   const [storyStatus, setStoryStatus] = useState<StoryStatus>({ pending: [], rejected: [] });
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<GroupedStory | null>(null);
   const [storyIndex, setStoryIndex] = useState(0);
 
-  const handleOpenUploadModal = () => {
-    console.log('Opening upload modal, userId:', userId, 'loading:', loading);
-    
+  const handleOpenUploadModal = useCallback(() => {
     if (loading) {
-      console.log('Still loading user data, please wait...');
       Alert.alert("Loading", "Please wait while we load your profile...");
       return;
     }
     
     if (!userId) {
-      console.log('No userId available, user needs to log in');
       Alert.alert("Error", "Please log in to upload stories");
       return;
     }
     
-    console.log('Opening upload modal with userId:', userId);
     setShowUploadModal(true);
-  };
+  }, [loading, userId]);
 
-  const handleCloseUploadModal = () => {
-    console.log('Closing upload modal');
+  const handleCloseUploadModal = useCallback(() => {
     setShowUploadModal(false);
-  };
+  }, []);
 
   const { data, refetch } = useQuery([GET_ALL_STORIES], () => getAllStories(), {
     keepPreviousData: false,
     refetchOnWindowFocus: true,
     retry: 0,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
   // Fetch story statuses (pending / rejected)
-  const fetchStatus = () => {
+  const fetchStatus = useCallback(() => {
     if (!userId) return;
     backendClient
       .get(`/users/${userId}/stories/status`)
@@ -279,12 +262,13 @@ export default function Stories() {
         rejected: res.data?.rejected ?? [],
       }))
       .catch(() => { });
-  };
+  }, [userId]);
 
-  useEffect(() => { fetchStatus(); }, [userId]);
+  useEffect(() => { fetchStatus(); }, [fetchStatus]);
 
-  useEffect(() => {
-    if (!data) return;
+  // Memoize grouped stories to prevent recalculation
+  const grouped = useMemo(() => {
+    if (!data) return [];
     const raw: Story[] = (data?.data?.data ?? []).map((s: any) => ({
       authorId: s.authorId,
       id: s.id,
@@ -293,32 +277,30 @@ export default function Stories() {
       creationTime: s.creationTime,
       imageUrl: s.imageUrl,
     }));
-    setGrouped(groupByAuthor(raw));
+    return groupByAuthor(raw);
   }, [data]);
 
-  const handleUploadSuccess = () => {
-    console.log('Story upload successful, refreshing data');
+  const handleUploadSuccess = useCallback(() => {
     refetch();
     fetchStatus();
-    // Show success feedback
     Alert.alert("Success", "Your story has been uploaded successfully!");
-  };
+  }, [refetch, fetchStatus]);
 
   // ── Story viewer ─────────────────────────────────────────────────────────────
-  const openGroup = (group: GroupedStory) => {
+  const openGroup = useCallback((group: GroupedStory) => {
     setSelectedGroup(group);
     setStoryIndex(0);
-  };
+  }, []);
 
-  const nextStory = () => {
+  const nextStory = useCallback(() => {
     if (!selectedGroup) return;
-    if (storyIndex < selectedGroup.stories.length - 1) setStoryIndex((i) => i + 1);
+    if (storyIndex < selectedGroup.stories.length - 1) setStoryIndex((i: number) => i + 1);
     else setSelectedGroup(null);
-  };
+  }, [selectedGroup, storyIndex]);
 
-  const prevStory = () => {
-    if (storyIndex > 0) setStoryIndex((i) => i - 1);
-  };
+  const prevStory = useCallback(() => {
+    if (storyIndex > 0) setStoryIndex((i: number) => i - 1);
+  }, [storyIndex]);
 
   // ── List items ───────────────────────────────────────────────────────────────
   type ListItem =
@@ -327,14 +309,17 @@ export default function Stories() {
     | { type: "status" }
     | { type: "story"; group: GroupedStory };
 
-  const hasStatus = storyStatus.pending.length > 0 || storyStatus.rejected.length > 0;
+  const hasStatus = useMemo(() => 
+    storyStatus.pending.length > 0 || storyStatus.rejected.length > 0, 
+    [storyStatus.pending.length, storyStatus.rejected.length]
+  );
 
-  const listData: ListItem[] = [
+  const listData: ListItem[] = useMemo(() => [
     { type: "add_post" },
     { type: "upload" },
     ...(hasStatus ? [{ type: "status" as const }] : []),
-    ...grouped.map((g) => ({ type: "story" as const, group: g })),
-  ];
+    ...grouped.map((g: GroupedStory) => ({ type: "story" as const, group: g })),
+  ], [hasStatus, grouped]);
 
   return (
     <View style={styles.container}>

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import {
     View, Text, FlatList, TouchableOpacity, TextInput,
-    StyleSheet, ActivityIndicator,
+    StyleSheet, ActivityIndicator, Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,6 +13,12 @@ import { GroupRoomCard } from "@/components/groupchat/GroupRoomCard";
 import { GroupRoomView } from "@/components/groupchat/GroupRoomView";
 import type { ChatRoom } from "@sparkstrand/chat-api-client/v2/types";
 import type { EventRoomMetadata } from "@/app/chat/group/hooks/eventMetadata";
+
+const { width: screenWidth } = Dimensions.get('window');
+
+// Responsive breakpoints
+const isSmallScreen = screenWidth < 375;
+const isMediumScreen = screenWidth >= 375 && screenWidth < 414;
 
 type Tab = "past" | "upcoming";
 
@@ -127,9 +133,24 @@ export default function GroupChatsContent() {
                     <FlatList
                         data={rooms}
                         keyExtractor={(item) => item.roomId}
-                        contentContainerStyle={styles.list}
+                        contentContainerStyle={[
+                            styles.list,
+                            { 
+                                paddingHorizontal: isSmallScreen ? 12 : 16,
+                                paddingTop: isSmallScreen ? 8 : 12 
+                            }
+                        ]}
                         showsVerticalScrollIndicator={false}
                         style={styles.flatList}
+                        removeClippedSubviews={true}
+                        maxToRenderPerBatch={10}
+                        windowSize={10}
+                        initialNumToRender={8}
+                        getItemLayout={(data, index) => ({
+                            length: isSmallScreen ? 112 : isMediumScreen ? 122 : 132, // card height + margin
+                            offset: (isSmallScreen ? 112 : isMediumScreen ? 122 : 132) * index,
+                            index,
+                        })}
                         renderItem={({ item }) => (
                             <GroupRoomCard
                                 room={item}
@@ -139,22 +160,50 @@ export default function GroupChatsContent() {
                         )}
                         ListFooterComponent={
                             !searchQuery.trim() && totalPages > 1 ? (
-                                <View style={styles.pagination}>
+                                <View style={[
+                                    styles.pagination,
+                                    { marginTop: isSmallScreen ? 8 : 12 }
+                                ]}>
                                     <TouchableOpacity
-                                        style={[styles.pageBtn, page === 1 && styles.pageBtnDisabled]}
+                                        style={[
+                                            styles.pageBtn, 
+                                            page === 1 && styles.pageBtnDisabled,
+                                            { 
+                                                paddingVertical: isSmallScreen ? 10 : 12,
+                                                paddingHorizontal: isSmallScreen ? 12 : 16 
+                                            }
+                                        ]}
                                         onPress={() => setPage(Math.max(1, page - 1))}
                                         disabled={page === 1}
                                     >
                                         <Ionicons name="chevron-back" size={16} color={page === 1 ? "#374151" : "#fff"} />
-                                        <Text style={[styles.pageBtnText, page === 1 && styles.pageBtnTextDisabled]}>Prev</Text>
+                                        <Text style={[
+                                            styles.pageBtnText, 
+                                            page === 1 && styles.pageBtnTextDisabled,
+                                            { fontSize: isSmallScreen ? 12 : 14 }
+                                        ]}>Prev</Text>
                                     </TouchableOpacity>
-                                    <Text style={styles.pageIndicator}>{page} / {totalPages}</Text>
+                                    <Text style={[
+                                        styles.pageIndicator,
+                                        { fontSize: isSmallScreen ? 12 : 13 }
+                                    ]}>{page} / {totalPages}</Text>
                                     <TouchableOpacity
-                                        style={[styles.pageBtn, page === totalPages && styles.pageBtnDisabled]}
+                                        style={[
+                                            styles.pageBtn, 
+                                            page === totalPages && styles.pageBtnDisabled,
+                                            { 
+                                                paddingVertical: isSmallScreen ? 10 : 12,
+                                                paddingHorizontal: isSmallScreen ? 12 : 16 
+                                            }
+                                        ]}
                                         onPress={() => setPage(Math.min(totalPages, page + 1))}
                                         disabled={page === totalPages}
                                     >
-                                        <Text style={[styles.pageBtnText, page === totalPages && styles.pageBtnTextDisabled]}>Next</Text>
+                                        <Text style={[
+                                            styles.pageBtnText, 
+                                            page === totalPages && styles.pageBtnTextDisabled,
+                                            { fontSize: isSmallScreen ? 12 : 14 }
+                                        ]}>Next</Text>
                                         <Ionicons name="chevron-forward" size={16} color={page === totalPages ? "#374151" : "#fff"} />
                                     </TouchableOpacity>
                                 </View>
@@ -169,40 +218,128 @@ export default function GroupChatsContent() {
 
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: "#0d0d0d" },
-    header: { flexDirection: "column", paddingHorizontal: 20, paddingTop: 16, paddingBottom: 10, gap: 10 },
+    header: { 
+        flexDirection: "column", 
+        paddingHorizontal: isSmallScreen ? 16 : 20, 
+        paddingTop: 16, 
+        paddingBottom: 10, 
+        gap: 10 
+    },
     headerTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-    title: { fontSize: 24, fontWeight: "700", color: "#fff", letterSpacing: 0.3 },
+    title: { 
+        fontSize: isSmallScreen ? 20 : 24, 
+        fontWeight: "700", 
+        color: "#fff", 
+        letterSpacing: 0.3 
+    },
     searchContainer: {
-        flexDirection: "row", alignItems: "center", backgroundColor: "#1a1a1a",
-        borderWidth: 1, borderColor: "#2a2a2a", borderRadius: 10,
-        paddingHorizontal: 10, paddingVertical: 2, gap: 6,
+        flexDirection: "row", 
+        alignItems: "center", 
+        backgroundColor: "#1a1a1a",
+        borderWidth: 1, 
+        borderColor: "#2a2a2a", 
+        borderRadius: 10,
+        paddingHorizontal: 10, 
+        paddingVertical: isSmallScreen ? 8 : 10, 
+        gap: 6,
     },
-    searchInput: { flex: 1, fontSize: 13, color: "#D1D5DB" },
+    searchInput: { 
+        flex: 1, 
+        fontSize: isSmallScreen ? 12 : 13, 
+        color: "#D1D5DB",
+        minHeight: isSmallScreen ? 16 : 18,
+    },
     tabRow: {
-        flexDirection: "row", marginHorizontal: 16, borderRadius: 12, overflow: "hidden",
-        borderWidth: 1, borderColor: "#2a2a2a", backgroundColor: "#161616", marginBottom: 12,
+        flexDirection: "row", 
+        marginHorizontal: isSmallScreen ? 12 : 16, 
+        borderRadius: 12, 
+        overflow: "hidden",
+        borderWidth: 1, 
+        borderColor: "#2a2a2a", 
+        backgroundColor: "#161616", 
+        marginBottom: 12,
     },
-    tab: { flex: 1, paddingVertical: 12, alignItems: "center" },
+    tab: { 
+        flex: 1, 
+        paddingVertical: isSmallScreen ? 10 : 12, 
+        alignItems: "center" 
+    },
     tabActive: { backgroundColor: "#2d5a2d" },
-    tabText: { fontSize: 13, fontWeight: "600", color: "#9CA3AF" },
+    tabText: { 
+        fontSize: isSmallScreen ? 12 : 13, 
+        fontWeight: "600", 
+        color: "#9CA3AF" 
+    },
     tabTextActive: { color: "#fff" },
-    countRow: { paddingHorizontal: 20, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: "#2a2a2a" },
-    countText: { fontSize: 13, fontWeight: "600", color: "#9CA3AF" },
-    centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
+    countRow: { 
+        paddingHorizontal: isSmallScreen ? 16 : 20, 
+        paddingBottom: 10, 
+        borderBottomWidth: 1, 
+        borderBottomColor: "#2a2a2a" 
+    },
+    countText: { 
+        fontSize: isSmallScreen ? 12 : 13, 
+        fontWeight: "600", 
+        color: "#9CA3AF" 
+    },
+    centered: { 
+        flex: 1, 
+        alignItems: "center", 
+        justifyContent: "center", 
+        gap: 12,
+        paddingHorizontal: 20,
+    },
     flatList: { flex: 1 },
-    stateText: { fontSize: 14, color: "#6B7280" },
-    emptyEmoji: { fontSize: 40 },
-    retryBtn: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10, backgroundColor: "#166534" },
-    retryText: { color: "#fff", fontWeight: "600" },
-    list: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 32 },
-    pagination: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 8, gap: 12 },
+    stateText: { 
+        fontSize: isSmallScreen ? 13 : 14, 
+        color: "#6B7280",
+        textAlign: "center",
+    },
+    emptyEmoji: { fontSize: isSmallScreen ? 36 : 40 },
+    retryBtn: { 
+        paddingHorizontal: isSmallScreen ? 20 : 24, 
+        paddingVertical: isSmallScreen ? 8 : 10, 
+        borderRadius: 10, 
+        backgroundColor: "#166534" 
+    },
+    retryText: { 
+        color: "#fff", 
+        fontWeight: "600",
+        fontSize: isSmallScreen ? 13 : 14,
+    },
+    list: { 
+        // paddingHorizontal and paddingTop are now dynamic
+        paddingBottom: 32 
+    },
+    pagination: { 
+        flexDirection: "row", 
+        alignItems: "center", 
+        justifyContent: "space-between", 
+        paddingTop: 8, 
+        gap: 12 
+    },
     pageBtn: {
-        flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
-        gap: 4, paddingVertical: 12, borderRadius: 12, backgroundColor: "#166534",
-        borderWidth: 1, borderColor: "#2ecc71",
+        flex: 1, 
+        flexDirection: "row", 
+        alignItems: "center", 
+        justifyContent: "center",
+        gap: 4, 
+        // paddingVertical and paddingHorizontal are now dynamic
+        borderRadius: 12, 
+        backgroundColor: "#166534",
+        borderWidth: 1, 
+        borderColor: "#2ecc71",
     },
     pageBtnDisabled: { backgroundColor: "#1a1a1a", borderColor: "#2a2a2a" },
-    pageBtnText: { fontSize: 14, color: "#fff", fontWeight: "600" },
+    pageBtnText: { 
+        // fontSize is now dynamic
+        color: "#fff", 
+        fontWeight: "600" 
+    },
     pageBtnTextDisabled: { color: "#374151" },
-    pageIndicator: { fontSize: 13, color: "#9CA3AF", fontWeight: "600" },
+    pageIndicator: { 
+        // fontSize is now dynamic
+        color: "#9CA3AF", 
+        fontWeight: "600" 
+    },
 });

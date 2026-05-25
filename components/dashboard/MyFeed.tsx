@@ -5,9 +5,10 @@ import { useUserDb } from "@/app/hooks/useUserDb";
 import PostStatusBar from "@/components/dashboard/PostStatusBar";
 import { timeAgo } from "@/helpers/date";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useRef, useState } from "react";
+import { Image } from 'expo-image';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
-  ActivityIndicator, Alert, FlatList, Image,
+  ActivityIndicator, Alert, FlatList,
   ScrollView, Share, StyleSheet, Text,
   TextInput, TouchableOpacity, TouchableWithoutFeedback, View,
 } from "react-native";
@@ -140,9 +141,9 @@ const ci = StyleSheet.create({
 
 // ─── Post Card ────────────────────────────────────────────────────────────────
 
-function PostCard({ post, userId, onUpdate }: {
+const PostCard = React.memo(({ post, userId, onUpdate }: {
   post: Post; userId?: string; onUpdate: (id: string, patch: Partial<Post>) => void;
-}) {
+}) => {
   const [showEmoji, setShowEmoji] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
@@ -400,7 +401,18 @@ function PostCard({ post, userId, onUpdate }: {
       )}
     </View>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison function for React.memo
+  return (
+    prevProps.post._id === nextProps.post._id &&
+    prevProps.post.total_reactions === nextProps.post.total_reactions &&
+    prevProps.post.total_comments === nextProps.post.total_comments &&
+    prevProps.post.isLikedByUser === nextProps.post.isLikedByUser &&
+    prevProps.post.isBookmarkedByUser === nextProps.post.isBookmarkedByUser &&
+    prevProps.post.userReaction === nextProps.post.userReaction &&
+    prevProps.userId === nextProps.userId
+  );
+});
 
 const pc = StyleSheet.create({
   card: {
@@ -448,17 +460,64 @@ const pc = StyleSheet.create({
 
 const MyFeed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const queryClient = useQueryClient();
   const { userDb, loading: userLoading } = useUserDb();
   const userId: string | undefined = userDb?.data?.data?.id ?? userDb?.data?.id ?? userDb?.id;
   const initializedRef = useRef(false);
 
-  const { data, isLoading } = useQuery([GET_ALL_POSTS, userId], () => getAllPosts(userId), {
-    enabled: !!userId,
-    keepPreviousData: false,
-    refetchOnWindowFocus: false,
-    retry: 1,
-  });
+  const { data, isLoading } = useQuery(
+    [GET_ALL_POSTS, userId, page], 
+    () => getAllPosts(userId, { page, limit: 10 }), 
+    {
+      enabled: !!userId,
+      keepPreviousData: true,
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 2 * 60 * 1000, // 2 minutes
+    }
+  );
+
+  const loadMorePosts = useCallback(async () => {
+    if (loadingMore || !hasMore || isLoading) return;
+    
+    setLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const response = await getAllPosts(userId, { page: nextPage, limit: 10 });
+      const newPosts = response?.data?.data ?? [];
+      
+      if (newPosts.length === 0) {
+        setHasMore(false);
+      } else {
+        const formattedPosts: Post[] = newPosts.map((post: any) => ({
+          _id: post.id,
+          desc: post.description,
+          title: post.title,
+          author: post.author,
+          files: post.files ?? [],
+          vote: post.count?.likes ?? 0,
+          total_comments: post.count?.comments ?? 0,
+          total_reactions: post.count?.reactions ?? 0,
+          createdAt: post.createdAt,
+          isLikedByUser: post.isLikedByUser ?? false,
+          isBookmarkedByUser: post.isBookmarkedByUser ?? false,
+          userReaction: post.reactions?.userReaction ?? null,
+          emojiCounts: post.reactions?.emojiCounts ?? {},
+          comments: [],
+        }));
+        
+        setPosts(prev => [...prev, ...formattedPosts]);
+        setPage(nextPage);
+      }
+    } catch (error) {
+      console.error('Error loading more posts:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, isLoading, page, userId]);
 
   useEffect(() => {
     if (!data) return;
@@ -480,10 +539,11 @@ const MyFeed = () => {
       comments: [],
     }));
 
-    if (!initializedRef.current) {
+    if (!initializedRef.current || page === 1) {
       // First load — use server data as-is (includes correct isLikedByUser etc.)
       initializedRef.current = true;
       setPosts(incoming);
+      setHasMore(incoming.length === 10); // Assume more if we got full page
     } else {
       // Subsequent refetch — preserve the user's local interaction state
       // so optimistic like/reaction/bookmark updates aren't wiped.
@@ -504,7 +564,7 @@ const MyFeed = () => {
         })
       );
     }
-  }, [data]);
+  }, [data, page]);
 
   const handleUpdate = (id: string, patch: Partial<Post>) => {
     setPosts((prev) => prev.map((p) => p._id === id ? { ...p, ...patch } : p));
@@ -542,7 +602,22 @@ const MyFeed = () => {
     });
   };
 
-  if (userLoading || isLoading) {
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    return (
+      <View style={styles.loadingFooter}>
+        <ActivityIndicator size="small" color="#2ecc71" />
+      </View>
+    );
+  };
+
+  const keyExtractor = useCallback((item: Post) => item._id, []);
+  
+  const renderItem = useCallback(({ item }: { item: Post }) => (
+    <PostCard post={item} userId={userId} onUpdate={handleUpdate} />
+  ), [userId, handleUpdate]);
+
+  if (userLoading || (isLoading && page === 1)) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#2ecc71" />
@@ -550,7 +625,7 @@ const MyFeed = () => {
     );
   }
 
-  if (posts.length === 0) {
+  if (posts.length === 0 && !isLoading) {
     return (
       <View style={styles.centered}>
         <Ionicons name="newspaper-outline" size={48} color="#374151" />
@@ -562,14 +637,20 @@ const MyFeed = () => {
   return (
     <FlatList
       data={posts}
-      keyExtractor={(item) => item._id}
+      keyExtractor={keyExtractor}
+      renderItem={renderItem}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.list}
       keyboardShouldPersistTaps="handled"
       ListHeaderComponent={<PostStatusBar />}
-      renderItem={({ item }) => (
-        <PostCard post={item} userId={userId} onUpdate={handleUpdate} />
-      )}
+      ListFooterComponent={renderFooter}
+      onEndReached={loadMorePosts}
+      onEndReachedThreshold={0.3}
+      removeClippedSubviews={true}
+      maxToRenderPerBatch={5}
+      windowSize={10}
+      initialNumToRender={5}
+      getItemLayout={undefined} // Let FlatList calculate automatically
     />
   );
 };
@@ -578,6 +659,7 @@ const styles = StyleSheet.create({
   list: { paddingBottom: 20, gap: 12 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingTop: 60 },
   emptyText: { color: "#6B7280", fontSize: 14 },
+  loadingFooter: { paddingVertical: 20, alignItems: "center" },
 });
 
 export default MyFeed;

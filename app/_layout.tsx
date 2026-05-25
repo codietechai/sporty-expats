@@ -10,6 +10,17 @@ import { QueryClient, QueryClientProvider } from "react-query";
 import { DrawerProvider } from "@/contexts/DrawerContext";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+// Create QueryClient outside component to prevent recreation
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -18,7 +29,6 @@ export default function RootLayout() {
   });
 
   const Publishable_key=process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
-  const queryClient = new QueryClient();
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

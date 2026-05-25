@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
 
 interface DrawerContextType {
   isDrawerOpen: boolean;
@@ -24,25 +24,27 @@ interface DrawerProviderProps {
 export const DrawerProvider: React.FC<DrawerProviderProps> = ({ children }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const openDrawer = () => {
-    console.log('DrawerContext: Opening drawer');
+  const openDrawer = useCallback(() => {
     setIsDrawerOpen(true);
-  };
+  }, []);
   
-  const closeDrawer = () => {
-    console.log('DrawerContext: Closing drawer');
+  const closeDrawer = useCallback(() => {
     setIsDrawerOpen(false);
-  };
+  }, []);
   
-  const toggleDrawer = () => {
-    console.log('DrawerContext: Toggling drawer, current state:', isDrawerOpen);
-    setIsDrawerOpen(!isDrawerOpen);
-  };
+  const toggleDrawer = useCallback(() => {
+    setIsDrawerOpen(prev => !prev);
+  }, []);
 
-  console.log('DrawerProvider: Current drawer state:', isDrawerOpen);
+  const contextValue = useMemo(() => ({
+    isDrawerOpen,
+    openDrawer,
+    closeDrawer,
+    toggleDrawer
+  }), [isDrawerOpen, openDrawer, closeDrawer, toggleDrawer]);
 
   return (
-    <DrawerContext.Provider value={{ isDrawerOpen, openDrawer, closeDrawer, toggleDrawer }}>
+    <DrawerContext.Provider value={contextValue}>
       {children}
     </DrawerContext.Provider>
   );
