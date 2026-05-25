@@ -7,11 +7,13 @@ import {
   View,
   StyleSheet,
   ActivityIndicator,
+  ToastAndroid,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import { getUserDetailsByClerkId } from "@/client/endpoints/users/getUserDetailsByClerkId";
+import { createUser } from "@/client/endpoints/users/createUser";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -45,22 +47,57 @@ const SocialLoginButton = ({
   const onSocialLoginPress = useCallback(async () => {
     try {
       setIsLoading(true);
+      console.log("Starting OAuth flow...");
+      
       const { createdSessionId, setActive } = await startOAuthFlow({});
+      
       if (createdSessionId) {
+        console.log("OAuth successful, setting session...");
         await setActive!({ session: createdSessionId });
         await user?.reload();
 
-        const userData = await getUserDetailsByClerkId(user?.id as string);
-        await AsyncStorage.setItem("userDetails", JSON.stringify(userData?.data));
+        // Try to get existing user data
+        try {
+          const userData = await getUserDetailsByClerkId(user?.id as string);
+          await AsyncStorage.setItem("userDetails", JSON.stringify(userData?.data));
+          console.log("Existing user found:", userData?.data);
+          ToastAndroid.show("Welcome back!", 2);
+        } catch (error: any) {
+          // If user doesn't exist (404), create a new user
+          if (error?.response?.status === 404) {
+            console.log("User not found in backend, creating new user...");
+            try {
+              const newUserData = {
+                clerkId: user?.id as string,
+                email: user?.primaryEmailAddress?.emailAddress as string,
+                username: user?.username || user?.firstName || "user",
+                firstName: user?.firstName || "",
+                lastName: user?.lastName || "",
+                imageUrl: user?.imageUrl || "",
+              };
+              
+              const createdUser = await createUser(newUserData);
+              await AsyncStorage.setItem("userDetails", JSON.stringify(createdUser?.data));
+              console.log("New user created:", createdUser?.data);
+              ToastAndroid.show("Welcome to SportyExpats!", 2);
+            } catch (createError) {
+              console.error("Failed to create user:", createError);
+              ToastAndroid.show("Account setup failed. Please try again.", 2);
+              // Don't return here - still allow login to proceed
+            }
+          } else {
+            console.error("Unexpected error fetching user:", error);
+            ToastAndroid.show("Login successful, but user data unavailable.", 2);
+          }
+        }
 
-        // Close the modal first, then navigate via the parent callback.
-        // This avoids calling navigation.navigate() from inside a Modal,
-        // which is outside the React Navigation tree.
+        // Close the modal and navigate
         onClose();
         onSuccess?.();
       }
     } catch (err) {
       console.error("OAuth error:", JSON.stringify(err, null, 2));
+      ToastAndroid.show("Login failed. Please try again.", 2);
     } finally {
       setIsLoading(false);
     }
