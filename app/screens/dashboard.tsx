@@ -14,7 +14,7 @@ import CustomDrawer from "@/components/CustomDrawer";
 import { useDrawer } from "@/contexts/DrawerContext";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "@clerk/clerk-expo";
-import SwipeGestureWrapper from "@/components/SwipeGestureWrapper";
+import TouchSwipeWrapper from "@/components/TouchSwipeWrapper";
 
 const Dashboard = () => {
   const [currentTab, setCurrentTab] = useState<string>("my_feed");
@@ -47,7 +47,7 @@ const Dashboard = () => {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <SwipeGestureWrapper>
+      <TouchSwipeWrapper>
         <SafeAreaView style={{ flex: 1, backgroundColor: "#0d0d0d" }} edges={["top"]}>
           <View style={{ flex: 1, backgroundColor: "#0d0d0d" }}>
             <Header myFeed={true} />
@@ -55,7 +55,7 @@ const Dashboard = () => {
             <TabsComponent tabs={tabs} setCurrentTab={setCurrentTab} />
           </View>
         </SafeAreaView>
-      </SwipeGestureWrapper>
+      </TouchSwipeWrapper>
       
       {/* Custom Drawer */}
       <CustomDrawer 

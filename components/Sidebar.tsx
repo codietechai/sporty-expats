@@ -13,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getProfilePhoto } from "@/client/endpoints/users/addProfilePhoto";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { useDrawer } from "@/contexts/DrawerContext";
+import { useRouter } from "expo-router";
 
 export type RootDrawerParamList = {
   Home: undefined;
@@ -32,7 +33,8 @@ export type RootDrawerParamList = {
   "Group Chat": undefined;
   "Group Chats": undefined;
   "Edit User Detail": undefined;
-  "Conversations": undefined;
+  Conversations: undefined;
+  "Add Feed": undefined;
 };
 
 type NavItem = {
@@ -54,20 +56,21 @@ export default function Sidebar(props: DrawerContentComponentProps) {
   const { userDb } = useUserDb();
   const { signOut } = useAuth();
   const { closeDrawer } = useDrawer();
+  const router = useRouter(); // Use Expo Router instead
 
   const activeRoute = props.state.routeNames[props.state.index];
 
   // Define navigation items with translation keys based on login status
   const MAIN_NAV: NavItem[] = loggedIn ? [
     { label: t("dashboard"), icon: "grid-outline", screen: "Dashboard" },
-    { label: t("events"), icon: "star-outline", screen: "Events List" },
+    { label: t("events"), icon: "star-outline", screen: "Events" },
     { label: t("market"), icon: "storefront-outline", screen: "Market" },
     { label: t("group_chat"), icon: "chatbubbles-outline", screen: "Group Chats" },
     { label: t("media"), icon: "videocam-outline", screen: "Media Uploads" },
     { label: t("create_event"), icon: "add-circle-outline", screen: "Create Event" },
   ] : [
     { label: t("home"), icon: "home-outline", screen: "Home" },
-    { label: t("events"), icon: "star-outline", screen: "Events List" },
+    { label: t("events"), icon: "star-outline", screen: "Events" },
     { label: t("market"), icon: "storefront-outline", screen: "Market" },
   ];
 
@@ -80,14 +83,47 @@ export default function Sidebar(props: DrawerContentComponentProps) {
     { label: t("about_us"), icon: "information-circle-outline", screen: "About Us" },
   ];
 
+  // Map drawer route names to Expo Router paths
+  const getRouterPath = (screenName: keyof RootDrawerParamList): string => {
+    const routeMap: Record<keyof RootDrawerParamList, string> = {
+      "Home": "/home",
+      "Events": "/screens/event",
+      "Events List": "/screens/EventsListScreen",
+      "Dashboard": "/screens/dashboard",
+      "Market": "/screens/market",
+      "Contact Us": "/screens/contactus",
+      "About Us": "/screens/aboutus",
+      "Create Event": "/screens/createEvents",
+      "Price": "/screens/price",
+      "profile": "/screens/profile",
+      "Personal Info": "/screens/personalInfo",
+      "Media Uploads": "/screens/mediaUpload",
+      "Password And Security": "/screens/passwordSecurity",
+      "Update Profile Photo": "/screens/updateProfilePhoto",
+      "Group Chat": "/screens/ChatScreen",
+      "Group Chats": "/screens/GroupChatsScreen",
+      "Edit User Detail": "/screens/EditUserScreen",
+      "Conversations": "/screens/Conversations",
+      "Add Feed": "/screens/AddFeed",
+    };
+    
+    return routeMap[screenName] || "/home";
+  };
+
   const navigateTo = (screenName: keyof RootDrawerParamList) => {
     try {
+      console.log('Sidebar: Attempting to navigate to:', screenName);
+      
       // Close the custom drawer first
       closeDrawer();
       
-      // Then navigate
+      // Get the correct router path
+      const routerPath = getRouterPath(screenName);
+      console.log('Sidebar: Using router path:', routerPath);
+      
+      // Then navigate using Expo Router
       setTimeout(() => {
-        props.navigation.navigate(screenName);
+        router.push(routerPath as any);
       }, 100);
     } catch (error) {
       console.error('Error navigating:', error);
@@ -140,7 +176,7 @@ export default function Sidebar(props: DrawerContentComponentProps) {
       // Navigate to home page
       setTimeout(() => {
         try {
-          props.navigation.navigate("Home");
+          router.push("/home");
         } catch (error) {
           console.error('Error navigating to Home after logout:', error);
         }
@@ -270,7 +306,7 @@ export default function Sidebar(props: DrawerContentComponentProps) {
           closeDrawer();
           setTimeout(() => {
             try {
-              props.navigation.navigate("Dashboard");
+              router.push("/screens/dashboard");
             } catch (error) {
               console.error('Error navigating to Dashboard:', error);
             }

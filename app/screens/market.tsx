@@ -74,7 +74,7 @@ export default function Market() {
           <Footer />
         </ScrollView>
         </View>
-      </SwipeGestureWrapper>
+      </TouchSwipeWrapper>
       
       {/* Custom Drawer */}
       <CustomDrawer 
