@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import {
     View, Text, FlatList, TouchableOpacity, TextInput,
-    StyleSheet, ActivityIndicator, Dimensions,
+    StyleSheet, Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,6 +11,7 @@ import { useGroupRooms } from "@/app/chat/group/hooks/useGroupRoom";
 import { useChatClient } from "@/app/chat/core/chatProvider";
 import { GroupRoomCard } from "@/components/groupchat/GroupRoomCard";
 import { GroupRoomView } from "@/components/groupchat/GroupRoomView";
+import GroupChatSkeleton from "@/components/groupchat/GroupChatSkeleton";
 import type { ChatRoom } from "@sparkstrand/chat-api-client/v2/types";
 import type { EventRoomMetadata } from "@/app/chat/group/hooks/eventMetadata";
 
@@ -110,9 +111,8 @@ export default function GroupChatsContent() {
                 </View>
 
                 {isLoading ? (
-                    <View style={styles.centered}>
-                        <ActivityIndicator size="large" color="#4ade80" />
-                        <Text style={styles.stateText}>Loading rooms…</Text>
+                    <View style={styles.flatList}>
+                        <GroupChatSkeleton count={6} />
                     </View>
                 ) : error ? (
                     <View style={styles.centered}>

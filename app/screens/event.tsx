@@ -12,6 +12,9 @@ import { useNavigation } from "@react-navigation/native";
 import CustomDrawer from "@/components/CustomDrawer";
 import { useDrawer } from "@/contexts/DrawerContext";
 import TouchSwipeWrapper from "@/components/TouchSwipeWrapper";
+import { Stack } from "expo-router";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 const { width } = Dimensions.get("window");
 
@@ -49,8 +52,11 @@ export default function Event() {
 
   return (
     <>
+      <Stack.Screen options={{ headerShown: false }} />
       <TouchSwipeWrapper>
-        <ScrollView style={styles.container}>
+        <View style={{ flex: 1, backgroundColor: "#0d0d0d" }}>
+          <Header />
+          <ScrollView style={styles.container}>
       {/* Section 1: Events for Professionals */}
       <Text style={styles.heading}>
         <Text style={styles.highlight}>EVENTS </Text>
@@ -150,7 +156,9 @@ export default function Event() {
       {/* Section 4: Network and Community */}
       <Text style={styles.sectionTitle}>NETWORK AND TRUE COMMUNITY</Text>
       <Image source={Runners} style={styles.fullWidthImage} />
+      <Footer />
     </ScrollView>
+        </View>
       </TouchSwipeWrapper>
       
       {/* Custom Drawer */}
