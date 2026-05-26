@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   },
   tabText: { fontSize: 13, color: "#9CA3AF", fontWeight: "500" },
   tabTextActive: { color: "#fff", fontWeight: "700" },
-  content: { flex: 1, paddingHorizontal: 12, paddingTop: 8 },
+  content: { flex: 1, paddingTop: 8 },
 });
 
 export default TabsComponent;

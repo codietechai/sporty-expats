@@ -54,6 +54,7 @@ export default function GroupChatsContent() {
                     <GroupRoomView
                         room={selectedRoom}
                         currentUserId={user.userId}
+                        currentUserImage={user.image ?? null}
                         onClose={() => setSelectedRoom(null)}
                     />
                 </SafeAreaView>

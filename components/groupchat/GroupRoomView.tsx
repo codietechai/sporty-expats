@@ -23,10 +23,11 @@ import { formatEventDate, isEventPast } from "@/app/chat/group/eventMetadata";
 interface Props {
     room: ChatRoom;
     currentUserId: string;
+    currentUserImage?: string | null;
     onClose: () => void;
 }
 
-export function GroupRoomView({ room, currentUserId, onClose }: Props) {
+export function GroupRoomView({ room, currentUserId, currentUserImage, onClose }: Props) {
     const meta = room.metadata as EventRoomMetadata | undefined;
     const coverImage = useRoomCoverImage(room.roomId, meta?.coverImage?.fileUrl);
     const { uploadFiles } = useChatClient();
@@ -63,8 +64,12 @@ export function GroupRoomView({ room, currentUserId, onClose }: Props) {
     const memberMap = useMemo(() => {
         const m: Record<string, ChatRoomMember> = {};
         for (const mem of members) m[mem.userId] = mem;
+        // Enrich current user's entry with their image if the server didn't return it
+        if (currentUserId && m[currentUserId] && !m[currentUserId].image && currentUserImage) {
+            m[currentUserId] = { ...m[currentUserId], image: currentUserImage };
+        }
         return m;
-    }, [members]);
+    }, [members, currentUserId, currentUserImage]);
 
     const replyCountMap = useMemo(() => {
         const c: Record<string, number> = {};

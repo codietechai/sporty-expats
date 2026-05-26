@@ -1,267 +1,257 @@
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  FlatList,
-  Modal,
+  View, Text, StyleSheet, TextInput, TouchableOpacity,
+  Alert, ActivityIndicator, Modal, ScrollView, StatusBar,
 } from "react-native";
-import { useUser } from "@clerk/clerk-expo";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { useUser } from "@clerk/clerk-expo";
+
+const VERIFICATION_OPTIONS = ["Phone SMS", "Email", "Authenticator App"];
+
+function PasswordField({
+  label, value, onChange, placeholder, show, onToggle,
+}: {
+  label: string; value: string; onChange: (v: string) => void;
+  placeholder: string; show: boolean; onToggle: () => void;
+}) {
+  return (
+    <View>
+      <Text style={s.label}>{label}</Text>
+      <View style={s.inputRow}>
+        <TextInput
+          style={s.input}
+          value={value}
+          onChangeText={onChange}
+          placeholder={placeholder}
+          placeholderTextColor="#4B5563"
+          secureTextEntry={!show}
+          autoCapitalize="none"
+        />
+        <TouchableOpacity onPress={onToggle} style={s.eyeBtn} hitSlop={8}>
+          <Ionicons name={show ? "eye" : "eye-off"} size={20} color="#6B7280" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
 
 export default function PasswordSecurityScreen() {
+  const navigation = useNavigation();
   const { user } = useUser();
 
   const [verificationMethod, setVerificationMethod] = useState("Phone SMS");
   const [dropdownVisible, setDropdownVisible] = useState(false);
-
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // State for password visibility
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleUpdate = async () => {
-    if (!user) {
-      Alert.alert("Error", "User not authenticated.");
-      return;
+    if (!user) { Alert.alert("Error", "User not authenticated."); return; }
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      Alert.alert("Error", "Please fill in all fields."); return;
     }
-
-    if (!newPassword || !confirmPassword) {
-      Alert.alert("Error", "Please fill in all fields.");
-      return;
-    }
-
     if (newPassword !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match.");
-      return;
+      Alert.alert("Error", "Passwords do not match."); return;
     }
-
     try {
       setLoading(true);
       await user.updatePassword({ newPassword, currentPassword });
       Alert.alert("Success", "Password updated successfully!");
-      setNewPassword("");
-      setConfirmPassword("");
-      setCurrentPassword("");
-      setVerificationMethod("Phone SMS"); // Reset to default verification method
+      setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
     } catch (error) {
-      console.log("Password update error:", error);
-      Alert.alert(
-        "Update Failed",
-        (error as any)?.[0]?.Error ||
-          (error as any)?.message ||
-          "Unknown error."
+      Alert.alert("Update Failed",
+        (error as any)?.[0]?.Error ?? (error as any)?.message ?? "Unknown error."
       );
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  const dropdownOptions = ["Phone SMS", "Email", "Authenticator App"];
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Password And Security</Text>
+    <>
+      <StatusBar barStyle="light-content" backgroundColor="#0d0d0d" />
+      <Stack.Screen options={{ headerShown: false }} />
+      <SafeAreaView style={s.safe} edges={["top"]}>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Preferred Verification</Text>
-        <TouchableOpacity
-          onPress={() => setDropdownVisible(true)}
-          style={styles.dropdown}
-        >
-          <Text style={styles.dropdownText}>{verificationMethod}</Text>
-        </TouchableOpacity>
+        {/* Header */}
+        <View style={s.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn} hitSlop={8}>
+            <Ionicons name="arrow-back" size={22} color="#fff" />
+          </TouchableOpacity>
+          <View style={s.headerCenter}>
+            <Text style={s.headerTitle}>Password & Security</Text>
+            <Text style={s.headerSub}>Manage your account security</Text>
+          </View>
+          <View style={{ width: 38 }} />
+        </View>
 
-        <Modal
-          transparent={true}
-          visible={dropdownVisible}
-          animationType="fade"
+        <ScrollView
+          style={s.scroll}
+          contentContainerStyle={s.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
+          {/* Verification */}
+          <Text style={s.sectionHeader}>Two-Factor Verification</Text>
+          <View style={s.card}>
+            <Text style={s.label}>Preferred Method</Text>
+            <TouchableOpacity style={s.dropdownBtn} onPress={() => setDropdownVisible(true)}>
+              <Text style={s.dropdownBtnText}>{verificationMethod}</Text>
+              <Ionicons name="chevron-down" size={16} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Password */}
+          <Text style={s.sectionHeader}>Change Password</Text>
+          <View style={s.card}>
+            <PasswordField
+              label="Current Password"
+              value={currentPassword}
+              onChange={setCurrentPassword}
+              placeholder="Enter current password"
+              show={showCurrent}
+              onToggle={() => setShowCurrent(p => !p)}
+            />
+            <View style={s.divider} />
+            <PasswordField
+              label="New Password"
+              value={newPassword}
+              onChange={setNewPassword}
+              placeholder="Enter new password"
+              show={showNew}
+              onToggle={() => setShowNew(p => !p)}
+            />
+            <View style={s.divider} />
+            <PasswordField
+              label="Confirm New Password"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              placeholder="Confirm new password"
+              show={showConfirm}
+              onToggle={() => setShowConfirm(p => !p)}
+            />
+          </View>
+
+          {/* Save */}
           <TouchableOpacity
-            style={styles.modalOverlay}
+            style={[s.saveBtn, loading && s.saveBtnDisabled]}
+            onPress={handleUpdate}
+            disabled={loading}
+          >
+            {loading
+              ? <ActivityIndicator color="#fff" />
+              : <>
+                  <Ionicons name="shield-checkmark-outline" size={18} color="#fff" />
+                  <Text style={s.saveBtnText}>Update Password</Text>
+                </>
+            }
+          </TouchableOpacity>
+        </ScrollView>
+
+        {/* Dropdown modal */}
+        <Modal transparent visible={dropdownVisible} animationType="fade">
+          <TouchableOpacity
+            style={s.modalOverlay}
             onPress={() => setDropdownVisible(false)}
             activeOpacity={1}
           >
-            <View style={styles.dropdownMenu}>
-              {dropdownOptions.map((option, index) => (
+            <View style={s.dropdownMenu}>
+              <Text style={s.dropdownMenuTitle}>Select Verification Method</Text>
+              {VERIFICATION_OPTIONS.map((opt) => (
                 <TouchableOpacity
-                  key={index}
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setVerificationMethod(option);
-                    setDropdownVisible(false);
-                  }}
+                  key={opt}
+                  style={[s.dropdownItem, verificationMethod === opt && s.dropdownItemActive]}
+                  onPress={() => { setVerificationMethod(opt); setDropdownVisible(false); }}
                 >
-                  <Text style={styles.dropdownItemText}>{option}</Text>
+                  <Text style={[s.dropdownItemText, verificationMethod === opt && s.dropdownItemTextActive]}>
+                    {opt}
+                  </Text>
+                  {verificationMethod === opt && (
+                    <Ionicons name="checkmark" size={16} color="#4ade80" />
+                  )}
                 </TouchableOpacity>
               ))}
             </View>
           </TouchableOpacity>
         </Modal>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Current Password</Text>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TextInput
-            value={currentPassword}
-            onChangeText={setCurrentPassword}
-            placeholder="Enter current password"
-            placeholderTextColor="#888"
-            style={[styles.input, { flex: 1 }]}
-            secureTextEntry={!showCurrentPassword}
-          />
-          <TouchableOpacity
-            onPress={() => setShowCurrentPassword((prev) => !prev)}
-            style={{ marginLeft: 8 }}
-          >
-            <Ionicons
-              name={showCurrentPassword ? "eye" : "eye-off"}
-              size={22}
-              color="#888"
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>New Password</Text>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TextInput
-            value={newPassword}
-            onChangeText={setNewPassword}
-            placeholder="Type new password"
-            placeholderTextColor="#888"
-            style={[styles.input, { flex: 1 }]}
-            secureTextEntry={!showNewPassword}
-          />
-          <TouchableOpacity
-            onPress={() => setShowNewPassword((prev) => !prev)}
-            style={{ marginLeft: 8 }}
-          >
-            <Ionicons
-              name={showNewPassword ? "eye" : "eye-off"}
-              size={22}
-              color="#888"
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Confirm Password</Text>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TextInput
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            placeholder="Confirm new password"
-            placeholderTextColor="#888"
-            style={[styles.input, { flex: 1 }]}
-            secureTextEntry={!showConfirmPassword}
-          />
-          <TouchableOpacity
-            onPress={() => setShowConfirmPassword((prev) => !prev)}
-            style={{ marginLeft: 8 }}
-          >
-            <Ionicons
-              name={showConfirmPassword ? "eye" : "eye-off"}
-              size={22}
-              color="#888"
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <TouchableOpacity
-        style={[styles.button, loading && { backgroundColor: "#888" }]}
-        onPress={handleUpdate}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Update Changes</Text>
-        )}
-      </TouchableOpacity>
-    </View>
+      </SafeAreaView>
+    </>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#111",
-    padding: 20,
-  },
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: "#0d0d0d" },
   header: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 20,
+    flexDirection: "row", alignItems: "center",
+    paddingHorizontal: 16, paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: "#1e1e1e", backgroundColor: "#111",
   },
-  inputContainer: {
-    marginBottom: 15,
+  backBtn: {
+    width: 38, height: 38, borderRadius: 10,
+    backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
+    alignItems: "center", justifyContent: "center",
   },
-  label: {
-    color: "#ccc",
-    marginBottom: 5,
+  headerCenter: { flex: 1, alignItems: "center" },
+  headerTitle: { fontSize: 17, fontWeight: "700", color: "#fff" },
+  headerSub: { fontSize: 11, color: "#6B7280", marginTop: 1 },
+  scroll: { flex: 1 },
+  scrollContent: { padding: 16, paddingBottom: 48 },
+  sectionHeader: {
+    fontSize: 11, fontWeight: "700", color: "#4ade80",
+    letterSpacing: 1, textTransform: "uppercase",
+    marginTop: 20, marginBottom: 8, marginLeft: 4,
   },
-  input: {
-    backgroundColor: "#222",
-    color: "#fff",
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 16,
+  card: {
+    backgroundColor: "#111", borderRadius: 14,
+    borderWidth: 1, borderColor: "#1e1e1e",
+    paddingHorizontal: 16, paddingVertical: 12, gap: 0,
   },
-  dropdown: {
-    backgroundColor: "#222",
-    borderRadius: 10,
-    padding: 12,
+  divider: { height: 1, backgroundColor: "#1e1e1e", marginVertical: 10 },
+  label: { fontSize: 12, color: "#9CA3AF", fontWeight: "500", marginBottom: 6 },
+  inputRow: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
+    borderRadius: 10, paddingHorizontal: 12,
   },
-  dropdownText: {
-    color: "#fff",
-    fontSize: 16,
+  input: { flex: 1, color: "#fff", fontSize: 14, paddingVertical: 10 },
+  eyeBtn: { padding: 4 },
+  dropdownBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
+    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10,
   },
+  dropdownBtnText: { color: "#fff", fontSize: 14 },
+  saveBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: "#166534", borderRadius: 12, paddingVertical: 14,
+    marginTop: 24, borderWidth: 1, borderColor: "#4ade80",
+  },
+  saveBtnDisabled: { opacity: 0.6 },
+  saveBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
   modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    paddingHorizontal: 20,
+    flex: 1, backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center", paddingHorizontal: 32,
   },
   dropdownMenu: {
-    backgroundColor: "#222",
-    borderRadius: 10,
-    paddingVertical: 10,
+    backgroundColor: "#111", borderRadius: 14,
+    borderWidth: 1, borderColor: "#1e1e1e", overflow: "hidden",
+  },
+  dropdownMenuTitle: {
+    color: "#6B7280", fontSize: 11, fontWeight: "700",
+    letterSpacing: 1, textTransform: "uppercase",
+    paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8,
   },
   dropdownItem: {
-    padding: 12,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#444",
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderTopWidth: 1, borderTopColor: "#1e1e1e",
   },
-  dropdownItemText: {
-    color: "#fff",
-    fontSize: 16,
-  },
-  button: {
-    marginTop: 30,
-    backgroundColor: "#1db954",
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-    width: "100%",
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
+  dropdownItemActive: { backgroundColor: "rgba(74,222,128,0.06)" },
+  dropdownItemText: { color: "#D1D5DB", fontSize: 15 },
+  dropdownItemTextActive: { color: "#fff", fontWeight: "600" },
 });

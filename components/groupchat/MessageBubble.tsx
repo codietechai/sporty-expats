@@ -269,9 +269,9 @@ export function MessageBubble({
 }
 
 const styles = StyleSheet.create({
-    row: { flexDirection: "row", paddingHorizontal: 6, paddingVertical: 3 },
+    row: { flexDirection: "row", paddingHorizontal: 10, paddingVertical: 3 },
     rowReverse: { flexDirection: "row-reverse" },
-    avatarCol: { width: 32, alignSelf: "flex-end", marginBottom: 4 },
+    avatarCol: { width: 34, alignSelf: "flex-end", marginBottom: 4, marginRight: 8 },
     contentCol: { flex: 1, maxWidth: "85%", alignItems: "flex-start" },
     contentColOwn: { alignItems: "flex-end" },
     msgHeader: { flexDirection: "row", alignItems: "baseline", gap: 6, marginBottom: 3, paddingHorizontal: 4 },

@@ -123,7 +123,9 @@ const CreateEvents = () => {
         creatorId: userId,
       });
       Alert.alert("Success", "Event created successfully!", [
-        { text: "OK", onPress: () => navigation.goBack() },
+        {
+          text: "OK", onPress: () => navigation.navigate("Dashboard" as never)
+        },
       ]);
     } catch (err: any) {
       const msg = err?.response?.data?.message ?? err?.response?.data?.error ?? "Failed to create event.";

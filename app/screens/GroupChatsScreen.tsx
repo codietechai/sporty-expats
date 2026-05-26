@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useUser } from "@clerk/clerk-expo";
 import { ChatUserRole } from "@sparkstrand/chat-api-client/v2/types";
 import { ChatProvider } from "@/app/chat/core/chatProvider";
@@ -14,8 +14,6 @@ import { Stack } from "expo-router";
 
 const CHAT_API_KEY = process.env.EXPO_PUBLIC_CHAT_API_KEY;
 const CHAT_SERVER_URL = process.env.EXPO_PUBLIC_CHAT_SERVER_URL;
-const { width: screenWidth } = Dimensions.get("window");
-const isSmallScreen = screenWidth < 375;
 
 // Static shell shown while data loads — keeps the UI stable
 function LoadingShell({ error }: { error?: string | null }) {
@@ -23,40 +21,22 @@ function LoadingShell({ error }: { error?: string | null }) {
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
-            <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+            <SafeAreaView style={styles.safe} edges={["top"]}>
+                {/* Consistent header */}
                 <View style={styles.header}>
-                    <View style={styles.headerTop}>
-                        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-                            <Ionicons name="arrow-back" size={22} color="#fff" />
-                        </TouchableOpacity>
-                        <Text style={styles.title}>Groups</Text>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={8}>
+                        <Ionicons name="arrow-back" size={22} color="#fff" />
+                    </TouchableOpacity>
+                    <View style={styles.headerCenter}>
+                        <Text style={styles.headerTitle}>Group Chats</Text>
+                        <Text style={styles.headerSub}>Your event group rooms</Text>
                     </View>
-                    <View style={styles.searchContainer}>
-                        <Ionicons name="search-outline" size={14} color="#6B7280" />
-                        <TextInput
-                            placeholder="Search groups"
-                            placeholderTextColor="#4B5563"
-                            style={styles.searchInput}
-                            editable={false}
-                        />
-                    </View>
-                </View>
-
-                <View style={styles.tabRow}>
-                    <View style={[styles.tab, styles.tabActive]}>
-                        <Text style={[styles.tabText, styles.tabTextActive]}>Past Events</Text>
-                    </View>
-                    <View style={styles.tab}>
-                        <Text style={styles.tabText}>Upcoming Events</Text>
-                    </View>
-                </View>
-
-                <View style={styles.countRow}>
-                    <Text style={styles.countText}>Past Events</Text>
+                    <View style={{ width: 38 }} />
                 </View>
 
                 {error ? (
                     <View style={styles.errorWrap}>
+                        <Ionicons name="alert-circle-outline" size={40} color="#EF4444" />
                         <Text style={styles.errorText}>{error}</Text>
                     </View>
                 ) : (
@@ -136,36 +116,18 @@ export default function GroupChatsScreen() {
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: "#0d0d0d" },
     header: {
-        flexDirection: "column",
-        paddingHorizontal: isSmallScreen ? 16 : 20,
-        paddingTop: 16,
-        paddingBottom: 10,
-        gap: 10,
+        flexDirection: "row", alignItems: "center",
+        paddingHorizontal: 16, paddingVertical: 12,
+        borderBottomWidth: 1, borderBottomColor: "#1e1e1e", backgroundColor: "#111",
     },
-    headerTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-    title: { fontSize: isSmallScreen ? 20 : 24, fontWeight: "700", color: "#fff", letterSpacing: 0.3 },
-    searchContainer: {
-        flexDirection: "row", alignItems: "center", backgroundColor: "#1a1a1a",
-        borderWidth: 1, borderColor: "#2a2a2a", borderRadius: 10,
-        paddingHorizontal: 10, paddingVertical: isSmallScreen ? 8 : 10, gap: 6,
+    backBtn: {
+        width: 38, height: 38, borderRadius: 10,
+        backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
+        alignItems: "center", justifyContent: "center",
     },
-    searchInput: { flex: 1, fontSize: isSmallScreen ? 12 : 13, color: "#D1D5DB" },
-    tabRow: {
-        flexDirection: "row", marginHorizontal: isSmallScreen ? 12 : 16,
-        borderRadius: 12, overflow: "hidden",
-        borderWidth: 1, borderColor: "#2a2a2a", backgroundColor: "#161616", marginBottom: 12,
-    },
-    tab: { flex: 1, paddingVertical: isSmallScreen ? 10 : 12, alignItems: "center" },
-    tabActive: { backgroundColor: "#2d5a2d" },
-    tabText: { fontSize: isSmallScreen ? 12 : 13, fontWeight: "600", color: "#9CA3AF" },
-    tabTextActive: { color: "#fff" },
-    countRow: {
-        paddingHorizontal: isSmallScreen ? 16 : 20,
-        paddingBottom: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: "#2a2a2a",
-    },
-    countText: { fontSize: isSmallScreen ? 12 : 13, fontWeight: "600", color: "#9CA3AF" },
-    errorWrap: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+    headerCenter: { flex: 1, alignItems: "center" },
+    headerTitle: { fontSize: 17, fontWeight: "700", color: "#fff" },
+    headerSub: { fontSize: 11, color: "#6B7280", marginTop: 1 },
+    errorWrap: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 12 },
     errorText: { color: "#ff6b6b", textAlign: "center", fontSize: 14, lineHeight: 22 },
 });

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
 
 interface ChatAvatarProps {
@@ -19,9 +19,10 @@ function hashColor(str: string): string {
 }
 
 export function ChatAvatar({ userId, displayName, name, image, size = 36 }: ChatAvatarProps) {
+    const [imgError, setImgError] = useState(false);
     const label = displayName || name || userId || "?";
     const initials = label.slice(0, 2).toUpperCase();
-    const hasImage = !!image && image.startsWith("http");
+    const hasImage = !imgError && !!image && (image.startsWith("http://") || image.startsWith("https://"));
 
     return (
         <View style={[styles.container, { width: size, height: size, borderRadius: size / 2 }]}>
@@ -29,7 +30,7 @@ export function ChatAvatar({ userId, displayName, name, image, size = 36 }: Chat
                 <Image
                     source={{ uri: image! }}
                     style={[styles.img, { borderRadius: size / 2 }]}
-                    onError={() => {/* fall through to initials on error */ }}
+                    onError={() => setImgError(true)}
                 />
             ) : (
                 <View style={[styles.fallback, { borderRadius: size / 2, backgroundColor: hashColor(label) }]}>
