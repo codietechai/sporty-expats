@@ -9,15 +9,16 @@ import {
   StyleSheet,
   StatusBar,
   ActivityIndicator,
+  Modal,
+  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import RNPickerSelect from "react-native-picker-select";
-import { getNames } from "country-list";
 import { updateUser } from "@/client/endpoints/users/updateUser";
 import { useUserDb } from "@/app/hooks/useUserDb";
+import { getNames } from "country-list";
 
 const countries = getNames().map((c) => ({ label: c, value: c }));
 
@@ -47,20 +48,67 @@ const genderOptions = [
 ];
 
 type FormData = {
-  username: string;
-  title: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  gender: string;
-  language: string;
-  visibility: string;
-  country: string;
-  address: string;
-  city: string;
-  zipCode: string;
-  bio: string;
+  username: string; title: string; firstName: string; lastName: string;
+  phone: string; gender: string; language: string; visibility: string;
+  country: string; address: string; city: string; zipCode: string; bio: string;
 };
+
+// ── Custom dropdown — same height as TextInput ─────────────────────────────
+
+function PickerField({
+  label, value, onValueChange, items, placeholder,
+}: {
+  label?: string;
+  value: string;
+  onValueChange: (v: string) => void;
+  items: { label: string; value: string }[];
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const display = items.find((i) => i.value === value)?.label ?? "";
+
+  return (
+    <>
+      {label && <Text style={styles.label}>{label}</Text>}
+      <TouchableOpacity style={styles.input} onPress={() => setOpen(true)} activeOpacity={0.7}>
+        <Text style={[{ flex: 1, color: display ? "#fff" : "#4B5563", fontSize: 14 }]} numberOfLines={1}>
+          {display || placeholder}
+        </Text>
+        <Ionicons name="chevron-down" size={16} color="#4B5563" />
+      </TouchableOpacity>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{placeholder}</Text>
+              <TouchableOpacity onPress={() => setOpen(false)} hitSlop={8}>
+                <Ionicons name="close" size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={items}
+              keyExtractor={(item) => item.value}
+              showsVerticalScrollIndicator={false}
+              style={{ maxHeight: 320 }}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.optionRow, item.value === value && styles.optionRowActive]}
+                  onPress={() => { onValueChange(item.value); setOpen(false); }}
+                >
+                  <Text style={[styles.optionText, item.value === value && styles.optionTextActive]}>
+                    {item.label}
+                  </Text>
+                  {item.value === value && <Ionicons name="checkmark" size={16} color="#4ade80" />}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+}
 
 // ── Reusable field components ──────────────────────────────────────────────
 
@@ -68,61 +116,26 @@ function SectionHeader({ title }: { title: string }) {
   return <Text style={styles.sectionHeader}>{title}</Text>;
 }
 
-function FieldLabel({ label }: { label: string }) {
-  return <Text style={styles.label}>{label}</Text>;
-}
-
 function StyledInput({
-  value,
-  onChangeText,
-  placeholder,
-  keyboardType,
-  multiline,
-  numberOfLines,
+  label, value, onChangeText, placeholder, keyboardType, multiline, numberOfLines,
 }: {
-  value: string;
-  onChangeText: (v: string) => void;
-  placeholder: string;
-  keyboardType?: any;
-  multiline?: boolean;
-  numberOfLines?: number;
+  label?: string; value: string; onChangeText: (v: string) => void;
+  placeholder: string; keyboardType?: any; multiline?: boolean; numberOfLines?: number;
 }) {
   return (
-    <TextInput
-      style={[styles.input, multiline && { minHeight: 100, textAlignVertical: "top" }]}
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder}
-      placeholderTextColor="#4B5563"
-      keyboardType={keyboardType}
-      multiline={multiline}
-      numberOfLines={numberOfLines}
-    />
-  );
-}
-
-function PickerField({
-  value,
-  onValueChange,
-  items,
-  placeholder,
-}: {
-  value: string;
-  onValueChange: (v: string) => void;
-  items: { label: string; value: string }[];
-  placeholder: string;
-}) {
-  return (
-    <View style={styles.pickerWrapper}>
-      <RNPickerSelect
-        onValueChange={onValueChange}
-        items={items}
-        placeholder={{ label: placeholder, value: "" }}
+    <>
+      {label && <Text style={styles.label}>{label}</Text>}
+      <TextInput
+        style={[styles.inputBase, multiline && { minHeight: 100, textAlignVertical: "top" }]}
         value={value}
-        style={pickerStyles}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor="#4B5563"
+        keyboardType={keyboardType}
+        multiline={multiline}
+        numberOfLines={numberOfLines}
       />
-      <Ionicons name="chevron-down" size={16} color="#4B5563" style={styles.pickerChevron} />
-    </View>
+    </>
   );
 }
 
@@ -233,112 +246,45 @@ export default function PersonalInfo() {
             {/* Account */}
             <SectionHeader title="Account" />
             <View style={styles.card}>
-              <FieldLabel label="Username" />
-              <StyledInput
-                value={formData.username}
-                onChangeText={set("username")}
-                placeholder="Enter your username"
-              />
+              <StyledInput label="Username" value={formData.username} onChangeText={set("username")} placeholder="Enter your username" />
               <View style={styles.divider} />
-              <FieldLabel label="Visibility" />
-              <PickerField
-                value={formData.visibility}
-                onValueChange={set("visibility")}
-                items={visibilityOptions}
-                placeholder="Select visibility"
-              />
+              <PickerField label="Visibility" value={formData.visibility} onValueChange={set("visibility")} items={visibilityOptions} placeholder="Select visibility" />
             </View>
 
             {/* Personal */}
             <SectionHeader title="Personal Details" />
             <View style={styles.card}>
-              <FieldLabel label="Title" />
-              <PickerField
-                value={formData.title}
-                onValueChange={set("title")}
-                items={titleOptions}
-                placeholder="Select your title"
-              />
+              <PickerField label="Title" value={formData.title} onValueChange={set("title")} items={titleOptions} placeholder="Select your title" />
               <View style={styles.divider} />
               <View style={styles.row}>
                 <View style={styles.halfField}>
-                  <FieldLabel label="First Name" />
-                  <StyledInput
-                    value={formData.firstName}
-                    onChangeText={set("firstName")}
-                    placeholder="First name"
-                  />
+                  <StyledInput label="First Name" value={formData.firstName} onChangeText={set("firstName")} placeholder="First name" />
                 </View>
                 <View style={styles.halfField}>
-                  <FieldLabel label="Last Name" />
-                  <StyledInput
-                    value={formData.lastName}
-                    onChangeText={set("lastName")}
-                    placeholder="Last name"
-                  />
+                  <StyledInput label="Last Name" value={formData.lastName} onChangeText={set("lastName")} placeholder="Last name" />
                 </View>
               </View>
               <View style={styles.divider} />
-              <FieldLabel label="Gender" />
-              <PickerField
-                value={formData.gender}
-                onValueChange={set("gender")}
-                items={genderOptions}
-                placeholder="Select gender"
-              />
+              <PickerField label="Gender" value={formData.gender} onValueChange={set("gender")} items={genderOptions} placeholder="Select gender" />
               <View style={styles.divider} />
-              <FieldLabel label="Phone Number" />
-              <StyledInput
-                value={formData.phone}
-                onChangeText={set("phone")}
-                placeholder="Enter your phone number"
-                keyboardType="phone-pad"
-              />
+              <StyledInput label="Phone Number" value={formData.phone} onChangeText={set("phone")} placeholder="Enter your phone number" keyboardType="phone-pad" />
               <View style={styles.divider} />
-              <FieldLabel label="Language" />
-              <PickerField
-                value={formData.language}
-                onValueChange={set("language")}
-                items={languageOptions}
-                placeholder="Select your language"
-              />
+              <PickerField label="Language" value={formData.language} onValueChange={set("language")} items={languageOptions} placeholder="Select your language" />
             </View>
 
             {/* Location */}
             <SectionHeader title="Location" />
             <View style={styles.card}>
-              <FieldLabel label="Country" />
-              <PickerField
-                value={formData.country}
-                onValueChange={set("country")}
-                items={countries}
-                placeholder="Select your country"
-              />
+              <PickerField label="Country" value={formData.country} onValueChange={set("country")} items={countries} placeholder="Select your country" />
               <View style={styles.divider} />
-              <FieldLabel label="Address" />
-              <StyledInput
-                value={formData.address}
-                onChangeText={set("address")}
-                placeholder="Enter your address"
-              />
+              <StyledInput label="Address" value={formData.address} onChangeText={set("address")} placeholder="Enter your address" />
               <View style={styles.divider} />
               <View style={styles.row}>
                 <View style={styles.halfField}>
-                  <FieldLabel label="City" />
-                  <StyledInput
-                    value={formData.city}
-                    onChangeText={set("city")}
-                    placeholder="City"
-                  />
+                  <StyledInput label="City" value={formData.city} onChangeText={set("city")} placeholder="City" />
                 </View>
                 <View style={styles.halfField}>
-                  <FieldLabel label="Zip Code" />
-                  <StyledInput
-                    value={formData.zipCode}
-                    onChangeText={set("zipCode")}
-                    placeholder="Zip code"
-                    keyboardType="numeric"
-                  />
+                  <StyledInput label="Zip Code" value={formData.zipCode} onChangeText={set("zipCode")} placeholder="Zip code" keyboardType="numeric" />
                 </View>
               </View>
             </View>
@@ -346,14 +292,7 @@ export default function PersonalInfo() {
             {/* Bio */}
             <SectionHeader title="About You" />
             <View style={styles.card}>
-              <FieldLabel label="Bio" />
-              <StyledInput
-                value={formData.bio}
-                onChangeText={set("bio")}
-                placeholder="Write a short bio…"
-                multiline
-                numberOfLines={4}
-              />
+              <StyledInput label="Bio" value={formData.bio} onChangeText={set("bio")} placeholder="Write a short bio…" multiline numberOfLines={4} />
             </View>
 
             {/* Save button */}
@@ -450,8 +389,21 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
 
-  // Input
+  // Input — shared by dropdown trigger
   input: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#1a1a1a",
+    borderWidth: 1,
+    borderColor: "#2a2a2a",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minHeight: 42,
+  },
+  // Input — for TextInput (no row layout)
+  inputBase: {
     backgroundColor: "#1a1a1a",
     borderWidth: 1,
     borderColor: "#2a2a2a",
@@ -460,22 +412,32 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     color: "#fff",
     fontSize: 14,
+    minHeight: 42,
   },
 
-  // Picker
-  pickerWrapper: {
-    backgroundColor: "#1a1a1a",
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-    borderRadius: 10,
-    justifyContent: "center",
-    position: "relative",
+  // Modal dropdown
+  modalOverlay: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "flex-end",
   },
-  pickerChevron: {
-    position: "absolute",
-    right: 12,
-    pointerEvents: "none",
+  modalSheet: {
+    backgroundColor: "#111", borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    borderWidth: 1, borderColor: "#1e1e1e", paddingBottom: 32,
   },
+  modalHeader: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 20, paddingVertical: 16,
+    borderBottomWidth: 1, borderBottomColor: "#1e1e1e",
+  },
+  modalTitle: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  optionRow: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 20, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: "#1a1a1a",
+  },
+  optionRowActive: { backgroundColor: "rgba(74,222,128,0.06)" },
+  optionText: { color: "#D1D5DB", fontSize: 15 },
+  optionTextActive: { color: "#fff", fontWeight: "600" },
 
   // Save button
   saveBtn: {
@@ -493,21 +455,3 @@ const styles = StyleSheet.create({
   saveBtnDisabled: { opacity: 0.6 },
   saveBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });
-
-const pickerStyles = {
-  inputIOS: {
-    color: "#fff",
-    fontSize: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    paddingRight: 32,
-  },
-  inputAndroid: {
-    color: "#fff",
-    fontSize: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    paddingRight: 32,
-  },
-  placeholder: { color: "#4B5563" },
-};
