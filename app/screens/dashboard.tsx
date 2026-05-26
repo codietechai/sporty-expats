@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Stack, useRouter } from "expo-router";
+import { Stack } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
+import { DrawerNavigationProp } from "@react-navigation/drawer";
 import TabsComponent from "@/components/dashboard/DashboardTabs";
 import Stories from "@/components/dashboard/Stories";
 import MyFeed from "@/components/dashboard/MyFeed";
@@ -11,18 +13,17 @@ import ItemSales from "@/components/dashboard/ItemSales";
 import MyPurchases from "@/components/dashboard/MyPurchases";
 import Header from "@/components/Header";
 import { useAuth } from "@clerk/clerk-expo";
-import TouchSwipeWrapper from "@/components/TouchSwipeWrapper";
 
 const Dashboard = () => {
-  const [currentTab, setCurrentTab] = useState<string>("my_feed");
   const { isSignedIn } = useAuth();
-  const router = useRouter();
+  const navigation = useNavigation<DrawerNavigationProp<any>>();
 
   useEffect(() => {
     if (!isSignedIn) {
-      router.replace('/home');
+      // Stay inside the drawer navigator so Header can still open the sidebar
+      navigation.navigate("Home" as any);
     }
-  }, [isSignedIn, router]);
+  }, [isSignedIn]);
 
   if (!isSignedIn) return null;
 
@@ -34,18 +35,20 @@ const Dashboard = () => {
     { key: "my_purchase", label: "My Purchase", component: MyPurchases },
   ];
 
+  const handleAddPost = () => {
+    navigation.navigate("Add Feed" as any);
+  };
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <TouchSwipeWrapper>
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#0d0d0d" }} edges={["top"]}>
-          <View style={{ flex: 1, backgroundColor: "#0d0d0d" }}>
-            <Header myFeed={true} />
-            <Stories onAddPost={() => router.push("/screens/AddFeed")} />
-            <TabsComponent tabs={tabs} setCurrentTab={setCurrentTab} />
-          </View>
-        </SafeAreaView>
-      </TouchSwipeWrapper>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#0d0d0d" }} edges={["top"]}>
+        <View style={{ flex: 1, backgroundColor: "#0d0d0d" }}>
+          <Header myFeed={true} />
+          <Stories onAddPost={handleAddPost} />
+          <TabsComponent tabs={tabs} setCurrentTab={() => {}} />
+        </View>
+      </SafeAreaView>
     </>
   );
 };

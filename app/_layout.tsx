@@ -8,7 +8,6 @@ import { tokenCache } from '@clerk/clerk-expo/token-cache'
 import { QueryClient, QueryClientProvider } from "react-query";
 import { DrawerProvider } from "@/contexts/DrawerContext";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import RootCustomDrawer from "@/components/RootCustomDrawer";
 
 // Create QueryClient outside component to prevent recreation
 const queryClient = new QueryClient({
@@ -38,7 +37,6 @@ export default function RootLayout() {
             <ClerkLoaded>
               <DrawerProvider>
                 <Stack screenOptions={{ headerShown: false }} />
-                <RootCustomDrawer />
               </DrawerProvider>
             </ClerkLoaded>
           </ClerkProvider>

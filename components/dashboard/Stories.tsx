@@ -18,7 +18,6 @@ import {
   View,
 } from "react-native";
 import { useQuery } from "react-query";
-import { useRouter } from "expo-router";
 import { useUser } from "@clerk/clerk-expo";
 import StoriesSkeleton from "@/components/dashboard/StoriesSkeleton";
 
@@ -207,7 +206,6 @@ const um = StyleSheet.create({
 
 // ── Main Stories component ────────────────────────────────────────────────────
 export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
-  const router = useRouter();
   const { userDb, loading } = useUserDb();
   const { user } = useUser(); // Add Clerk user as fallback
   
@@ -340,7 +338,7 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
               return (
                 <TouchableOpacity
                   style={styles.addPostTile}
-                  onPress={() => onAddPost ? onAddPost() : router.push("/screens/AddFeed")}
+                  onPress={() => onAddPost?.()}
                 >
                   <View style={styles.addPostIcon}>
                     <Ionicons name="add" size={22} color="#2ecc71" />

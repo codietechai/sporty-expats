@@ -1,60 +1,45 @@
-
 import React from "react";
 import { Text, View, TouchableOpacity, StyleSheet } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { useRouter } from "expo-router";
-import { useDrawer } from "@/contexts/DrawerContext";
+import { useNavigation } from "@react-navigation/native";
+import { DrawerNavigationProp } from "@react-navigation/drawer";
 
 type HeaderProps = {
   myFeed?: boolean;
+  onAddPress?: () => void;
 };
 
-const Header: React.FC<HeaderProps> = ({ myFeed }) => {
-  const router = useRouter();
-  const { openDrawer } = useDrawer();
+const Header: React.FC<HeaderProps> = ({ myFeed, onAddPress }) => {
+  const navigation = useNavigation();
 
   const handleMenuPress = () => {
-    openDrawer();
+    const drawer = navigation.getParent<DrawerNavigationProp<any>>("MainDrawer" as any);
+    if (drawer?.openDrawer) {
+      drawer.openDrawer();
+    }
   };
 
   const handleAddFeedPress = () => {
-    router.push("/screens/AddFeed");
+    if (onAddPress) {
+      onAddPress();
+    } else {
+      // Fall back to drawer navigation
+      (navigation as any).navigate("Add Feed");
+    }
   };
 
   return (
     <View style={styles.headerContainer}>
-      <View
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          width: "100%",
-        }}
-      >
-        <TouchableOpacity
-          onPress={handleMenuPress}
-          style={styles.menuButton}
-          activeOpacity={0.7}
-        >
-          <Text
-            className="text-white text-2xl font-oswald"
-            style={{ fontSize: 20 }}
-          >
+      <View style={styles.row}>
+        <TouchableOpacity onPress={handleMenuPress} style={styles.menuButton} activeOpacity={0.7}>
+          <Text className="text-white text-2xl font-oswald" style={{ fontSize: 20 }}>
             Sporty<Text className="text-main">Expats</Text>
           </Text>
         </TouchableOpacity>
 
-        <View style={{ display: "flex", flexDirection: "row" }}>
+        <View style={styles.actions}>
           <TouchableOpacity style={{ marginRight: 15 }}>
-            <Svg
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="white"
-              width={24}
-              height={24}
-            >
+            <Svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="white" width={24} height={24}>
               <Path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -63,31 +48,9 @@ const Header: React.FC<HeaderProps> = ({ myFeed }) => {
             </Svg>
           </TouchableOpacity>
           {myFeed && (
-            <TouchableOpacity
-              style={{
-                marginRight: 15,
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: "green",
-                borderRadius: 100,
-                paddingHorizontal: 12,
-                paddingVertical: 4,
-              }}
-              onPress={handleAddFeedPress}
-            >
-              <Svg
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="white"
-                width={20}
-                height={20}
-              >
-                <Path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 4.5v15m7.5-7.5h-15"
-                />
+            <TouchableOpacity style={styles.addBtn} onPress={handleAddFeedPress}>
+              <Svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="white" width={20} height={20}>
+                <Path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </Svg>
               <Text style={{ color: "white", fontSize: 12 }}>Add</Text>
             </TouchableOpacity>
@@ -101,21 +64,31 @@ const Header: React.FC<HeaderProps> = ({ myFeed }) => {
 const styles = StyleSheet.create({
   headerContainer: {
     backgroundColor: "black",
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
     paddingTop: 20,
-    justifyContent: "space-between",
     paddingBottom: 20,
-    gap: 50,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
   },
   menuButton: {
     paddingLeft: 20,
     marginRight: 10,
   },
-  title: {
-    color: "white",
-    fontSize: 18,
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  addBtn: {
+    marginRight: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "green",
+    borderRadius: 100,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
   },
 });
 

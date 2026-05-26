@@ -12,8 +12,6 @@ import { useAuth } from "@clerk/clerk-react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getProfilePhoto } from "@/client/endpoints/users/addProfilePhoto";
 import { useUserDb } from "@/app/hooks/useUserDb";
-import { useDrawer } from "@/contexts/DrawerContext";
-import { useRouter, usePathname } from "expo-router";
 
 export type RootDrawerParamList = {
   Home: undefined;
@@ -55,33 +53,11 @@ export default function Sidebar(props: DrawerContentComponentProps) {
   const { user } = useUser();
   const { userDb } = useUserDb();
   const { signOut } = useAuth();
-  const { closeDrawer } = useDrawer();
-  const router = useRouter();
-  const pathname = usePathname();
-  const pathToScreen: Record<string, keyof RootDrawerParamList> = {
-    "/home": "Home",
-    "/screens/dashboard": "Dashboard",
-    "/screens/event": "Events",
-    "/screens/market": "Market",
-    "/screens/contactus": "Contact Us",
-    "/screens/aboutus": "About Us",
-    "/screens/createEvents": "Create Event",
-    "/screens/price": "Price",
-    "/screens/profile": "profile",
-    "/screens/personalInfo": "Personal Info",
-    "/screens/mediaUpload": "Media Uploads",
-    "/screens/passwordSecurity": "Password And Security",
-    "/screens/updateProfilePhoto": "Update Profile Photo",
-    "/screens/ChatScreen": "Group Chat",
-    "/screens/GroupChatsScreen": "Group Chats",
-    "/screens/EditUserScreen": "Edit User Detail",
-    "/screens/Conversations": "Conversations",
-    "/screens/AddFeed": "Add Feed",
-    "/screens/EventsListScreen": "Events List",
-  };
-  const activeRoute: keyof RootDrawerParamList | '' = pathToScreen[pathname] ?? '';
 
-  // Define navigation items with translation keys based on login status
+  // Active route comes directly from the real drawer navigator state
+  const activeRoute: keyof RootDrawerParamList | '' =
+    (props.state?.routeNames?.[props.state?.index] as keyof RootDrawerParamList | undefined) ?? '';
+
   const MAIN_NAV: NavItem[] = loggedIn ? [
     { label: t("dashboard"), icon: "grid-outline", screen: "Dashboard" },
     { label: t("events"), icon: "star-outline", screen: "Events" },
@@ -104,51 +80,9 @@ export default function Sidebar(props: DrawerContentComponentProps) {
     { label: t("about_us"), icon: "information-circle-outline", screen: "About Us" },
   ];
 
-  // Map drawer route names to Expo Router paths
-  const getRouterPath = (screenName: keyof RootDrawerParamList): string => {
-    const routeMap: Record<keyof RootDrawerParamList, string> = {
-      "Home": "/home",
-      "Events": "/screens/event",
-      "Events List": "/screens/EventsListScreen",
-      "Dashboard": "/screens/dashboard",
-      "Market": "/screens/market",
-      "Contact Us": "/screens/contactus",
-      "About Us": "/screens/aboutus",
-      "Create Event": "/screens/createEvents",
-      "Price": "/screens/price",
-      "profile": "/screens/profile",
-      "Personal Info": "/screens/personalInfo",
-      "Media Uploads": "/screens/mediaUpload",
-      "Password And Security": "/screens/passwordSecurity",
-      "Update Profile Photo": "/screens/updateProfilePhoto",
-      "Group Chat": "/screens/ChatScreen",
-      "Group Chats": "/screens/GroupChatsScreen",
-      "Edit User Detail": "/screens/EditUserScreen",
-      "Conversations": "/screens/Conversations",
-      "Add Feed": "/screens/AddFeed",
-    };
-    
-    return routeMap[screenName] || "/home";
-  };
-
+  // All navigation goes through the drawer navigator — never router.push
   const navigateTo = (screenName: keyof RootDrawerParamList) => {
-    try {
-      console.log('Sidebar: Attempting to navigate to:', screenName);
-      
-      // Close the custom drawer first
-      closeDrawer();
-      
-      // Get the correct router path
-      const routerPath = getRouterPath(screenName);
-      console.log('Sidebar: Using router path:', routerPath);
-      
-      // Then navigate using Expo Router
-      setTimeout(() => {
-        router.push(routerPath as any);
-      }, 100);
-    } catch (error) {
-      console.error('Error navigating:', error);
-    }
+    props.navigation.navigate(screenName as any);
   };
 
   const changeLanguage = (lang: string) => {
@@ -173,37 +107,17 @@ export default function Sidebar(props: DrawerContentComponentProps) {
       .then((res) => {
         if (res?.data?.fileUrl) setImage(`${res.data.fileUrl}?t=${Date.now()}`);
       })
-      .catch(() => { });
+      .catch(() => {});
   }, [userDb]);
 
   const logOut = async () => {
     try {
-      // Close dropdown first
       setShowDropdown(false);
-      
-      // Close drawer
-      closeDrawer();
-      
-      // Sign out from Clerk
       await signOut();
-      
-      // Clear local storage
       await AsyncStorage.clear();
-      
-      // Reset user state
       setLoggedIn(false);
       setImage(null);
-      
-      // Navigate to home page
-      setTimeout(() => {
-        try {
-          router.push("/home");
-        } catch (error) {
-          console.error('Error navigating to Home after logout:', error);
-        }
-      }, 200);
-      
-      console.log('User logged out successfully');
+      props.navigation.navigate("Home" as any);
     } catch (error) {
       console.error('Error during logout:', error);
     }
@@ -241,11 +155,7 @@ export default function Sidebar(props: DrawerContentComponentProps) {
                   onPress={() => navigateTo(item.screen)}
                   style={[styles.navItem, isActive && styles.navItemActive]}
                 >
-                  <Ionicons
-                    name={item.icon}
-                    size={20}
-                    color={isActive ? "#2ecc71" : "#9CA3AF"}
-                  />
+                  <Ionicons name={item.icon} size={20} color={isActive ? "#2ecc71" : "#9CA3AF"} />
                   <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
                     {item.label}
                   </Text>
@@ -270,13 +180,9 @@ export default function Sidebar(props: DrawerContentComponentProps) {
           </TouchableOpacity>
         ))}
 
-        {/* Profile / Login */}
         {loggedIn ? (
           <>
-            <TouchableOpacity
-              onPress={() => setShowDropdown((p) => !p)}
-              style={styles.profileRow}
-            >
+            <TouchableOpacity onPress={() => setShowDropdown((p) => !p)} style={styles.profileRow}>
               <Image
                 source={{ uri: image ?? user?.imageUrl ?? "https://storage.strandcdn.com/avatar.svg" }}
                 style={styles.avatar}
@@ -301,10 +207,7 @@ export default function Sidebar(props: DrawerContentComponentProps) {
                   <Ionicons name="person-outline" size={16} color="#D1D5DB" />
                   <Text style={styles.dropdownText}>{t("view_profile")}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={logOut}
-                >
+                <TouchableOpacity style={styles.dropdownItem} onPress={logOut}>
                   <Ionicons name="log-out-outline" size={16} color="#EF4444" />
                   <Text style={[styles.dropdownText, { color: "#EF4444" }]}>{t("log_out")}</Text>
                 </TouchableOpacity>
@@ -324,14 +227,7 @@ export default function Sidebar(props: DrawerContentComponentProps) {
         onClose={() => setModalVisible(false)}
         onSuccess={() => {
           setModalVisible(false);
-          closeDrawer();
-          setTimeout(() => {
-            try {
-              router.push("/screens/dashboard");
-            } catch (error) {
-              console.error('Error navigating to Dashboard:', error);
-            }
-          }, 100);
+          props.navigation.navigate("Dashboard" as any);
         }}
       />
 
@@ -343,11 +239,7 @@ export default function Sidebar(props: DrawerContentComponentProps) {
               { lang: "en", label: "English", flag: "https://static.vecteezy.com/system/resources/thumbnails/025/687/930/small/american-national-flag-usa-independence-day-vector.jpg" },
               { lang: "fr", label: "Français", flag: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Flag_of_France.svg/1280px-Flag_of_France.svg.png" },
             ].map((item) => (
-              <TouchableOpacity
-                key={item.lang}
-                onPress={() => changeLanguage(item.lang)}
-                style={styles.langItem}
-              >
+              <TouchableOpacity key={item.lang} onPress={() => changeLanguage(item.lang)} style={styles.langItem}>
                 <Image source={{ uri: item.flag }} style={styles.flag} />
                 <Text style={styles.langItemText}>{item.label}</Text>
               </TouchableOpacity>
@@ -362,36 +254,29 @@ export default function Sidebar(props: DrawerContentComponentProps) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#18181A" },
   inner: { paddingHorizontal: 16, paddingTop: 16 },
-
   logoRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 28 },
   logo: { fontSize: 22, fontWeight: "700", color: "#fff", fontFamily: "oswald" },
   logoAccent: { color: "#166534" },
   langBtn: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#2a2a2a", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
   flag: { width: 18, height: 18, borderRadius: 9 },
   langText: { color: "#D1D5DB", fontSize: 12, fontWeight: "600" },
-
   navSection: { gap: 2 },
   navItem: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 12, borderRadius: 10, position: "relative" },
   navItemActive: { backgroundColor: "rgba(22,101,52,0.15)" },
   navLabel: { fontSize: 15, color: "#9CA3AF", flex: 1 },
   navLabelActive: { color: "#fff", fontWeight: "600" },
   activeIndicator: { width: 4, height: 4, borderRadius: 2, backgroundColor: "#2ecc71" },
-
   bottomSection: { paddingHorizontal: 16, paddingBottom: 24, borderTopWidth: 1, borderTopColor: "#2a2a2a", paddingTop: 12, gap: 2 },
-
   profileRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, backgroundColor: "#1f1f1f", marginTop: 8 },
   avatar: { width: 38, height: 38, borderRadius: 19 },
   profileInfo: { flex: 1 },
   profileName: { color: "#fff", fontSize: 13, fontWeight: "600" },
   profileEmail: { color: "#6B7280", fontSize: 11, marginTop: 1 },
-
   dropdown: { backgroundColor: "#1f1f1f", borderRadius: 10, marginTop: 4, overflow: "hidden", borderWidth: 1, borderColor: "#2a2a2a" },
   dropdownItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, paddingHorizontal: 16 },
   dropdownText: { fontSize: 14, color: "#D1D5DB" },
-
   loginBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#166534", borderRadius: 10, paddingVertical: 12, marginTop: 8 },
   loginText: { color: "#fff", fontWeight: "600", fontSize: 15 },
-
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" },
   langModal: { backgroundColor: "#1f1f1f", borderRadius: 12, padding: 16, width: 200, gap: 4 },
   langItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10 },

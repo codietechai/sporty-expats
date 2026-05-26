@@ -51,16 +51,17 @@ export default function AppNavigator() {
       initialRouteName={getInitialRouteName()}
       screenOptions={{
         headerShown: true,
-        headerStyle: {
-          backgroundColor: "black",
-        },
+        headerStyle: { backgroundColor: "black" },
         headerTintColor: "#fff",
-        headerTitleStyle: {
-          fontWeight: "bold",
-        },
+        headerTitleStyle: { fontWeight: "bold" },
         drawerStyle: {
           backgroundColor: "#18181A",
+          width: "80%",
         },
+        drawerType: "slide",
+        overlayColor: "rgba(0,0,0,0.5)",
+        swipeEdgeWidth: 50,
+        swipeMinDistance: 5,
       }}
       drawerContent={(props) => <Sidebar {...props} />}
     >

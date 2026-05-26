@@ -8,10 +8,6 @@ import {
   ScrollView,
   Animated,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import CustomDrawer from "@/components/CustomDrawer";
-import { useDrawer } from "@/contexts/DrawerContext";
-import TouchSwipeWrapper from "@/components/TouchSwipeWrapper";
 import { Stack } from "expo-router";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -31,8 +27,6 @@ import Horse from "@/assets/images/horse.jpg";
 import YogaPose from "@/assets/images/yogapose.jpg";
 
 export default function Event() {
-  const navigation = useNavigation();
-  const { isDrawerOpen, closeDrawer } = useDrawer();
   const marqueeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -53,10 +47,9 @@ export default function Event() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <TouchSwipeWrapper>
-        <View style={{ flex: 1, backgroundColor: "#0d0d0d" }}>
-          <Header />
-          <ScrollView style={styles.container}>
+      <View style={{ flex: 1, backgroundColor: "#0d0d0d" }}>
+        <Header />
+        <ScrollView style={styles.container}>
       {/* Section 1: Events for Professionals */}
       <Text style={styles.heading}>
         <Text style={styles.highlight}>EVENTS </Text>
@@ -158,15 +151,7 @@ export default function Event() {
       <Image source={Runners} style={styles.fullWidthImage} />
       <Footer />
     </ScrollView>
-        </View>
-      </TouchSwipeWrapper>
-      
-      {/* Custom Drawer */}
-      <CustomDrawer 
-        visible={isDrawerOpen} 
-        onClose={closeDrawer} 
-        navigation={navigation}
-      />
+      </View>
     </>
   );
 }

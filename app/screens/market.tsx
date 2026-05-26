@@ -1,30 +1,21 @@
 import React from "react";
 import { View, Image, StyleSheet, Text, ScrollView } from "react-native";
 import { Stack } from "expo-router";
-import { useNavigation } from "@react-navigation/native";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import CustomDrawer from "@/components/CustomDrawer";
-import { useDrawer } from "@/contexts/DrawerContext";
-import TouchSwipeWrapper from "@/components/TouchSwipeWrapper";
 
 export default function Market() {
-  const navigation = useNavigation();
-  const { isDrawerOpen, closeDrawer } = useDrawer();
   const totalSlices = 6;
   const sliceWidth = 60;
   const imageHeight = 300;
-
-  // How much each slice shows (shorter height means bigger mask top+bottom)
   const visibleHeights = [160, 240, 200, 180, 260, 150];
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <TouchSwipeWrapper>
-        <View style={{ flex: 1, backgroundColor: "black" }}>
-          <Header />
-          <ScrollView>
+      <View style={{ flex: 1, backgroundColor: "black" }}>
+        <Header />
+        <ScrollView>
           <Text className="text-white text-5xl uppercase font-oswald pt-14 text-center">
             Agree on a fair price
           </Text>
@@ -73,15 +64,7 @@ export default function Market() {
 
           <Footer />
         </ScrollView>
-        </View>
-      </TouchSwipeWrapper>
-      
-      {/* Custom Drawer */}
-      <CustomDrawer 
-        visible={isDrawerOpen} 
-        onClose={closeDrawer} 
-        navigation={navigation}
-      />
+      </View>
     </>
   );
 }
