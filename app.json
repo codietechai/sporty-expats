@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "sportyexpats-mobile-app",
+    "name": "Sporty Expats",
     "slug": "sportyexpats-mobile-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/logo.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,15 +13,15 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#000000"
       },
       "package": "com.antriksh2000.sportyexpatsmobileapp"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/image.png"
+      "favicon": "./assets/logo.png"
     },
     "plugins": [
       "expo-router",

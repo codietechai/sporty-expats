@@ -76,11 +76,13 @@ export default function GroupChatsScreen() {
 
     const firstName = user?.personalDetails?.firstName ?? user?.firstName;
     const lastName = user?.personalDetails?.lastName ?? user?.lastName;
+    const email = user?.personalDetails?.email ?? user?.email ?? clerkUser?.primaryEmailAddress?.emailAddress;
 
     const chatUser = {
         userId,
         displayName: firstName ? `${firstName} ${lastName ?? ""}`.trim() : undefined,
         name: user?.username ?? undefined,
+        email,
         image: user?.imageUrl ?? clerkUser?.imageUrl ?? undefined,
         role:
             user?.role === "Host" ? ChatUserRole.moderator

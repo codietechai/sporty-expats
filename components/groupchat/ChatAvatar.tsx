@@ -5,6 +5,7 @@ interface ChatAvatarProps {
     userId: string;
     displayName?: string | null;
     name?: string | null;
+    email?: string | null;
     image?: string | null;
     size?: number;
 }
@@ -18,10 +19,10 @@ function hashColor(str: string): string {
     return `hsl(${h}, 55%, 38%)`;
 }
 
-export function ChatAvatar({ userId, displayName, name, image, size = 36 }: ChatAvatarProps) {
+export function ChatAvatar({ userId, displayName, name, email, image, size = 36 }: ChatAvatarProps) {
     const [imgError, setImgError] = useState(false);
-    const label = displayName || name || userId || "?";
-    const initials = label.slice(0, 2).toUpperCase();
+    const fallbackSource = email || displayName || name || userId || "?";
+    const initials = fallbackSource.trim().charAt(0).toUpperCase() || "?";
     const hasImage = !imgError && !!image && (image.startsWith("http://") || image.startsWith("https://"));
 
     return (
@@ -33,7 +34,7 @@ export function ChatAvatar({ userId, displayName, name, image, size = 36 }: Chat
                     onError={() => setImgError(true)}
                 />
             ) : (
-                <View style={[styles.fallback, { borderRadius: size / 2, backgroundColor: hashColor(label) }]}>
+                <View style={[styles.fallback, { borderRadius: size / 2, backgroundColor: hashColor(fallbackSource) }]}>
                     <Text style={[styles.initials, { fontSize: size * 0.36 }]}>{initials}</Text>
                 </View>
             )}
@@ -47,7 +48,7 @@ export function AvatarStack({
     size = 24,
     total,
 }: {
-    users: { userId: string; displayName?: string | null; name?: string | null; image?: string | null }[];
+    users: { userId: string; displayName?: string | null; name?: string | null; email?: string | null; image?: string | null }[];
     max?: number;
     size?: number;
     total?: number;

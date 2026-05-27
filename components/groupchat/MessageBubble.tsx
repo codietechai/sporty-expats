@@ -15,7 +15,7 @@ import type { AnyMessage, ChatRoomMember } from "@sparkstrand/chat-api-client/v2
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "🔥", "👏", "😮"];
 
-function formatTime(date: string): string {
+function formatTime(date: string | Date): string {
     return new Date(date).toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
@@ -57,6 +57,7 @@ export function MessageBubble({
 }: Props) {
     const [showActionModal, setShowActionModal] = useState(false);
     const [showEmojiModal, setShowEmojiModal] = useState(false);
+    const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
     const senderName = sender?.displayName ?? sender?.name ?? message.userId ?? "Member";
 
@@ -69,8 +70,9 @@ export function MessageBubble({
         return acc;
     }, {});
 
-    const isFailed = message.status === "failed";
-    const isSending = message.status === "sending";
+    const status = (message as AnyMessage & { status?: string }).status;
+    const isFailed = status === "failed";
+    const isSending = status === "sending";
 
     return (
         <>
@@ -86,6 +88,7 @@ export function MessageBubble({
                             userId={message.userId}
                             displayName={sender?.displayName}
                             name={sender?.name}
+                            email={sender?.email}
                             image={sender?.image}
                             size={34}
                         />
@@ -113,12 +116,17 @@ export function MessageBubble({
 
                         {(message.attachments ?? []).map((att, i) =>
                             att.mime?.startsWith("image/") ? (
-                                <Image
+                                <TouchableOpacity
                                     key={i}
-                                    source={{ uri: att.url }}
-                                    style={styles.attachmentImage}
-                                    resizeMode="cover"
-                                />
+                                    onPress={() => setPreviewImageUrl(att.url)}
+                                    activeOpacity={0.85}
+                                >
+                                    <Image
+                                        source={{ uri: att.url }}
+                                        style={styles.attachmentImage}
+                                        resizeMode="cover"
+                                    />
+                                </TouchableOpacity>
                             ) : (
                                 <TouchableOpacity
                                     key={i}
@@ -264,6 +272,30 @@ export function MessageBubble({
                     </View>
                 </Pressable>
             </Modal>
+
+            <Modal
+                visible={!!previewImageUrl}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setPreviewImageUrl(null)}
+            >
+                <View style={styles.imagePreviewOverlay}>
+                    <TouchableOpacity
+                        style={styles.imagePreviewClose}
+                        onPress={() => setPreviewImageUrl(null)}
+                        hitSlop={10}
+                    >
+                        <Ionicons name="close" size={24} color="#fff" />
+                    </TouchableOpacity>
+                    {previewImageUrl ? (
+                        <Image
+                            source={{ uri: previewImageUrl }}
+                            style={styles.imagePreview}
+                            resizeMode="contain"
+                        />
+                    ) : null}
+                </View>
+            </Modal>
         </>
     );
 }
@@ -346,4 +378,25 @@ const styles = StyleSheet.create({
     actionLabel: { fontSize: 15, color: "#E5E7EB" },
     cancelRow: { marginTop: 4, borderTopWidth: 1, borderTopColor: "#2a2a2a", justifyContent: "center" },
     cancelLabel: { fontSize: 15, color: "#6B7280", fontWeight: "600", textAlign: "center", flex: 1 },
+    imagePreviewOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.94)",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    imagePreview: { width: "100%", height: "86%" },
+    imagePreviewClose: {
+        position: "absolute",
+        top: 44,
+        right: 18,
+        zIndex: 2,
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: "rgba(31,31,31,0.85)",
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: 1,
+        borderColor: "#2a2a2a",
+    },
 });

@@ -28,8 +28,9 @@ import EditUserScreen from "./screens/EditUserScreen";
 import ConversationScreen from "./screens/Conversations";
 import EventsListScreen from "./screens/EventsListScreen";
 import GroupChatsScreen from "./screens/GroupChatsScreen";
+import MyCreatedEventsScreen from "./screens/MyCreatedEventsScreen";
 
-const Drawer = createDrawerNavigator();
+const Drawer = createDrawerNavigator<any, "MainDrawer">();
 
 export default function AppNavigator() {
   const { t } = useTranslation("sidebar");
@@ -99,6 +100,11 @@ export default function AppNavigator() {
         name="Events List"
         component={EventsListScreen}
         options={{ drawerLabel: t("Events List") }}
+      />
+      <Drawer.Screen
+        name="My Events"
+        component={MyCreatedEventsScreen}
+        options={{ drawerLabel: t("My Events") }}
       />
       <Drawer.Screen
         name="EventInfo"

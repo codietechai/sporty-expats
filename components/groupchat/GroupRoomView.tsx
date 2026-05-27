@@ -236,6 +236,7 @@ export function GroupRoomView({ room, currentUserId, currentUserImage, onClose }
                                     userId={item.userId}
                                     displayName={item.displayName}
                                     name={item.name}
+                                    email={item.email}
                                     image={item.image ?? null}
                                     size={36}
                                 />

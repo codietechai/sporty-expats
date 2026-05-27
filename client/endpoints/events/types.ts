@@ -76,4 +76,6 @@ export type CreateEventPayload = {
     isPaidEvent: boolean;
     organizers: string[];
     creatorId: string;
+    participantOrganizers?: string[];
+    memberDetails?: { id: string; name: string; email: string }[];
 };

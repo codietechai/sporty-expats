@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
-import { Control } from "react-hook-form";
+import { Alert, View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
+import { Control, useFormContext } from "react-hook-form";
 import { EventFormValues } from "@/app/screens/createEvents";
 
 type StepProps = {
@@ -24,62 +24,111 @@ type Props = {
 
 const CreteEventTabsComponent: React.FC<Props> = ({ tabs, control, onSubmit }) => {
   const [activeTab, setActiveTab] = useState(tabs[0].key);
-
-  const activeIndex = tabs.findIndex((t) => t.key === activeTab);
+  const { getValues } = useFormContext<EventFormValues>();
+  const activeIndex = tabs.findIndex((tab) => tab.key === activeTab);
   const ActiveComponent = tabs[activeIndex]?.component;
 
-  return (
-    <View style={{ flex: 1 }}>
-      {/* Step indicator */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ flexGrow: 0 }}
-        contentContainerStyle={styles.tabRow}
-      >
-        {tabs.map((tab, index) => {
-          const isActive = activeTab === tab.key;
-          const isDone = index < activeIndex;
-          return (
-            <TouchableOpacity
-              key={tab.key}
-              style={styles.tabItem}
-              onPress={() => setActiveTab(tab.key)}
-              activeOpacity={0.7}
-            >
-              {/* connector line */}
-              {index > 0 && (
-                <View style={[styles.connector, isDone && styles.connectorDone]} />
-              )}
-              <View style={[
-                styles.stepCircle,
-                isActive && styles.stepCircleActive,
-                isDone && styles.stepCircleDone,
-              ]}>
-                {isDone
-                  ? <Text style={styles.stepCheck}>✓</Text>
-                  : <Text style={[styles.stepNumber, isActive && styles.stepNumberActive]}>{index + 1}</Text>
-                }
-              </View>
-              <Text style={[styles.stepLabel, isActive && styles.stepLabelActive]}>
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+  const validateStep = (stepIndex: number): string | null => {
+    const values = getValues();
+    const start = values.startDate instanceof Date ? values.startDate : new Date(values.startDate);
+    const end = values.endDate instanceof Date ? values.endDate : new Date(values.endDate);
+    const payment = values.paymentDeadline instanceof Date ? values.paymentDeadline : new Date(values.paymentDeadline);
+    const refund = values.refundDeadline ? new Date(values.refundDeadline) : null;
 
-      {/* Progress bar */}
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${((activeIndex + 1) / tabs.length) * 100}%` }]} />
+    if (stepIndex >= 0) {
+      if (!values.title.trim()) return "Complete the event title first.";
+      if (!values.category.trim()) return "Select an event category first.";
+      if (!values.description.trim()) return "Complete the event description first.";
+      if (start < new Date()) return "Start date cannot be in the past.";
+      if (start >= end) return "End date must be after the start date.";
+      if (payment >= start) return "Payment deadline must be before the start date.";
+      if (!refund) return "Select a refund notice deadline first.";
+      if (refund >= start) return "Refund deadline must be before the start date.";
+    }
+
+    if (stepIndex >= 1 && !values.coverImage?.fileUrl) {
+      return "Upload a cover image first.";
+    }
+
+    if (stepIndex >= 2) {
+      const min = Number(values.minAttendees) || 0;
+      const max = Number(values.maxAttendees) || 0;
+      const tickets = Number(values.availableTickets) || 0;
+      const price = Number(values.ticketPrice) || 0;
+      if (!values.ticketDescription.trim()) return "Complete the ticket description first.";
+      if (!values.organizers.length) return "Select at least one organizer first.";
+      if (!values.location.name.trim()) return "Select an event location first.";
+      if (!values.location.latitude || !values.location.longitude) return "Choose a suggested location first.";
+      if (min < 1) return "Minimum attendees must be at least 1.";
+      if (max < min) return "Maximum attendees must be greater than minimum attendees.";
+      if (tickets < 1) return "Available tickets must be at least 1.";
+      if (tickets > max) return "Available tickets cannot exceed maximum attendees.";
+      if (values.isPaidEvent && price <= 0) return "Ticket price must be greater than 0 for paid events.";
+    }
+
+    if (stepIndex >= 3) {
+      const incompleteInvite = values.memberDetails.some((member) => !member.id || !member.name || !member.email);
+      if (incompleteInvite) return "Select a member for every invite slot first.";
+    }
+
+    return null;
+  };
+
+  const guardedSetActiveTab = (nextKey: string) => {
+    const nextIndex = tabs.findIndex((tab) => tab.key === nextKey);
+    if (nextIndex <= activeIndex) {
+      setActiveTab(nextKey);
+      return;
+    }
+
+    const blockedBy = validateStep(nextIndex - 1);
+    if (blockedBy) {
+      Alert.alert("Complete previous step", blockedBy);
+      return;
+    }
+    setActiveTab(nextKey);
+  };
+
+  return (
+    <View style={styles.wrapper}>
+      <View style={styles.tabShell}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ flexGrow: 0 }}
+          contentContainerStyle={styles.tabRow}
+        >
+          {tabs.map((tab, index) => {
+            const isActive = activeTab === tab.key;
+            const isDone = index < activeIndex;
+
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={[styles.tabItem, isActive && styles.tabItemActive]}
+                onPress={() => guardedSetActiveTab(tab.key)}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.stepLabel, isActive && styles.stepLabelActive]}>
+                  {tab.label}
+                </Text>
+                {isDone && <Text style={styles.stepDone}>Done</Text>}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
-      {/* Content */}
       <View style={styles.content}>
         {ActiveComponent ? (
-          <ActiveComponent control={control} activeTab={activeTab} setActiveTab={setActiveTab} onSubmit={onSubmit} />
+          <ActiveComponent
+            control={control}
+            activeTab={activeTab}
+            setActiveTab={guardedSetActiveTab}
+            onSubmit={onSubmit}
+          />
         ) : (
-          <Text style={{ color: "white" }}>No component found</Text>
+          <Text style={{ color: "#fff" }}>No component found</Text>
         )}
       </View>
     </View>
@@ -89,76 +138,47 @@ const CreteEventTabsComponent: React.FC<Props> = ({ tabs, control, onSubmit }) =
 export default CreteEventTabsComponent;
 
 const styles = StyleSheet.create({
+  wrapper: { flex: 1, backgroundColor: "#000" },
+  tabShell: {
+    marginHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 16,
+    borderRadius: 18,
+    backgroundColor: "#ffffff0d",
+    overflow: "hidden",
+  },
   tabRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
+    alignItems: "stretch",
   },
   tabItem: {
-    alignItems: "center",
-    marginRight: 8,
-    position: "relative",
-    minWidth: 64,
-  },
-  connector: {
-    position: "absolute",
-    top: 14,
-    right: "50%",
-    left: "-50%",
-    height: 2,
-    backgroundColor: "#1f2937",
-    zIndex: 0,
-  },
-  connectorDone: { backgroundColor: "#166534" },
-  stepCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#1a1a1a",
-    borderWidth: 2,
-    borderColor: "#2a2a2a",
     justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1,
+    minWidth: 118,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderRightWidth: 1,
+    borderRightColor: "#ffffff0d",
   },
-  stepCircleActive: {
-    backgroundColor: "#166534",
-    borderColor: "#2ecc71",
-  },
-  stepCircleDone: {
-    backgroundColor: "#14532d",
-    borderColor: "#166534",
-  },
-  stepNumber: { color: "#6B7280", fontWeight: "700", fontSize: 13 },
-  stepNumberActive: { color: "#fff" },
-  stepCheck: { color: "#2ecc71", fontWeight: "700", fontSize: 13 },
+  tabItemActive: { backgroundColor: "#ffffff1a" },
   stepLabel: {
-    marginTop: 6,
-    fontSize: 10,
-    color: "#4B5563",
-    textAlign: "center",
-    maxWidth: 64,
+    fontSize: 14,
+    color: "#fff",
+    textAlign: "left",
+    lineHeight: 18,
   },
-  stepLabelActive: { color: "#2ecc71", fontWeight: "600" },
-
-  progressTrack: {
-    height: 2,
-    backgroundColor: "#1f2937",
-    marginHorizontal: 20,
-    borderRadius: 2,
-    marginBottom: 4,
-  },
-  progressFill: {
-    height: 2,
-    backgroundColor: "#2ecc71",
-    borderRadius: 2,
-  },
-
+  stepLabelActive: { color: "#2fa566", fontWeight: "600" },
+  stepDone: { color: "#aaa", fontSize: 11, marginTop: 4 },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 18,
+    borderRadius: 16,
+    backgroundColor: "#1f1f1f",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 4,
   },
 });

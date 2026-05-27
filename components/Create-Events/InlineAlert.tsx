@@ -15,7 +15,7 @@ const InlineAlert: React.FC<Props> = ({ message, type = "error" }) => {
             <Ionicons
                 name={isError ? "alert-circle-outline" : "checkmark-circle-outline"}
                 size={16}
-                color={isError ? "#f87171" : "#2ecc71"}
+                color={isError ? "#f56565" : "#38c177"}
                 style={{ marginRight: 8 }}
             />
             <Text style={[styles.text, isError ? styles.errorText : styles.successText]}>{message}</Text>
@@ -35,9 +35,9 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         borderWidth: 1,
     },
-    errorBg: { backgroundColor: "#1f0a0a", borderColor: "#7f1d1d" },
-    successBg: { backgroundColor: "#052e16", borderColor: "#166534" },
+    errorBg: { backgroundColor: "#2a2a2a", borderColor: "#f56565" },
+    successBg: { backgroundColor: "#2a2a2a", borderColor: "#38c177" },
     text: { fontSize: 13, flex: 1, lineHeight: 18 },
-    errorText: { color: "#f87171" },
-    successText: { color: "#2ecc71" },
+    errorText: { color: "#f56565" },
+    successText: { color: "#38c177" },
 });

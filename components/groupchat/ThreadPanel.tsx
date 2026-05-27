@@ -84,6 +84,7 @@ export function ThreadPanel({
                             userId={parentMessage.userId}
                             displayName={parentSender?.displayName}
                             name={parentSender?.name}
+                            email={parentSender?.email}
                             image={parentSender?.image}
                             size={32}
                         />

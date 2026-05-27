@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import { Text, TextInput, View, TouchableOpacity, StyleSheet } from "react-native";
+import { Modal, Text, TextInput, View, TouchableOpacity, StyleSheet } from "react-native";
 import { ScrollView } from "react-native";
 import { Controller, Control, useWatch } from "react-hook-form";
 import { EventFormValues } from "@/app/screens/createEvents";
 import DatePickerField from "./DatePickerField";
 import InlineAlert from "./InlineAlert";
+import { categoriesList } from "./categories";
+import { Ionicons } from "@expo/vector-icons";
 
 type Props = {
   setActiveTab: (key: string) => void;
@@ -15,19 +17,28 @@ type Props = {
 
 const Event_Information: React.FC<Props> = ({ setActiveTab, control }) => {
   const [error, setError] = useState<string | null>(null);
-  const values = useWatch({ control, name: ["title", "category", "startDate", "endDate", "description"] });
-  const [title, category, startDate, endDate, description] = values;
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const values = useWatch({ control, name: ["title", "category", "startDate", "endDate", "refundDeadline", "paymentDeadline", "description"] });
+  const [title, category, startDate, endDate, refundDeadline, paymentDeadline, description] = values;
 
   const handleContinue = () => {
     const now = new Date();
     const start = startDate instanceof Date ? startDate : new Date(startDate);
     const end = endDate instanceof Date ? endDate : new Date(endDate);
+    const refund = refundDeadline ? new Date(refundDeadline) : null;
+    const payment = paymentDeadline instanceof Date ? paymentDeadline : new Date(paymentDeadline);
 
     if (!title?.trim()) { setError("Event title is required."); return; }
     if (!category?.trim()) { setError("Event category is required."); return; }
+    if (!startDate) { setError("Start date is required."); return; }
+    if (!endDate) { setError("End date is required."); return; }
+    if (!refundDeadline) { setError("Refund notice deadline is required."); return; }
+    if (!paymentDeadline) { setError("Payment deadline is required."); return; }
     if (!description?.trim()) { setError("Event description is required."); return; }
     if (start < now) { setError("Start date cannot be in the past."); return; }
-    if (end <= start) { setError("End date must be after the start date."); return; }
+    if (start >= end) { setError("End date must be after the start date."); return; }
+    if (refund && refund >= start) { setError("Refund deadline must be before the start date."); return; }
+    if (payment >= start) { setError("Payment deadline must be before the start date."); return; }
 
     setError(null);
     setActiveTab("image_upload");
@@ -47,7 +58,7 @@ const Event_Information: React.FC<Props> = ({ setActiveTab, control }) => {
               value={value}
               onChangeText={onChange}
               placeholder="e.g. Sunday Football Match"
-              placeholderTextColor="#4B5563"
+              placeholderTextColor="#999"
               style={styles.input}
             />
           </View>
@@ -60,13 +71,34 @@ const Event_Information: React.FC<Props> = ({ setActiveTab, control }) => {
         render={({ field: { value, onChange } }) => (
           <View style={styles.fieldWrap}>
             <Text style={styles.label}>Event Category</Text>
-            <TextInput
-              value={value}
-              onChangeText={onChange}
-              placeholder="e.g. Football, Yoga, Running"
-              placeholderTextColor="#4B5563"
-              style={styles.input}
-            />
+            <TouchableOpacity style={styles.selectTrigger} onPress={() => setCategoryOpen(true)} activeOpacity={0.75}>
+              <Text style={[styles.selectText, !value && styles.placeholder]}>
+                {value || "Select a category"}
+              </Text>
+              <Ionicons name="chevron-down" size={18} color="#aaa" />
+            </TouchableOpacity>
+            <Modal transparent visible={categoryOpen} animationType="fade" onRequestClose={() => setCategoryOpen(false)}>
+              <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setCategoryOpen(false)}>
+                <View style={styles.modalSheet}>
+                  <Text style={styles.modalTitle}>Select a category</Text>
+                  <ScrollView>
+                    {categoriesList.map((item) => (
+                      <TouchableOpacity
+                        key={item}
+                        style={[styles.optionRow, value === item && styles.optionRowActive]}
+                        onPress={() => {
+                          onChange(item);
+                          setCategoryOpen(false);
+                        }}
+                      >
+                        <Text style={[styles.optionText, value === item && styles.optionTextActive]}>{item}</Text>
+                        {value === item && <Ionicons name="checkmark" size={18} color="#38c177" />}
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </TouchableOpacity>
+            </Modal>
           </View>
         )}
       />
@@ -77,7 +109,7 @@ const Event_Information: React.FC<Props> = ({ setActiveTab, control }) => {
             control={control}
             name="startDate"
             render={({ field: { value, onChange } }) => (
-              <DatePickerField label="Start Date & Time" value={value} onChange={onChange} mode="datetime" />
+              <DatePickerField label="Start Date & Time" value={value} onChange={onChange} mode="datetime" minimumDate={new Date()} />
             )}
           />
         </View>
@@ -87,11 +119,25 @@ const Event_Information: React.FC<Props> = ({ setActiveTab, control }) => {
             control={control}
             name="endDate"
             render={({ field: { value, onChange } }) => (
-              <DatePickerField label="End Date & Time" value={value} onChange={onChange} mode="datetime" />
+              <DatePickerField label="End Date & Time" value={value} onChange={onChange} mode="datetime" minimumDate={startDate instanceof Date ? startDate : new Date(startDate)} />
             )}
           />
         </View>
       </View>
+
+      <Controller
+        control={control}
+        name="paymentDeadline"
+        render={({ field: { value, onChange } }) => (
+          <DatePickerField
+            label="Payment Deadline"
+            value={value}
+            onChange={onChange}
+            mode="datetime"
+            minimumDate={new Date()}
+          />
+        )}
+      />
 
       <Controller
         control={control}
@@ -102,6 +148,7 @@ const Event_Information: React.FC<Props> = ({ setActiveTab, control }) => {
             value={value ? new Date(value) : new Date()}
             onChange={(d) => onChange(d.toISOString())}
             mode="datetime"
+            minimumDate={new Date()}
           />
         )}
       />
@@ -118,7 +165,7 @@ const Event_Information: React.FC<Props> = ({ setActiveTab, control }) => {
               multiline
               numberOfLines={5}
               placeholder="Describe your event..."
-              placeholderTextColor="#4B5563"
+              placeholderTextColor="#999"
               style={styles.textarea}
               textAlignVertical="top"
             />
@@ -140,37 +187,74 @@ export default Event_Information;
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   container: { paddingBottom: 40 },
-  sectionTitle: { color: "#fff", fontSize: 20, fontWeight: "700", marginBottom: 20 },
+  sectionTitle: { color: "#fff", fontSize: 24, fontWeight: "700", marginBottom: 24 },
   row: { flexDirection: "row" },
   fieldWrap: { marginBottom: 14 },
-  label: { color: "#9CA3AF", fontSize: 13, fontWeight: "500", marginBottom: 6 },
+  label: { color: "#e0e0e0", fontSize: 14, fontWeight: "500", marginBottom: 8 },
   input: {
     borderWidth: 1,
-    borderColor: "#2a2a2a",
-    backgroundColor: "#111827",
-    padding: 12,
+    borderColor: "#4a4a4a",
+    backgroundColor: "#2a2a2a",
+    padding: 14,
     color: "#fff",
     borderRadius: 10,
     fontSize: 14,
   },
+  selectTrigger: {
+    borderWidth: 1,
+    borderColor: "#4a4a4a",
+    backgroundColor: "#2a2a2a",
+    padding: 14,
+    borderRadius: 10,
+    minHeight: 50,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  selectText: { color: "#fff", fontSize: 14, flex: 1 },
+  placeholder: { color: "#999" },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.72)",
+    justifyContent: "center",
+    paddingHorizontal: 22,
+  },
+  modalSheet: {
+    maxHeight: "78%",
+    backgroundColor: "#1f1f1f",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#4a4a4a",
+    padding: 16,
+  },
+  modalTitle: { color: "#fff", fontSize: 18, fontWeight: "700", marginBottom: 12 },
+  optionRow: {
+    minHeight: 46,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  optionRowActive: { backgroundColor: "#2fa56633" },
+  optionText: { color: "#e0e0e0", fontSize: 14 },
+  optionTextActive: { color: "#38c177", fontWeight: "700" },
   textarea: {
     borderWidth: 1,
-    borderColor: "#2a2a2a",
-    backgroundColor: "#111827",
-    padding: 12,
+    borderColor: "#4a4a4a",
+    backgroundColor: "#2a2a2a",
+    padding: 14,
     color: "#fff",
     borderRadius: 10,
     fontSize: 14,
     minHeight: 120,
   },
   continueBtn: {
-    backgroundColor: "#166534",
-    borderRadius: 12,
+    backgroundColor: "#38c177",
+    borderRadius: 10,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 8,
-    borderWidth: 1,
-    borderColor: "#2ecc71",
   },
   continueBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });

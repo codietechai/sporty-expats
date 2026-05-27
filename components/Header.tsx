@@ -9,6 +9,17 @@ type HeaderProps = {
   onAddPress?: () => void;
 };
 
+type BrandWordmarkProps = {
+  size?: number;
+  centered?: boolean;
+};
+
+export const BrandWordmark: React.FC<BrandWordmarkProps> = ({ size = 20, centered = false }) => (
+  <Text style={[styles.wordmark, { fontSize: size }, centered && styles.wordmarkCentered]}>
+    Sporty<Text style={styles.wordmarkAccent}>Expats</Text>
+  </Text>
+);
+
 const Header: React.FC<HeaderProps> = ({ myFeed, onAddPress }) => {
   const navigation = useNavigation();
 
@@ -32,9 +43,7 @@ const Header: React.FC<HeaderProps> = ({ myFeed, onAddPress }) => {
     <View style={styles.headerContainer}>
       <View style={styles.row}>
         <TouchableOpacity onPress={handleMenuPress} style={styles.menuButton} activeOpacity={0.7}>
-          <Text className="text-white text-2xl font-oswald" style={{ fontSize: 20 }}>
-            Sporty<Text className="text-main">Expats</Text>
-          </Text>
+          <BrandWordmark />
         </TouchableOpacity>
 
         <View style={styles.actions}>
@@ -76,6 +85,17 @@ const styles = StyleSheet.create({
   menuButton: {
     paddingLeft: 20,
     marginRight: 10,
+  },
+  wordmark: {
+    color: "#fff",
+    fontFamily: "oswald",
+    fontWeight: "700",
+  },
+  wordmarkCentered: {
+    textAlign: "center",
+  },
+  wordmarkAccent: {
+    color: "#166534",
   },
   actions: {
     flexDirection: "row",

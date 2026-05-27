@@ -33,7 +33,7 @@ const TIME_FILTERS: { label: string; value: TimeFilter }[] = [
 
 export default function EventsListScreen() {
     const [selectedCategory, setSelectedCategory] = useState("All");
-    const [timeFilter, setTimeFilter] = useState<TimeFilter>("ongoing");
+    const [timeFilter, setTimeFilter] = useState<TimeFilter>("upcoming");
     const [minPrice, setMinPrice] = useState("");
     const [maxPrice, setMaxPrice] = useState("");
 
@@ -41,7 +41,7 @@ export default function EventsListScreen() {
         events, isLoading, isError,
         updateFilters, resetFilters,
         hasNextPage, hasPrevPage, goToNextPage, goToPrevPage,
-    } = useEvents({ timeFilter: "ongoing" });
+    } = useEvents({ timeFilter: "upcoming" });
 
     const handleTimeFilterChange = (f: TimeFilter) => {
         setTimeFilter(f);
@@ -64,9 +64,9 @@ export default function EventsListScreen() {
         setSelectedCategory("All");
         setMinPrice("");
         setMaxPrice("");
-        setTimeFilter("ongoing");
+        setTimeFilter("upcoming");
         resetFilters();
-        updateFilters({ timeFilter: "ongoing" });
+        updateFilters({ timeFilter: "upcoming" });
     };
 
     return (

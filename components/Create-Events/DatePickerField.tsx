@@ -61,9 +61,9 @@ export default function DatePickerField({ label, value, onChange, mode = "dateti
         <View style={styles.wrap}>
             <Text style={styles.label}>{label}</Text>
             <TouchableOpacity style={styles.trigger} onPress={open} activeOpacity={0.7}>
-                <Ionicons name="calendar-outline" size={16} color="#2ecc71" />
+                <Ionicons name="calendar-outline" size={16} color="#38c177" />
                 <Text style={styles.triggerText}>{formatted}</Text>
-                <Ionicons name="chevron-down" size={14} color="#4B5563" />
+                <Ionicons name="chevron-down" size={14} color="#aaa" />
             </TouchableOpacity>
 
             {/* iOS: modal spinner */}
@@ -108,7 +108,7 @@ export default function DatePickerField({ label, value, onChange, mode = "dateti
 const styles = StyleSheet.create({
     wrap: { marginBottom: 14 },
     label: {
-        color: "#9CA3AF",
+        color: "#e0e0e0",
         fontSize: 13,
         fontWeight: "500",
         marginBottom: 6,
@@ -118,8 +118,8 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: 10,
         borderWidth: 1,
-        borderColor: "#2a2a2a",
-        backgroundColor: "#111827",
+        borderColor: "#4a4a4a",
+        backgroundColor: "#2a2a2a",
         borderRadius: 10,
         paddingHorizontal: 12,
         paddingVertical: 13,
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(0,0,0,0.6)",
     },
     modalSheet: {
-        backgroundColor: "#111827",
+        backgroundColor: "#1f1f1f",
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         paddingBottom: 32,
@@ -147,8 +147,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 14,
         borderBottomWidth: 1,
-        borderBottomColor: "#1f2937",
+        borderBottomColor: "#4a4a4a",
     },
     modalTitle: { color: "#fff", fontSize: 15, fontWeight: "600" },
-    doneBtn: { color: "#2ecc71", fontSize: 15, fontWeight: "700" },
+    doneBtn: { color: "#38c177", fontSize: 15, fontWeight: "700" },
 });

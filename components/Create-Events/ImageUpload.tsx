@@ -1,10 +1,12 @@
-import React from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { ActivityIndicator, Alert, View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { Controller, Control } from "react-hook-form";
 import { EventFormValues } from "@/app/screens/createEvents";
 import InlineAlert from "./InlineAlert";
+import { useUserDb } from "@/app/hooks/useUserDb";
+import { uploadEventCoverImage } from "@/client/endpoints/events/uploadEventCoverImage";
 
 type Props = {
   setActiveTab: (key: string) => void;
@@ -14,9 +16,19 @@ type Props = {
 };
 
 const Image_Upload: React.FC<Props> = ({ setActiveTab, control }) => {
+  const { userDb } = useUserDb();
+  const currentUser = userDb?.data?.data ?? userDb?.data ?? userDb ?? null;
+  const userId = currentUser?.id ?? "";
+  const [uploading, setUploading] = useState(false);
+
   const pickImage = async (onChange: (val: { filename: string; fileUrl: string }) => void) => {
+    if (!userId) {
+      Alert.alert("Error", "User not found. Please sign in again.");
+      return;
+    }
+
     const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!granted) { alert("Permission to access media library is required."); return; }
+    if (!granted) { Alert.alert("Permission required", "Permission to access media library is required."); return; }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -25,7 +37,22 @@ const Image_Upload: React.FC<Props> = ({ setActiveTab, control }) => {
     if (!result.canceled) {
       const asset = result.assets[0];
       const filename = asset.uri.split("/").pop() ?? "cover.jpg";
-      onChange({ filename, fileUrl: asset.uri });
+      const file = {
+        uri: asset.uri,
+        name: filename,
+        type: asset.mimeType ?? "image/jpeg",
+      };
+
+      setUploading(true);
+      try {
+        const uploadedImage = await uploadEventCoverImage(userId, file);
+        onChange(uploadedImage);
+      } catch (error: any) {
+        const message = error?.response?.data?.error ?? error?.message ?? "File upload failed.";
+        Alert.alert("Upload failed", Array.isArray(message) ? message.join("\n") : message);
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
@@ -41,13 +68,19 @@ const Image_Upload: React.FC<Props> = ({ setActiveTab, control }) => {
           <TouchableOpacity
             style={[styles.uploadArea, !!value?.fileUrl && styles.uploadAreaFilled]}
             onPress={() => pickImage(onChange)}
+            disabled={uploading}
             activeOpacity={0.8}
           >
-            {value?.fileUrl ? (
+            {uploading ? (
+              <View style={styles.placeholder}>
+                <ActivityIndicator color="#38c177" />
+                <Text style={styles.uploadText}>Uploading image...</Text>
+              </View>
+            ) : value?.fileUrl ? (
               <Image source={{ uri: value.fileUrl }} style={styles.preview} resizeMode="cover" />
             ) : (
               <View style={styles.placeholder}>
-                <Ionicons name="cloud-upload-outline" size={48} color="#2ecc71" />
+                <Ionicons name="cloud-upload-outline" size={48} color="#999" />
                 <Text style={styles.uploadText}>Tap to upload image</Text>
                 <Text style={styles.uploadHint}>JPG, PNG up to 10MB</Text>
               </View>
@@ -55,8 +88,8 @@ const Image_Upload: React.FC<Props> = ({ setActiveTab, control }) => {
           </TouchableOpacity>
 
           {value?.fileUrl && (
-            <TouchableOpacity style={styles.changeBtn} onPress={() => pickImage(onChange)}>
-              <Ionicons name="refresh-outline" size={16} color="#9CA3AF" />
+            <TouchableOpacity style={styles.changeBtn} onPress={() => pickImage(onChange)} disabled={uploading}>
+              <Ionicons name="refresh-outline" size={16} color="#aaa" />
               <Text style={styles.changeBtnText}>Change image</Text>
             </TouchableOpacity>
           )}
@@ -68,7 +101,7 @@ const Image_Upload: React.FC<Props> = ({ setActiveTab, control }) => {
             <TouchableOpacity
               style={[styles.continueBtn, !value?.fileUrl && styles.continueBtnDisabled]}
               onPress={() => {
-                if (!value?.fileUrl) return;
+                if (!value?.fileUrl || uploading) return;
                 setActiveTab("ticket_information");
               }}
             >
@@ -88,28 +121,28 @@ export default Image_Upload;
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  title: { color: "#fff", fontSize: 20, fontWeight: "700", marginBottom: 4 },
-  subtitle: { color: "#6B7280", fontSize: 13, marginBottom: 20 },
+  title: { color: "#fff", fontSize: 24, fontWeight: "700", marginBottom: 4 },
+  subtitle: { color: "#aaa", fontSize: 13, marginBottom: 20 },
   uploadArea: {
     borderWidth: 2,
-    borderColor: "#2a2a2a",
+    borderColor: "#4a4a4a",
     borderStyle: "dashed",
-    borderRadius: 16,
+    borderRadius: 10,
     height: 220,
     overflow: "hidden",
-    backgroundColor: "#111827",
+    backgroundColor: "#2a2a2a",
   },
-  uploadAreaFilled: { borderStyle: "solid", borderColor: "#166534" },
+  uploadAreaFilled: { borderStyle: "solid", borderColor: "#38c177" },
   placeholder: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8 },
   uploadText: { color: "#fff", fontSize: 15, fontWeight: "600" },
-  uploadHint: { color: "#4B5563", fontSize: 12 },
+  uploadHint: { color: "#aaa", fontSize: 12 },
   preview: { width: "100%", height: "100%" },
   changeBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 10, paddingVertical: 8 },
-  changeBtnText: { color: "#9CA3AF", fontSize: 13 },
+  changeBtnText: { color: "#aaa", fontSize: 13 },
   btnRow: { flexDirection: "row", gap: 12, marginTop: "auto", paddingTop: 24 },
-  backBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: "#2a2a2a", alignItems: "center" },
-  backBtnText: { color: "#9CA3AF", fontWeight: "600", fontSize: 15 },
-  continueBtn: { flex: 2, backgroundColor: "#166534", borderRadius: 12, paddingVertical: 14, alignItems: "center", borderWidth: 1, borderColor: "#2ecc71" },
-  continueBtnDisabled: { backgroundColor: "#1a1a1a", borderColor: "#2a2a2a" },
+  backBtn: { flex: 1, paddingVertical: 14, borderRadius: 10, borderWidth: 1, borderColor: "#454746", alignItems: "center", backgroundColor: "#454746" },
+  backBtnText: { color: "#ccc", fontWeight: "600", fontSize: 15 },
+  continueBtn: { flex: 2, backgroundColor: "#38c177", borderRadius: 10, paddingVertical: 14, alignItems: "center" },
+  continueBtnDisabled: { backgroundColor: "#3a3a3a" },
   continueBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });

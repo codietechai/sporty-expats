@@ -40,7 +40,7 @@ const PreviewEvent: React.FC<Props> = ({ setActiveTab, control, onSubmit }) => {
         <Image source={{ uri: values.coverImage.fileUrl }} style={styles.coverImage} resizeMode="cover" />
       ) : (
         <View style={styles.coverPlaceholder}>
-          <Ionicons name="image-outline" size={40} color="#4B5563" />
+          <Ionicons name="image-outline" size={40} color="#999" />
           <Text style={styles.coverPlaceholderText}>No cover image</Text>
         </View>
       )}
@@ -60,7 +60,11 @@ const PreviewEvent: React.FC<Props> = ({ setActiveTab, control, onSubmit }) => {
         <InfoRow icon="location-outline" label="Location" value={values.location?.name || "—"} />
         <InfoRow icon="eye-outline" label="Visibility" value={values.visibility || "Public"} />
         <InfoRow icon="people-outline" label="Attendees" value={`${values.minAttendees || 0} – ${values.maxAttendees || 0}`} />
-        <InfoRow icon="ticket-outline" label="Available Tickets" value={String(values.availableTickets || 0)} />
+        <InfoRow
+          icon="ticket-outline"
+          label="Available Tickets"
+          value={String(Math.max(Number(values.availableTickets || 0) - (values.participantOrganizers?.length ?? 0), 0))}
+        />
         {values.isPaidEvent && (
           <InfoRow icon="card-outline" label="Ticket Price" value={`€${values.ticketPrice || 0}`} />
         )}
@@ -89,6 +93,24 @@ const PreviewEvent: React.FC<Props> = ({ setActiveTab, control, onSubmit }) => {
         </View>
       )}
 
+      {values.participantOrganizers && values.participantOrganizers.length > 0 && (
+        <View style={styles.descCard}>
+          <Text style={styles.descLabel}>Organizer Participants</Text>
+          {values.participantOrganizers.map((o, i) => (
+            <Text key={i} style={styles.organizerText}>- {o}</Text>
+          ))}
+        </View>
+      )}
+
+      {values.memberDetails && values.memberDetails.length > 0 && (
+        <View style={styles.descCard}>
+          <Text style={styles.descLabel}>Invited Members</Text>
+          {values.memberDetails.map((member) => (
+            <Text key={member.email} style={styles.organizerText}>- {member.name} ({member.email})</Text>
+          ))}
+        </View>
+      )}
+
       {/* Buttons */}
       <View style={styles.btnRow}>
         <TouchableOpacity style={styles.backBtn} onPress={() => setActiveTab("invite_members")}>
@@ -107,7 +129,7 @@ const PreviewEvent: React.FC<Props> = ({ setActiveTab, control, onSubmit }) => {
 
 const InfoRow = ({ icon, label, value }: { icon: any; label: string; value: string }) => (
   <View style={styles.infoRow}>
-    <Ionicons name={icon} size={16} color="#2ecc71" style={{ marginRight: 8 }} />
+    <Ionicons name={icon} size={16} color="#2fa566" style={{ marginRight: 8 }} />
     <Text style={styles.infoLabel}>{label}:</Text>
     <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
   </View>
@@ -118,24 +140,24 @@ export default PreviewEvent;
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   container: { paddingBottom: 40 },
-  sectionTitle: { color: "#fff", fontSize: 20, fontWeight: "700", marginBottom: 16 },
-  coverImage: { width: "100%", height: 180, borderRadius: 14, marginBottom: 16 },
-  coverPlaceholder: { width: "100%", height: 180, borderRadius: 14, backgroundColor: "#111827", borderWidth: 1, borderColor: "#2a2a2a", alignItems: "center", justifyContent: "center", marginBottom: 16 },
-  coverPlaceholderText: { color: "#4B5563", marginTop: 8, fontSize: 13 },
+  sectionTitle: { color: "#fff", fontSize: 24, fontWeight: "700", marginBottom: 16 },
+  coverImage: { width: "100%", height: 220, borderRadius: 12, marginBottom: 16 },
+  coverPlaceholder: { width: "100%", height: 220, borderRadius: 12, backgroundColor: "#2a2a2a", borderWidth: 1, borderColor: "#4a4a4a", alignItems: "center", justifyContent: "center", marginBottom: 16 },
+  coverPlaceholderText: { color: "#999", marginTop: 8, fontSize: 13 },
   title: { color: "#fff", fontSize: 22, fontWeight: "700", marginBottom: 8 },
-  badge: { alignSelf: "flex-start", backgroundColor: "#14532d", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 16, borderWidth: 1, borderColor: "#166534" },
-  badgeText: { color: "#2ecc71", fontSize: 12, fontWeight: "600" },
-  infoCard: { backgroundColor: "#111827", borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: "#1f2937" },
-  infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: "#1f2937" },
-  infoLabel: { color: "#9CA3AF", fontSize: 13, width: 120 },
+  badge: { alignSelf: "flex-start", backgroundColor: "#2fa56633", borderRadius: 4, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 16 },
+  badgeText: { color: "#fff", fontSize: 12, fontWeight: "600" },
+  infoCard: { backgroundColor: "#2a2a2a", borderRadius: 10, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: "#4a4a4a" },
+  infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#4a4a4a" },
+  infoLabel: { color: "#e0e0e0", fontSize: 13, width: 120 },
   infoValue: { color: "#fff", fontSize: 13, flex: 1 },
-  descCard: { backgroundColor: "#111827", borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: "#1f2937" },
-  descLabel: { color: "#9CA3AF", fontSize: 12, fontWeight: "600", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 },
-  descText: { color: "#D1D5DB", fontSize: 14, lineHeight: 22 },
-  organizerText: { color: "#D1D5DB", fontSize: 14, marginBottom: 4 },
+  descCard: { backgroundColor: "#2a2a2a", borderRadius: 10, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: "#4a4a4a" },
+  descLabel: { color: "#e0e0e0", fontSize: 13, fontWeight: "700", marginBottom: 8 },
+  descText: { color: "#ccc", fontSize: 14, lineHeight: 22 },
+  organizerText: { color: "#ccc", fontSize: 14, marginBottom: 4 },
   btnRow: { flexDirection: "row", gap: 12, marginTop: 8 },
-  backBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: "#2a2a2a", alignItems: "center" },
-  backBtnText: { color: "#9CA3AF", fontWeight: "600", fontSize: 15 },
-  publishBtn: { flex: 2, backgroundColor: "#166534", borderRadius: 12, paddingVertical: 14, alignItems: "center", borderWidth: 1, borderColor: "#2ecc71" },
+  backBtn: { flex: 1, paddingVertical: 14, borderRadius: 10, borderWidth: 1, borderColor: "#454746", alignItems: "center", backgroundColor: "#454746" },
+  backBtnText: { color: "#ccc", fontWeight: "600", fontSize: 15 },
+  publishBtn: { flex: 2, backgroundColor: "#2fa566", borderRadius: 12, paddingVertical: 14, alignItems: "center" },
   publishBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });

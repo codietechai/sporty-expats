@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import React from "react";
+import { StyleSheet, View } from "react-native";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/translations/i18n";
 import { ClerkLoaded, ClerkProvider } from '@clerk/clerk-expo'
@@ -8,6 +9,7 @@ import { tokenCache } from '@clerk/clerk-expo/token-cache'
 import { QueryClient, QueryClientProvider } from "react-query";
 import { DrawerProvider } from "@/contexts/DrawerContext";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BrandWordmark } from "@/components/Header";
 
 // Create QueryClient outside component to prevent recreation
 const queryClient = new QueryClient({
@@ -29,6 +31,14 @@ export default function RootLayout() {
 
   const Publishable_key = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
+  if (!fontsLoaded) {
+    return (
+      <View style={styles.splash}>
+        <BrandWordmark size={34} centered />
+      </View>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
@@ -45,3 +55,12 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  splash: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#000",
+  },
+});

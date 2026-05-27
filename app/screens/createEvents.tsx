@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StatusBar, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, StatusBar, StyleSheet, Modal } from "react-native";
 import { Stack } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
 import { useUserDb } from "@/app/hooks/useUserDb";
@@ -13,6 +13,7 @@ import TicketInformation from "@/components/Create-Events/TicketInformations";
 import InviteMembers from "@/components/Create-Events/InviteMembers";
 import PreviewEvent from "@/components/Create-Events/PreviewEvent";
 import { createEvent } from "@/client/endpoints/events/createEvent";
+import type { Event } from "@/client/endpoints/events/types";
 import { Alert } from "react-native";
 
 export type EventFormValues = {
@@ -32,35 +33,52 @@ export type EventFormValues = {
   refundDeadline: string;
   isPaidEvent: boolean;
   organizers: string[];
+  participantOrganizers: string[];
+  memberDetails: { id: string; name: string; email: string }[];
+  ticketDescription: string;
+  eventURL: string;
   creatorId: string;
 };
+
+const getDefaultEventValues = (): EventFormValues => ({
+  title: "",
+  description: "",
+  coverImage: { filename: "", fileUrl: "" },
+  startDate: new Date(),
+  endDate: new Date(),
+  location: { name: "", latitude: "", longitude: "" },
+  minAttendees: "",
+  maxAttendees: "",
+  category: "",
+  ticketPrice: "",
+  visibility: "Public",
+  availableTickets: "",
+  paymentDeadline: new Date(),
+  refundDeadline: "",
+  isPaidEvent: false,
+  organizers: [],
+  participantOrganizers: [],
+  memberDetails: [],
+  ticketDescription: "",
+  eventURL: "",
+  creatorId: "",
+});
 
 const CreateEvents = () => {
   const navigation = useNavigation();
   const { userDb } = useUserDb();
-  const userId: string = userDb?.data?.id ?? userDb?.id ?? "";
+  const currentUser = userDb?.data?.data ?? userDb?.data ?? userDb ?? null;
+  const userId: string = currentUser?.id ?? "";
+  const role = currentUser?.role;
+  const verified = role === "Admin" || role === "Host";
+  const [proceedToCreateEvent, setProceedToCreateEvent] = useState(false);
+  const [formResetKey, setFormResetKey] = useState(0);
+  const [publishedEvent, setPublishedEvent] = useState<Event | null>(null);
 
-  const { control, handleSubmit, ...methods } = useForm<EventFormValues>({
-    defaultValues: {
-      title: "",
-      description: "",
-      coverImage: { filename: "", fileUrl: "" },
-      startDate: new Date(),
-      endDate: new Date(),
-      location: { name: "", latitude: "", longitude: "" },
-      minAttendees: "",
-      maxAttendees: "",
-      category: "",
-      ticketPrice: "",
-      visibility: "Public",
-      availableTickets: "",
-      paymentDeadline: new Date(),
-      refundDeadline: "",
-      isPaidEvent: false,
-      organizers: [],
-      creatorId: "",
-    },
+  const formMethods = useForm<EventFormValues>({
+    defaultValues: getDefaultEventValues(),
   });
+  const { control, handleSubmit, reset } = formMethods;
 
   const toISO = (d: Date | string | undefined): string => {
     if (!d) return new Date().toISOString();
@@ -92,18 +110,23 @@ const CreateEvents = () => {
     if (!data.location.name.trim()) { Alert.alert("Validation", "Event location is required."); return; }
     if (!data.coverImage.fileUrl) { Alert.alert("Validation", "Cover image is required."); return; }
     if (!data.description.trim()) { Alert.alert("Validation", "Event description is required."); return; }
+    if (!data.ticketDescription.trim()) { Alert.alert("Validation", "Ticket description is required."); return; }
+    if (!data.organizers.length) { Alert.alert("Validation", "Please add at least one organizer."); return; }
     if (startDate < now) { Alert.alert("Validation", "Start date cannot be in the past."); return; }
     if (endDate <= startDate) { Alert.alert("Validation", "End date must be after the start date."); return; }
-    if (paymentDeadline > startDate) { Alert.alert("Validation", "Payment deadline must be before the start date."); return; }
+    if (paymentDeadline >= startDate) { Alert.alert("Validation", "Payment deadline must be before the start date."); return; }
     if (refundDeadline && refundDeadline >= startDate) { Alert.alert("Validation", "Refund deadline must be before the start date."); return; }
     if (minAttendees < 1) { Alert.alert("Validation", "Minimum attendees must be at least 1."); return; }
     if (maxAttendees < minAttendees) { Alert.alert("Validation", "Maximum attendees must be ≥ minimum attendees."); return; }
     if (availableTickets < 1) { Alert.alert("Validation", "Available tickets must be at least 1."); return; }
     if (availableTickets > maxAttendees) { Alert.alert("Validation", "Available tickets cannot exceed maximum attendees."); return; }
+    if (!verified && data.isPaidEvent) { Alert.alert("Validation", "Only hosts and admins can create paid events."); return; }
     if (data.isPaidEvent && ticketPrice <= 0) { Alert.alert("Validation", "Ticket price must be > 0 for paid events."); return; }
+    const adjustedAvailableTickets = availableTickets - data.participantOrganizers.length;
+    if (adjustedAvailableTickets < 1) { Alert.alert("Validation", "Available tickets must stay at least 1 after organizer participants."); return; }
 
     try {
-      await createEvent({
+      const createdEvent = await createEvent({
         title: data.title,
         description: data.description,
         coverImage: { filename: data.coverImage.filename, fileUrl: data.coverImage.fileUrl },
@@ -115,20 +138,21 @@ const CreateEvents = () => {
         category: data.category,
         ticketPrice,
         visibility: data.visibility,
-        availableTickets,
+        availableTickets: adjustedAvailableTickets,
         paymentDeadline: toISO(paymentDeadline),
         refundDeadline: refundDeadline ? toISO(refundDeadline) : toISO(endDate),
         isPaidEvent: data.isPaidEvent,
         organizers: data.organizers,
+        participantOrganizers: data.participantOrganizers,
+        memberDetails: data.memberDetails,
         creatorId: userId,
       });
-      Alert.alert("Success", "Event created successfully!", [
-        {
-          text: "OK", onPress: () => navigation.navigate("Dashboard" as never)
-        },
-      ]);
+      console.log("Event created successfully:", createdEvent.id);
+      reset(getDefaultEventValues());
+      setFormResetKey((key) => key + 1);
+      setPublishedEvent(createdEvent);
     } catch (err: any) {
-      const msg = err?.response?.data?.message ?? err?.response?.data?.error ?? "Failed to create event.";
+      const msg = err?.response?.data?.message ?? err?.response?.data?.error ?? err?.message ?? "Failed to create event.";
       Alert.alert("Error", Array.isArray(msg) ? msg.join("\n") : msg);
     }
   });
@@ -141,9 +165,33 @@ const CreateEvents = () => {
     { key: "preview_event", label: "Preview", component: PreviewEvent },
   ];
 
+  if (role === "Member" && !proceedToCreateEvent) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <View style={styles.memberGate}>
+          <Text style={styles.memberGateText}>
+            Members can continue creating free events. Verify your profile to create paid events.
+          </Text>
+          <TouchableOpacity
+            style={styles.memberGatePrimary}
+            onPress={() => navigation.navigate("profile" as never)}
+          >
+            <Text style={styles.memberGatePrimaryText}>Verify</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.memberGateSecondary}
+            onPress={() => setProceedToCreateEvent(true)}
+          >
+            <Text style={styles.memberGateSecondaryText}>Continue</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <>
-      <StatusBar barStyle="light-content" backgroundColor="#0d0d0d" />
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
       <Stack.Screen options={{ headerShown: false }} />
 
       <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -160,11 +208,55 @@ const CreateEvents = () => {
         </View>
 
         {/* Tabs + content */}
-        <FormProvider control={control} handleSubmit={handleSubmit} {...methods}>
+        <FormProvider {...formMethods}>
           <View style={styles.body}>
-            <CreteEventTabsComponent tabs={tabs} control={control} onSubmit={onSubmit} />
+            <CreteEventTabsComponent
+              key={formResetKey}
+              tabs={tabs}
+              control={control}
+              onSubmit={onSubmit}
+            />
           </View>
         </FormProvider>
+
+        <Modal
+          visible={!!publishedEvent}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setPublishedEvent(null)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.successModal}>
+              <View style={styles.successIconWrap}>
+                <Ionicons name="checkmark-circle" size={42} color="#2fa566" />
+              </View>
+              <Text style={styles.successTitle}>Event published</Text>
+              <Text style={styles.successText}>
+                Your event was created successfully. You can track its approval status in My Events.
+              </Text>
+              {publishedEvent?.title ? (
+                <Text style={styles.successEventName} numberOfLines={2}>
+                  {publishedEvent.title}
+                </Text>
+              ) : null}
+              <TouchableOpacity
+                style={styles.successPrimary}
+                onPress={() => {
+                  setPublishedEvent(null);
+                  navigation.navigate("My Events" as never);
+                }}
+              >
+                <Text style={styles.successPrimaryText}>View My Events</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.successSecondary}
+                onPress={() => setPublishedEvent(null)}
+              >
+                <Text style={styles.successSecondaryText}>Create Another</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </>
   );
@@ -173,28 +265,125 @@ const CreateEvents = () => {
 export default CreateEvents;
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#0d0d0d" },
+  safe: { flex: 1, backgroundColor: "#000" },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#1e1e1e",
-    backgroundColor: "#111",
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 12,
+    backgroundColor: "#000",
   },
   backBtn: {
     width: 38,
     height: 38,
-    borderRadius: 10,
-    backgroundColor: "#1a1a1a",
+    borderRadius: 8,
+    backgroundColor: "#454746",
     borderWidth: 1,
-    borderColor: "#2a2a2a",
+    borderColor: "#555",
     alignItems: "center",
     justifyContent: "center",
   },
   headerCenter: { flex: 1, alignItems: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "700", color: "#fff" },
-  headerSub: { fontSize: 11, color: "#6B7280", marginTop: 1 },
-  body: { flex: 1, backgroundColor: "#0d0d0d" },
+  headerTitle: { fontSize: 28, fontWeight: "700", color: "#fff" },
+  headerSub: { fontSize: 12, color: "#ccc", marginTop: 4 },
+  body: { flex: 1, backgroundColor: "#000" },
+  memberGate: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    gap: 14,
+    backgroundColor: "#000",
+  },
+  memberGateText: {
+    color: "#ccc",
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  memberGatePrimary: {
+    backgroundColor: "#2fa566",
+    borderColor: "#2fa566",
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  memberGatePrimaryText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  memberGateSecondary: {
+    backgroundColor: "#454746",
+    borderColor: "#555",
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  memberGateSecondaryText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.72)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 22,
+  },
+  successModal: {
+    width: "100%",
+    maxWidth: 380,
+    borderRadius: 18,
+    backgroundColor: "#1f1f1f",
+    borderWidth: 1,
+    borderColor: "#2fa56655",
+    padding: 22,
+    alignItems: "center",
+  },
+  successIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#2fa5661f",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  successTitle: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  successText: {
+    color: "#cfcfcf",
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: "center",
+  },
+  successEventName: {
+    color: "#2fa566",
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+    marginTop: 12,
+    marginBottom: 18,
+  },
+  successPrimary: {
+    width: "100%",
+    backgroundColor: "#2fa566",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 18,
+  },
+  successPrimaryText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  successSecondary: {
+    width: "100%",
+    backgroundColor: "#454746",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#555",
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  successSecondaryText: { color: "#fff", fontSize: 15, fontWeight: "700" },
 });

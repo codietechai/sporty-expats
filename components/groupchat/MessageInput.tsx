@@ -217,10 +217,20 @@ export function MessageInput({
                 {/* Attach buttons — only shown when uploadFiles is available */}
                 {uploadFiles && !isEditing && (
                     <View style={styles.attachBtns}>
-                        <TouchableOpacity onPress={pickImages} disabled={disabled} hitSlop={6}>
+                        <TouchableOpacity
+                            onPress={pickImages}
+                            disabled={disabled}
+                            hitSlop={6}
+                            style={styles.attachBtn}
+                        >
                             <Ionicons name="image-outline" size={22} color={disabled ? "#374151" : "#6B7280"} />
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={pickDocuments} disabled={disabled} hitSlop={6}>
+                        <TouchableOpacity
+                            onPress={pickDocuments}
+                            disabled={disabled}
+                            hitSlop={6}
+                            style={styles.attachBtn}
+                        >
                             <Ionicons name="attach-outline" size={22} color={disabled ? "#374151" : "#6B7280"} />
                         </TouchableOpacity>
                     </View>
@@ -294,18 +304,25 @@ const styles = StyleSheet.create({
     fileRemove: { marginLeft: 2 },
 
     inputRow: {
-        flexDirection: "row", alignItems: "flex-end", gap: 8,
+        flexDirection: "row", alignItems: "center", gap: 8,
         paddingHorizontal: 12, paddingVertical: 8,
         borderRadius: 14, borderWidth: 1, borderColor: "#2a2a2a", backgroundColor: "#1a1a1a",
     },
     inputRowDisabled: { backgroundColor: "#131313", borderColor: "#1e1e1e" },
     inputRowEditing: { borderColor: "rgba(74,222,128,0.35)" },
 
-    attachBtns: { flexDirection: "row", gap: 10, alignItems: "center", paddingBottom: 2 },
+    attachBtns: { flexDirection: "row", gap: 8, alignItems: "center" },
+    attachBtn: {
+        width: 30,
+        height: 34,
+        alignItems: "center",
+        justifyContent: "center",
+    },
 
     input: {
         flex: 1, fontSize: 14, color: "#F9FAFB",
-        maxHeight: 100, paddingTop: 0, paddingBottom: 0,
+        maxHeight: 100, minHeight: 34, paddingTop: 7, paddingBottom: 7,
+        textAlignVertical: "center",
     },
     sendBtn: {
         width: 34, height: 34, borderRadius: 10,
