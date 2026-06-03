@@ -137,14 +137,7 @@ export default function Sidebar(props: DrawerContentComponentProps) {
               Sporty<Text style={styles.logoAccent}>Expats</Text>
             </Text>
             <TouchableOpacity onPress={() => setLanguageModalVisible(true)} style={styles.langBtn}>
-              <Image
-                source={{
-                  uri: selectedLanguage === "en"
-                    ? "https://static.vecteezy.com/system/resources/thumbnails/025/687/930/small/american-national-flag-usa-independence-day-vector.jpg"
-                    : "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Flag_of_France.svg/1280px-Flag_of_France.svg.png",
-                }}
-                style={styles.flag}
-              />
+              <Ionicons name="language-outline" size={16} color="#D1D5DB" />
               <Text style={styles.langText}>{selectedLanguage === "en" ? "EN" : "FR"}</Text>
             </TouchableOpacity>
           </View>
@@ -240,11 +233,10 @@ export default function Sidebar(props: DrawerContentComponentProps) {
         <TouchableOpacity style={styles.modalOverlay} onPress={() => setLanguageModalVisible(false)}>
           <View style={styles.langModal}>
             {[
-              { lang: "en", label: "English", flag: "https://static.vecteezy.com/system/resources/thumbnails/025/687/930/small/american-national-flag-usa-independence-day-vector.jpg" },
-              { lang: "fr", label: "Français", flag: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Flag_of_France.svg/1280px-Flag_of_France.svg.png" },
+              { lang: "en", label: "English" },
+              { lang: "fr", label: "Français" },
             ].map((item) => (
               <TouchableOpacity key={item.lang} onPress={() => changeLanguage(item.lang)} style={styles.langItem}>
-                <Image source={{ uri: item.flag }} style={styles.flag} />
                 <Text style={styles.langItemText}>{item.label}</Text>
               </TouchableOpacity>
             ))}
@@ -262,7 +254,6 @@ const styles = StyleSheet.create({
   logo: { fontSize: 22, fontWeight: "700", color: "#fff", fontFamily: "oswald" },
   logoAccent: { color: "#166534" },
   langBtn: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#2a2a2a", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  flag: { width: 18, height: 18, borderRadius: 9 },
   langText: { color: "#D1D5DB", fontSize: 12, fontWeight: "600" },
   navSection: { gap: 2 },
   navItem: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 12, borderRadius: 10, position: "relative" },

@@ -36,20 +36,13 @@ export default function AppNavigator() {
   const { t } = useTranslation("sidebar");
   const { getToken, isSignedIn } = useAuth();
 
-  // Set up interceptor synchronously so it's ready before any child component
-  // makes API calls — avoids the race where useUserDb fires before the Bearer
-  // token interceptor is registered.
   setUpAuthInterceptor(getToken);
-
-  // Update initial route based on auth state
-  const getInitialRouteName = () => {
-    return isSignedIn ? "Dashboard" : "Home";
-  };
 
   return (
     <Drawer.Navigator
       id="MainDrawer"
-      initialRouteName={getInitialRouteName()}
+      initialRouteName={isSignedIn ? "Dashboard" : "Home"}
+      backBehavior="history"
       screenOptions={{
         headerShown: true,
         headerStyle: { backgroundColor: "black" },
@@ -99,12 +92,12 @@ export default function AppNavigator() {
       <Drawer.Screen
         name="Events List"
         component={EventsListScreen}
-        options={{ drawerLabel: t("Events List") }}
+        options={{ drawerLabel: t("Events List"), headerShown: false }}
       />
       <Drawer.Screen
         name="My Events"
         component={MyCreatedEventsScreen}
-        options={{ drawerLabel: t("My Events") }}
+        options={{ drawerLabel: t("My Events"), headerShown: false }}
       />
       <Drawer.Screen
         name="EventInfo"

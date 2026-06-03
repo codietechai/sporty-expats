@@ -15,26 +15,29 @@ export type EventFilters = {
 };
 
 const DEBOUNCE_MS = 400;
+const PAGE_SIZE = 10;
 
 export function useEvents(initialFilters: EventFilters = {}) {
     const [filters, setFilters] = useState<EventFilters>(initialFilters);
     const [debouncedFilters, setDebouncedFilters] = useState<EventFilters>(initialFilters);
-    const [nextCursor, setNextCursor] = useState<string | undefined>();
-    const [prevCursor, setPrevCursor] = useState<string | undefined>();
+
+    // Cursor history: index 0 = page 1 (no cursor), index n = cursor for page n+1
+    const [cursorHistory, setCursorHistory] = useState<string[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
     const [activeCursor, setActiveCursor] = useState<{ startingAfter?: string; endingBefore?: string }>({});
+
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Debounce filter changes
     useEffect(() => {
         if (debounceTimer.current) clearTimeout(debounceTimer.current);
         debounceTimer.current = setTimeout(() => {
             setDebouncedFilters(filters);
             // Reset pagination when filters change
             setActiveCursor({});
+            setCurrentPage(1);
+            setCursorHistory([]);
         }, DEBOUNCE_MS);
-        return () => {
-            if (debounceTimer.current) clearTimeout(debounceTimer.current);
-        };
+        return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
     }, [filters]);
 
     const queryParams: GetEventsQueryParams = {
@@ -42,29 +45,38 @@ export function useEvents(initialFilters: EventFilters = {}) {
         ...activeCursor,
     };
 
-    const { data, isLoading, isError, error, refetch } = useQuery(
+    const { data, isLoading, isError, isFetching, error, refetch } = useQuery(
         [GET_EVENTS_KEY, queryParams],
         () => getEvents(queryParams),
         {
-            keepPreviousData: true,
+            keepPreviousData: false,
             refetchOnWindowFocus: false,
             retry: 1,
-            onSuccess: (res) => {
-                setNextCursor(res.nextCursor || undefined);
-                setPrevCursor(res.prevCursor || undefined);
-            },
         }
     );
 
     const events: Event[] = data?.data ?? [];
+    const nextCursor = data?.nextCursor || undefined;
+    const prevCursor = data?.prevCursor || undefined;
 
     const goToNextPage = useCallback(() => {
-        if (nextCursor) setActiveCursor({ startingAfter: nextCursor });
-    }, [nextCursor]);
+        if (!nextCursor) return;
+        setCursorHistory((prev) => {
+            const updated = [...prev];
+            updated[currentPage - 1] = nextCursor;
+            return updated;
+        });
+        setActiveCursor({ startingAfter: nextCursor });
+        setCurrentPage((p) => p + 1);
+    }, [nextCursor, currentPage]);
 
     const goToPrevPage = useCallback(() => {
-        if (prevCursor) setActiveCursor({ endingBefore: prevCursor });
-    }, [prevCursor]);
+        if (currentPage <= 1) return;
+        const prevPage = currentPage - 2; // index into history for the page before current
+        const cursor = prevPage >= 0 ? cursorHistory[prevPage - 1] : undefined;
+        setActiveCursor(cursor ? { startingAfter: cursor } : {});
+        setCurrentPage((p) => p - 1);
+    }, [currentPage, cursorHistory]);
 
     const updateFilters = useCallback((newFilters: Partial<EventFilters>) => {
         setFilters((prev) => ({ ...prev, ...newFilters }));
@@ -73,19 +85,23 @@ export function useEvents(initialFilters: EventFilters = {}) {
     const resetFilters = useCallback(() => {
         setFilters({});
         setActiveCursor({});
+        setCurrentPage(1);
+        setCursorHistory([]);
     }, []);
 
     return {
         events,
-        isLoading,
+        isLoading: isLoading || isFetching,
         isError,
         error,
         refetch,
         filters,
         updateFilters,
         resetFilters,
+        currentPage,
+        pageSize: PAGE_SIZE,
         hasNextPage: !!nextCursor,
-        hasPrevPage: !!prevCursor,
+        hasPrevPage: currentPage > 1,
         goToNextPage,
         goToPrevPage,
     };

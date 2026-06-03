@@ -118,9 +118,21 @@ const Event_Information: React.FC<Props> = ({ setActiveTab, control }) => {
           <Controller
             control={control}
             name="endDate"
-            render={({ field: { value, onChange } }) => (
-              <DatePickerField label="End Date & Time" value={value} onChange={onChange} mode="datetime" minimumDate={startDate instanceof Date ? startDate : new Date(startDate)} />
-            )}
+            render={({ field: { value, onChange } }) => {
+              // minimum is 1 minute after startDate so same-day earlier times are blocked
+              const minEnd = startDate
+                ? new Date(new Date(startDate).getTime() + 60 * 1000)
+                : new Date();
+              return (
+                <DatePickerField
+                  label="End Date & Time"
+                  value={value}
+                  onChange={onChange}
+                  mode="datetime"
+                  minimumDate={minEnd}
+                />
+              );
+            }}
           />
         </View>
       </View>

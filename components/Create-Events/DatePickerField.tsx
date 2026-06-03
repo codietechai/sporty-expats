@@ -37,8 +37,10 @@ export default function DatePickerField({ label, value, onChange, mode = "dateti
                 // Merge date from tempDate with time from selected (android datetime flow)
                 if (mode === "datetime" && androidStep === "time") {
                     const merged = new Date(tempDate);
-                    merged.setHours(selected.getHours(), selected.getMinutes());
-                    onChange(merged);
+                    merged.setHours(selected.getHours(), selected.getMinutes(), 0, 0);
+                    // Clamp: if merged is before minimumDate, use minimumDate instead
+                    const result = minimumDate && merged < minimumDate ? new Date(minimumDate) : merged;
+                    onChange(result);
                 } else {
                     onChange(selected);
                 }

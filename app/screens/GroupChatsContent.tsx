@@ -26,15 +26,16 @@ type Tab = "past" | "upcoming";
 export default function GroupChatsContent() {
     const navigation = useNavigation();
     const { user } = useChatClient();
-    const { pastRooms, upcomingRooms, isLoading, error, page, totalPages, setPage, refetch } = useGroupRooms();
+    const { pastRooms, upcomingRooms, isLoading, error, page, pastTotalPages, upcomingTotalPages, setPage, refetch } = useGroupRooms();
 
     const [activeTab, setActiveTab] = useState<Tab>("past");
     const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
 
     const allRooms = activeTab === "past" ? pastRooms : upcomingRooms;
+    const totalPages = activeTab === "past" ? pastTotalPages : upcomingTotalPages;
 
-    const rooms = useMemo(() => {
+    const filteredRooms = useMemo(() => {
         const q = searchQuery.trim().toLowerCase();
         if (!q) return allRooms;
         return allRooms.filter((room) => {
@@ -45,6 +46,14 @@ export default function GroupChatsContent() {
             return title.includes(q) || category.includes(q) || location.includes(q);
         });
     }, [allRooms, searchQuery]);
+
+    // Client-side pagination over the filtered subset
+    const PAGE_SIZE = 10;
+    const rooms = useMemo(() => {
+        if (searchQuery.trim()) return filteredRooms; // no pagination while searching
+        const start = (page - 1) * PAGE_SIZE;
+        return filteredRooms.slice(start, start + PAGE_SIZE);
+    }, [filteredRooms, page, searchQuery]);
 
     if (selectedRoom && user?.userId) {
         return (
@@ -67,27 +76,38 @@ export default function GroupChatsContent() {
             <Stack.Screen options={{ headerShown: false }} />
             <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
                 <View style={styles.header}>
-                    <View style={styles.headerTop}>
-                        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-                            <Ionicons name="arrow-back" size={22} color="#fff" />
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={8}>
+                        <Ionicons name="arrow-back" size={22} color="#fff" />
+                    </TouchableOpacity>
+                    <View style={styles.headerCenter}>
+                        <Text style={styles.headerTitle}>Group Chats</Text>
+                        <Text style={styles.headerSub}>Your event group rooms</Text>
+                    </View>
+                    <TouchableOpacity
+                        style={styles.backBtn}
+                        hitSlop={8}
+                        onPress={() => {
+                            const drawer = (navigation as any).getParent?.("MainDrawer");
+                            drawer?.openDrawer?.();
+                        }}
+                    >
+                        <Ionicons name="menu" size={22} color="#fff" />
+                    </TouchableOpacity>
+                </View>
+                <View style={styles.searchRow}>
+                    <Ionicons name="search-outline" size={14} color="#6B7280" />
+                    <TextInput
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        placeholder="Search groups"
+                        placeholderTextColor="#4B5563"
+                        style={styles.searchInput}
+                    />
+                    {searchQuery.length > 0 && (
+                        <TouchableOpacity onPress={() => setSearchQuery("")}>
+                            <Ionicons name="close-circle" size={16} color="#6B7280" />
                         </TouchableOpacity>
-                        <Text style={styles.title}>Groups</Text>
-                    </View>
-                    <View style={styles.searchContainer}>
-                        <Ionicons name="search-outline" size={14} color="#6B7280" />
-                        <TextInput
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                            placeholder="Search groups"
-                            placeholderTextColor="#4B5563"
-                            style={styles.searchInput}
-                        />
-                        {searchQuery.length > 0 && (
-                            <TouchableOpacity onPress={() => setSearchQuery("")}>
-                                <Ionicons name="close-circle" size={16} color="#6B7280" />
-                            </TouchableOpacity>
-                        )}
-                    </View>
+                    )}
                 </View>
 
                 <View style={styles.tabRow}>
@@ -107,7 +127,7 @@ export default function GroupChatsContent() {
 
                 <View style={styles.countRow}>
                     <Text style={styles.countText}>
-                        {activeTab === "past" ? "Past" : "Upcoming"} Events ({rooms.length})
+                        {activeTab === "past" ? "Past" : "Upcoming"} Events ({filteredRooms.length})
                     </Text>
                 </View>
 
@@ -220,29 +240,31 @@ export default function GroupChatsContent() {
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: "#0d0d0d" },
     header: {
-        flexDirection: "column",
-        paddingHorizontal: isSmallScreen ? 16 : 20,
-        paddingTop: 16,
-        paddingBottom: 10,
-        gap: 10
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: "#1e1e1e",
+        backgroundColor: "#111",
     },
-    headerTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-    title: {
-        fontSize: isSmallScreen ? 20 : 24,
-        fontWeight: "700",
-        color: "#fff",
-        letterSpacing: 0.3
+    backBtn: {
+        width: 38, height: 38, borderRadius: 10,
+        backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
+        alignItems: "center", justifyContent: "center",
     },
-    searchContainer: {
+    headerCenter: { flex: 1, alignItems: "center" },
+    headerTitle: { fontSize: 17, fontWeight: "700", color: "#fff" },
+    headerSub: { fontSize: 11, color: "#6B7280", marginTop: 1 },
+    searchRow: {
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: "#1a1a1a",
-        borderWidth: 1,
-        borderColor: "#2a2a2a",
-        borderRadius: 10,
-        paddingHorizontal: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#1e1e1e",
+        paddingHorizontal: 16,
         paddingVertical: isSmallScreen ? 8 : 10,
-        gap: 6,
+        gap: 8,
     },
     searchInput: {
         flex: 1,
