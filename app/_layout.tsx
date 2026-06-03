@@ -8,6 +8,7 @@ import { ClerkLoaded, ClerkProvider } from '@clerk/clerk-expo'
 import { tokenCache } from '@clerk/clerk-expo/token-cache'
 import { QueryClient, QueryClientProvider } from "react-query";
 import { DrawerProvider } from "@/contexts/DrawerContext";
+import { UserProvider } from "@/contexts/UserContext";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BrandWordmark } from "@/components/Header";
 
@@ -46,7 +47,9 @@ export default function RootLayout() {
           <ClerkProvider tokenCache={tokenCache} publishableKey={Publishable_key}>
             <ClerkLoaded>
               <DrawerProvider>
-                <Stack screenOptions={{ headerShown: false }} />
+                <UserProvider>
+                  <Stack screenOptions={{ headerShown: false }} />
+                </UserProvider>
               </DrawerProvider>
             </ClerkLoaded>
           </ClerkProvider>

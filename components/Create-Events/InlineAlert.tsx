@@ -27,17 +27,13 @@ export default InlineAlert;
 
 const styles = StyleSheet.create({
     container: {
-        flexDirection: "row",
-        alignItems: "center",
-        borderRadius: 10,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        marginBottom: 12,
-        borderWidth: 1,
+        flexDirection: "row", alignItems: "center",
+        borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10,
+        marginBottom: 12, borderWidth: 1,
     },
-    errorBg: { backgroundColor: "#2a2a2a", borderColor: "#f56565" },
-    successBg: { backgroundColor: "#2a2a2a", borderColor: "#38c177" },
+    errorBg: { backgroundColor: "rgba(239,68,68,0.06)", borderColor: "#EF4444" },
+    successBg: { backgroundColor: "rgba(74,222,128,0.06)", borderColor: "#4ade80" },
     text: { fontSize: 13, flex: 1, lineHeight: 18 },
-    errorText: { color: "#f56565" },
-    successText: { color: "#38c177" },
+    errorText: { color: "#EF4444" },
+    successText: { color: "#4ade80" },
 });

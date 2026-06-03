@@ -146,7 +146,7 @@ function StyledInput({
 
 export default function PersonalInfo() {
   const navigation = useNavigation();
-  const { userDb, loading: userLoading } = useUserDb();
+  const { userDb, loading: userLoading, refresh } = useUserDb();
   const { user: clerkUser } = useUser();
   const [saving, setSaving] = useState(false);
 
@@ -202,9 +202,9 @@ export default function PersonalInfo() {
         // Existing user — update via PUT
         const res = await updateUser(userId, formData);
         if (res.status === 200) {
-          // Persist updated user to session
           const updated = res.data?.data ?? res.data;
           await AsyncStorage.setItem("userDetails", JSON.stringify(updated));
+          refresh();
           Alert.alert("Saved", "Your details have been updated.");
         } else {
           Alert.alert("Error", res?.data?.message ?? "Something went wrong.");
@@ -218,10 +218,10 @@ export default function PersonalInfo() {
         };
         const res = await backendClient.post("/users/save", payload);
         if (res.status === 200 || res.status === 201) {
-          // Response shape: { user: {...}, personalDetail: {...} }
           const { user, personalDetail } = res.data;
           const sessionData = { ...user, personalDetails: personalDetail };
           await AsyncStorage.setItem("userDetails", JSON.stringify(sessionData));
+          refresh();
           Alert.alert("Saved", "Your profile has been created.");
         } else {
           Alert.alert("Error", res?.data?.message ?? "Something went wrong.");

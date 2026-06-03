@@ -1,12 +1,13 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
-  ActivityIndicator,
+  Animated,
   StyleSheet,
   StatusBar,
   ScrollView,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useNavigation } from "expo-router";
@@ -15,12 +16,56 @@ import { getUploadedMediaByUser } from "@/client/endpoints/users/getUserUploaded
 import MediaGallery from "@/components/profile/mediaGallery";
 import { useUserDb } from "@/app/hooks/useUserDb";
 
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const GAP = 2;
+const COLS = 3;
+const ITEM_SIZE = (SCREEN_WIDTH - GAP * (COLS + 1)) / COLS;
+
 const FILTER_TABS = [
   { key: "all", label: "All" },
   { key: "week", label: "This Week" },
   { key: "month", label: "This Month" },
   { key: "year", label: "This Year" },
 ];
+
+// ── Skeleton ──────────────────────────────────────────────────────────────────
+function MediaSkeleton() {
+  const opacity = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.4, duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  const cells = Array.from({ length: 12 });
+
+  return (
+    <Animated.View style={[sk.grid, { opacity }]}>
+      {cells.map((_, i) => (
+        <View key={i} style={sk.cell} />
+      ))}
+    </Animated.View>
+  );
+}
+
+const sk = StyleSheet.create({
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    padding: GAP,
+  },
+  cell: {
+    width: ITEM_SIZE,
+    height: ITEM_SIZE,
+    margin: GAP / 2,
+    borderRadius: 4,
+    backgroundColor: "#1e1e1e",
+  },
+});
 
 const MediaUploadScreen = () => {
   const navigation = useNavigation();
@@ -141,10 +186,7 @@ const MediaUploadScreen = () => {
 
         {/* Content */}
         {isLoading ? (
-          <View style={styles.centered}>
-            <ActivityIndicator size="large" color="#4ade80" />
-            <Text style={styles.loadingText}>Loading media…</Text>
-          </View>
+          <MediaSkeleton />
         ) : !userId ? (
           <View style={styles.centered}>
             <Ionicons name="person-circle-outline" size={48} color="#374151" />

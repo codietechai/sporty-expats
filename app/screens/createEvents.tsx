@@ -206,8 +206,6 @@ const CreateEvents = () => {
           </View>
           <View style={{ width: 38 }} />
         </View>
-
-        {/* Tabs + content */}
         <FormProvider {...formMethods}>
           <View style={styles.body}>
             <CreteEventTabsComponent
@@ -265,35 +263,36 @@ const CreateEvents = () => {
 export default CreateEvents;
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#000" },
+  safe: { flex: 1, backgroundColor: "#0d0d0d" },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 12,
-    backgroundColor: "#000",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1e1e1e",
+    backgroundColor: "#111",
   },
   backBtn: {
     width: 38,
     height: 38,
-    borderRadius: 8,
-    backgroundColor: "#454746",
+    borderRadius: 10,
+    backgroundColor: "#1a1a1a",
     borderWidth: 1,
-    borderColor: "#555",
+    borderColor: "#2a2a2a",
     alignItems: "center",
     justifyContent: "center",
   },
   headerCenter: { flex: 1, alignItems: "center" },
-  headerTitle: { fontSize: 28, fontWeight: "700", color: "#fff" },
-  headerSub: { fontSize: 12, color: "#ccc", marginTop: 4 },
-  body: { flex: 1, backgroundColor: "#000" },
+  headerTitle: { fontSize: 17, fontWeight: "700", color: "#fff" },
+  headerSub: { fontSize: 11, color: "#6B7280", marginTop: 1 },
+  body: { flex: 1, backgroundColor: "#0d0d0d" },
   memberGate: {
     flex: 1,
     justifyContent: "center",
     paddingHorizontal: 24,
     gap: 14,
-    backgroundColor: "#000",
+    backgroundColor: "#0d0d0d",
   },
   memberGateText: {
     color: "#ccc",

@@ -359,7 +359,7 @@ const PostCard = React.memo(({ post, userId, onUpdate }: {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [initialReply, setInitialReply] = useState<{ id: string; username: string; displayName: string } | null>(null);
   const [activeImg, setActiveImg] = useState(0);
-  const { width: SW } = require("react-native").Dimensions.get("window");
+  const [mediaWidth, setMediaWidth] = useState(0);
 
   const validFiles = post.files.filter((f) => f.fileUrl?.startsWith("http"));
   const authorName = getDisplayName(post.author);
@@ -440,11 +440,11 @@ const PostCard = React.memo(({ post, userId, onUpdate }: {
 
       {/* Media */}
       {validFiles.length > 0 && (
-        <View style={pc.mediaWrap}>
+        <View style={pc.mediaWrap} onLayout={(e) => setMediaWidth(e.nativeEvent.layout.width)}>
           <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}
             onMomentumScrollEnd={(e) => setActiveImg(Math.round(e.nativeEvent.contentOffset.x / e.nativeEvent.layoutMeasurement.width))}>
-            {validFiles.map((f, i) => (
-              <Image key={i} source={{ uri: f.fileUrl }} style={[pc.mediaImg, { width: SW }]} contentFit="cover" />
+            {mediaWidth > 0 && validFiles.map((f, i) => (
+              <Image key={i} source={{ uri: f.fileUrl }} style={[pc.mediaImg, { width: mediaWidth }]} contentFit="cover" />
             ))}
           </ScrollView>
           {validFiles.length > 1 && (

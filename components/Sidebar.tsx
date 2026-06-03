@@ -61,10 +61,8 @@ export default function Sidebar(props: DrawerContentComponentProps) {
 
   const MAIN_NAV: NavItem[] = loggedIn ? [
     { label: t("dashboard"), icon: "grid-outline", screen: "Dashboard" },
-    { label: t("events"), icon: "star-outline", screen: "Events" },
     { label: t("Events List"), icon: "calendar-outline", screen: "Events List" },
     { label: t("My Events"), icon: "calendar-number-outline", screen: "My Events" },
-    { label: t("market"), icon: "storefront-outline", screen: "Market" },
     { label: t("group_chat"), icon: "chatbubbles-outline", screen: "Group Chats" },
     { label: t("media"), icon: "videocam-outline", screen: "Media Uploads" },
     { label: t("create_event"), icon: "add-circle-outline", screen: "Create Event" },
