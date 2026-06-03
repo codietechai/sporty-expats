@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 import { useNavigation } from "@react-navigation/native";
 import { useQuery } from "react-query";
 import dayjs from "dayjs";
@@ -201,7 +202,7 @@ export default function MyCreatedEventsScreen() {
                             onPress={() => navigation.navigate("EventInfo", { event: item })}
                         >
                             {item.coverImage?.fileUrl ? (
-                                <Image source={{ uri: item.coverImage.fileUrl }} style={styles.cardImage} />
+                                <Image source={{ uri: normalizeMediaUrl(item.coverImage.fileUrl) }} style={styles.cardImage} />
                             ) : (
                                 <View style={styles.cardImagePlaceholder}>
                                     <Ionicons name="image-outline" size={34} color="#374151" />

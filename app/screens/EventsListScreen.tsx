@@ -17,6 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useEvents } from "@/app/hooks/useEvents";
 import type { Event } from "@/client/endpoints/events/types";
 import { categoriesList } from "@/components/Create-Events/categories";
+import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 import dayjs from "dayjs";
 
 const CATEGORIES = ["All", ...categoriesList];
@@ -296,7 +297,7 @@ function EventCard({ event }: { event: Event }) {
             onPress={() => navigation.navigate("EventInfo", { event })}
         >
             {event.coverImage?.fileUrl ? (
-                <Image source={{ uri: event.coverImage.fileUrl }} style={styles.cardImage} />
+                <Image source={{ uri: normalizeMediaUrl(event.coverImage.fileUrl) }} style={styles.cardImage} />
             ) : (
                 <View style={styles.cardImagePlaceholder}>
                     <Ionicons name="image-outline" size={36} color="#374151" />

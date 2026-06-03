@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
 import { useWatch, Control } from "react-hook-form";
 import { Ionicons } from "@expo/vector-icons";
+import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 import { EventFormValues } from "@/app/screens/createEvents";
 
 type Props = {
@@ -37,7 +38,7 @@ const PreviewEvent: React.FC<Props> = ({ setActiveTab, control, onSubmit }) => {
 
       {/* Cover image */}
       {values.coverImage?.fileUrl ? (
-        <Image source={{ uri: values.coverImage.fileUrl }} style={styles.coverImage} resizeMode="cover" />
+        <Image source={{ uri: normalizeMediaUrl(values.coverImage.fileUrl) }} style={styles.coverImage} resizeMode="cover" />
       ) : (
         <View style={styles.coverPlaceholder}>
           <Ionicons name="image-outline" size={40} color="#999" />

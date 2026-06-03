@@ -10,6 +10,7 @@ import { useNavigation } from "@react-navigation/native";
 import { getEventById } from "@/client/endpoints/events/getEventById";
 import { getAttendee, withdrawParticipation, AttendeeData } from "@/client/endpoints/events/eventRegistration";
 import { useUserDb } from "@/app/hooks/useUserDb";
+import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 import type { Event } from "@/client/endpoints/events/types";
 import { HomeScreenNavigationProp } from "../home";
 
@@ -166,10 +167,7 @@ export default function EventInfoScreen({ route }: any) {
                     {/* Cover image */}
                     <View style={styles.coverWrap}>
                         {event.coverImage?.fileUrl ? (
-                            <>
-                                {console.log("[EventInfo] coverImage URL:", event.coverImage.fileUrl) as any}
-                                <Image source={{ uri: event.coverImage.fileUrl }} style={styles.coverImage} resizeMode="cover" />
-                            </>
+                            <Image source={{ uri: normalizeMediaUrl(event.coverImage.fileUrl) }} style={styles.coverImage} resizeMode="cover" />
                         ) : (
                             <View style={styles.coverPlaceholder}>
                                 <Ionicons name="image-outline" size={48} color="#374151" />

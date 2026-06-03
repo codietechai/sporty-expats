@@ -2,7 +2,7 @@
  * Normalises S3 pre-signed URLs so images never expire.
  *
  * /public/* paths  → rewrite to cdn.sportyexpats.fr (CDN mirrors this prefix)
- * /uploads/* paths → strip query string, keep raw S3 URL (CDN doesn't mirror uploads)
+ * /uploads/* paths → keep the full pre-signed URL (bucket is private, signature required)
  * Everything else  → returned as-is (Clerk, external, already-CDN)
  */
 export function normalizeMediaUrl(url: string | null | undefined): string {
@@ -22,8 +22,8 @@ export function normalizeMediaUrl(url: string | null | undefined): string {
       return `https://cdn.sportyexpats.fr${pathname.replace(/^\/public/, "")}`;
     }
 
-    // /uploads/ or anything else — strip the expiring signature, use plain S3 URL
-    return `${parsed.origin}${pathname}`;
+    // /uploads/ or anything else — keep the full pre-signed URL intact
+    return url;
   } catch {
     return url;
   }
