@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   cardImage: {
     width: "100%",
     height: 169,
-    backgroundColor: "#1f2937",
+    backgroundColor: "#1e1e1e",
   },
   cardBody: { padding: 12, gap: 6 },
   row: { flexDirection: "row", alignItems: "center", gap: 4 },

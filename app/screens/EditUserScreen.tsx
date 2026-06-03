@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: "600",
-        color: "#111827",
+        color: "#1a1a1a",
     },
     container: {
         padding: 20,
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         fontSize: 14,
         backgroundColor: "#F9FAFB",
-        color: "#111827",
+        color: "#1a1a1a",
     },
     buttonContainer: {
         alignItems: "flex-end",
@@ -144,6 +144,6 @@ const styles = StyleSheet.create({
     saveText: {
         fontSize: 14,
         fontWeight: "500",
-        color: "#111827",
+        color: "#1a1a1a",
     },
 });

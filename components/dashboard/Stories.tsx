@@ -178,7 +178,7 @@ const um = StyleSheet.create({
   title: { color: "#fff", fontSize: 18, fontWeight: "700" },
   previewArea: {
     width: "100%", height: 200, borderRadius: 12,
-    overflow: "hidden", backgroundColor: "#1f2937",
+    overflow: "hidden", backgroundColor: "#1e1e1e",
   },
   preview: { width: "100%", height: "100%" },
   previewPlaceholder: {

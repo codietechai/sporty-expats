@@ -29,7 +29,7 @@ export default function ConversationScreen({ navigation }: any) {
                         Conversations/Notifications
                     </Text>
                     <Pressable onPress={() => navigation.goBack()}>
-                        <Ionicons name="close" size={22} color="#111827" />
+                        <Ionicons name="close" size={22} color="#1a1a1a" />
                     </Pressable>
                 </View>
 
@@ -47,7 +47,7 @@ export default function ConversationScreen({ navigation }: any) {
                         <Ionicons
                             name="checkmark"
                             size={16}
-                            color="#111827"
+                            color="#1a1a1a"
                         />
                         <Text style={styles.markText}>Mark As Read</Text>
                     </Pressable>
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#111827",
+        color: "#1a1a1a",
     },
 
     actionsRow: {
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
 
     markText: {
         fontSize: 13,
-        color: "#111827",
+        color: "#1a1a1a",
         fontWeight: "500",
     },
 
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     name: {
         fontSize: 14,
         fontWeight: "600",
-        color: "#111827",
+        color: "#1a1a1a",
         marginBottom: 4,
     },
 

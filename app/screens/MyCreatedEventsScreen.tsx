@@ -51,12 +51,12 @@ function SkeletonCard() {
     );
 }
 const sk = StyleSheet.create({
-    card: { backgroundColor: "#111827", borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: "#1f2937", marginBottom: 14 },
-    image: { width: "100%", height: 160, backgroundColor: "#1f2937" },
+    card: { backgroundColor: "#1a1a1a", borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: "#1e1e1e", marginBottom: 14 },
+    image: { width: "100%", height: 160, backgroundColor: "#1e1e1e" },
     body: { padding: 14, gap: 10 },
-    lineLong: { height: 16, width: "80%", backgroundColor: "#1f2937", borderRadius: 4 },
-    lineMid: { height: 12, width: "55%", backgroundColor: "#1f2937", borderRadius: 4 },
-    lineShort: { height: 11, width: "40%", backgroundColor: "#1f2937", borderRadius: 4 },
+    lineLong: { height: 16, width: "80%", backgroundColor: "#1e1e1e", borderRadius: 4 },
+    lineMid: { height: 12, width: "55%", backgroundColor: "#1e1e1e", borderRadius: 4 },
+    lineShort: { height: 11, width: "40%", backgroundColor: "#1e1e1e", borderRadius: 4 },
 });
 
 export default function MyCreatedEventsScreen() {
@@ -306,11 +306,11 @@ const styles = StyleSheet.create({
     retryBtnText: { color: "#fff", fontWeight: "600" },
     list: { paddingHorizontal: 16, paddingBottom: 32, gap: 14 },
     card: {
-        backgroundColor: "#111827",
+        backgroundColor: "#1a1a1a",
         borderRadius: 16,
         overflow: "hidden",
         borderWidth: 1,
-        borderColor: "#1f2937",
+        borderColor: "#1e1e1e",
     },
     cardImage: { width: "100%", height: 160 },
     cardImagePlaceholder: {

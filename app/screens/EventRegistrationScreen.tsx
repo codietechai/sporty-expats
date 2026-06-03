@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
     fieldLabel: { color: "#9ca3af", fontSize: 12, marginTop: 6 },
     required: { color: "#ef4444" },
     input: {
-        backgroundColor: "#111827",
+        backgroundColor: "#1a1a1a",
         borderWidth: 1,
         borderColor: "#2a2a2a",
         borderRadius: 10,

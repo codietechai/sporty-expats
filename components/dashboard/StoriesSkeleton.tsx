@@ -16,7 +16,7 @@ function Shimmer({ style }: { style: any }) {
     ).start();
   }, []);
 
-  return <Animated.View style={[{ backgroundColor: "#1f2937" }, style, { opacity }]} />;
+  return <Animated.View style={[{ backgroundColor: "#1e1e1e" }, style, { opacity }]} />;
 }
 
 export default function StoriesSkeleton({ count = 5 }: { count?: number }) {

@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   otherText: {
-    color: "#1F2937",
+    color: "#1e1e1e",
     fontSize: 14,
   },
 });

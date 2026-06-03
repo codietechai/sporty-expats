@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     flex: 1,
     maxHeight: 100,
     fontSize: 15,
-    color: "#111827",
+    color: "#1a1a1a",
     paddingVertical: 6,
   },
   sendBtn: {

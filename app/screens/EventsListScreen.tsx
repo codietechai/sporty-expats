@@ -69,21 +69,21 @@ function EventListSkeleton() {
 
 const sk = StyleSheet.create({
     card: {
-        backgroundColor: "#111827",
+        backgroundColor: "#1a1a1a",
         borderRadius: 16,
         overflow: "hidden",
         borderWidth: 1,
-        borderColor: "#1f2937",
+        borderColor: "#1e1e1e",
         marginBottom: 14,
     },
-    image: { width: "100%", height: 160, backgroundColor: "#1f2937" },
+    image: { width: "100%", height: 160, backgroundColor: "#1e1e1e" },
     body: { padding: 14, gap: 10 },
-    lineLong: { height: 16, width: "80%", backgroundColor: "#1f2937", borderRadius: 4 },
-    lineMid: { height: 12, width: "55%", backgroundColor: "#1f2937", borderRadius: 4 },
-    lineShort: { height: 11, width: "45%", backgroundColor: "#1f2937", borderRadius: 4 },
-    lineXShort: { height: 11, width: "25%", backgroundColor: "#1f2937", borderRadius: 4 },
-    footer: { flexDirection: "row", alignItems: "center", gap: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: "#1f2937" },
-    dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "#1f2937" },
+    lineLong: { height: 16, width: "80%", backgroundColor: "#1e1e1e", borderRadius: 4 },
+    lineMid: { height: 12, width: "55%", backgroundColor: "#1e1e1e", borderRadius: 4 },
+    lineShort: { height: 11, width: "45%", backgroundColor: "#1e1e1e", borderRadius: 4 },
+    lineXShort: { height: 11, width: "25%", backgroundColor: "#1e1e1e", borderRadius: 4 },
+    footer: { flexDirection: "row", alignItems: "center", gap: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: "#1e1e1e" },
+    dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "#1e1e1e" },
 });
 
 // ── Main screen ───────────────────────────────────────────────────────────────
@@ -415,8 +415,8 @@ const styles = StyleSheet.create({
     list: { paddingHorizontal: 16, paddingBottom: 32, gap: 14 },
 
     card: {
-        backgroundColor: "#111827", borderRadius: 16,
-        overflow: "hidden", borderWidth: 1, borderColor: "#1f2937",
+        backgroundColor: "#1a1a1a", borderRadius: 16,
+        overflow: "hidden", borderWidth: 1, borderColor: "#1e1e1e",
     },
     cardImage: { width: "100%", height: 180 },
     cardImagePlaceholder: {
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     metaText: { fontSize: 12, color: "#9CA3AF", flex: 1 },
     cardFooter: {
         flexDirection: "row", alignItems: "center", gap: 6,
-        paddingTop: 6, borderTopWidth: 1, borderTopColor: "#1f2937",
+        paddingTop: 6, borderTopWidth: 1, borderTopColor: "#1e1e1e",
     },
     statusDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "#374151" },
     statusDotActive: { backgroundColor: "#2ecc71" },

@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: "#071E10",
     borderWidth: 1,
-    borderColor: "#1f2937",
+    borderColor: "#1e1e1e",
   },
   tabItemActive: {
     backgroundColor: "#166534",
