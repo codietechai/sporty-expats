@@ -12,6 +12,7 @@ import {
 import Svg, { Path } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
+import { useRouter } from "expo-router";
 import { getUserDetailsByClerkId } from "@/client/endpoints/users/getUserDetailsByClerkId";
 import { createUser } from "@/client/endpoints/users/createUser";
 
@@ -36,6 +37,7 @@ const SocialLoginButton = ({
 
   const { startOAuthFlow } = useOAuth({ strategy: getStrategy() });
   const { user } = useUser();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   // Warm up the browser to reduce OAuth latency
@@ -82,8 +84,10 @@ const SocialLoginButton = ({
               ToastAndroid.show("Welcome to SportyExpats!", 2);
             } catch (createError) {
               console.error("Failed to create user:", createError);
-              ToastAndroid.show("Account setup failed. Please try again.", 2);
-              // Don't return here - still allow login to proceed
+              ToastAndroid.show("Account setup failed. Redirecting to profile setup.", 2);
+              onClose();
+              router.replace("/screens/personalInfo");
+              return;
             }
           } else {
             console.error("Unexpected error fetching user:", error);

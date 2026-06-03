@@ -16,7 +16,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useUser } from "@clerk/clerk-expo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { updateUser } from "@/client/endpoints/users/updateUser";
+import { backendClient } from "@/client/backendClient";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { getNames } from "country-list";
 
@@ -144,6 +147,7 @@ function StyledInput({
 export default function PersonalInfo() {
   const navigation = useNavigation();
   const { userDb, loading: userLoading } = useUserDb();
+  const { user: clerkUser } = useUser();
   const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
@@ -191,17 +195,37 @@ export default function PersonalInfo() {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
   const handleSave = async () => {
-    if (!userId) {
-      Alert.alert("Error", "User ID not available.");
-      return;
-    }
     try {
       setSaving(true);
-      const res = await updateUser(userId, formData);
-      if (res.status === 200) {
-        Alert.alert("Saved", "Your details have been updated.");
+
+      if (userId) {
+        // Existing user — update via PUT
+        const res = await updateUser(userId, formData);
+        if (res.status === 200) {
+          // Persist updated user to session
+          const updated = res.data?.data ?? res.data;
+          await AsyncStorage.setItem("userDetails", JSON.stringify(updated));
+          Alert.alert("Saved", "Your details have been updated.");
+        } else {
+          Alert.alert("Error", res?.data?.message ?? "Something went wrong.");
+        }
       } else {
-        Alert.alert("Error", res?.data?.message ?? "Something went wrong.");
+        // No user ID yet — create via POST /users/save
+        const payload = {
+          ...formData,
+          email: clerkUser?.primaryEmailAddress?.emailAddress ?? "",
+          imageUrl: clerkUser?.imageUrl ?? "",
+        };
+        const res = await backendClient.post("/users/save", payload);
+        if (res.status === 200 || res.status === 201) {
+          // Response shape: { user: {...}, personalDetail: {...} }
+          const { user, personalDetail } = res.data;
+          const sessionData = { ...user, personalDetails: personalDetail };
+          await AsyncStorage.setItem("userDetails", JSON.stringify(sessionData));
+          Alert.alert("Saved", "Your profile has been created.");
+        } else {
+          Alert.alert("Error", res?.data?.message ?? "Something went wrong.");
+        }
       }
     } catch (err: any) {
       Alert.alert("Error", err?.message ?? "An unexpected error occurred.");

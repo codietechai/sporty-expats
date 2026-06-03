@@ -14,9 +14,8 @@ export default function OAuthCallback() {
   // Create user function
   const createUser = async (userData: any) => {
     try {
-      console.log('Creating user with data:', userData);
+
       const response = await backendClient.post('/users/', userData);
-      console.log('User created successfully:', response);
       return response;
     } catch (error: any) {
       console.error('Error creating user:', {
@@ -30,19 +29,15 @@ export default function OAuthCallback() {
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
-      console.log('OAuth callback: isSignedIn =', isSignedIn, 'user =', user?.id);
       
       if (isSignedIn && user) {
         try {
           // Try to get existing user data from backend
-          console.log('Fetching user data from backend...');
           const userData = await getUserDetailsByClerkId(user.id);
           await AsyncStorage.setItem("userDetails", JSON.stringify(userData?.data));
-          console.log("Existing user found:", userData?.data);
         } catch (error: any) {
           // If user doesn't exist (404), create a new user
           if (error?.response?.status === 404) {
-            console.log("User not found in backend, creating new user...");
             try {
               const newUserData = {
                 clerkId: user.id,
@@ -55,9 +50,8 @@ export default function OAuthCallback() {
               
               const createdUser = await createUser(newUserData);
               await AsyncStorage.setItem("userDetails", JSON.stringify(createdUser?.data));
-              console.log("New user created successfully:", createdUser?.data);
             } catch (createError) {
-              console.error("Failed to create user:", createError);
+              console.error("Failed to create user oauthhhhhhhhhh:", createError);
             }
           } else {
             console.error("Unexpected error fetching user:", error);
@@ -65,7 +59,6 @@ export default function OAuthCallback() {
         }
         
         // Always redirect to dashboard after processing
-        console.log('Redirecting to dashboard...');
         router.replace('/screens/dashboard');
       } else {
         // If not signed in, redirect to home

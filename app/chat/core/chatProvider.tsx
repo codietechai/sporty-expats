@@ -91,13 +91,6 @@ export function ChatProvider({ apiKey, baseURL, user, tokenOrProvider, children 
             const uploadData = uploadUrls[i];
             const contentType = uploadData.mime || file.mimeType || "application/octet-stream";
 
-            console.log(`[uploadFiles] Uploading "${file.name}"`, {
-                fileMime: file.mimeType,
-                serverMime: uploadData.mime,
-                contentType,
-                uploadUrl: uploadData.uploadUrl.substring(0, 100),
-            });
-
             // React Native fetch supports { uri, type, name } as body —
             // it reads the local file and sends raw binary, exactly like web's body: File
             const putResponse = await fetch(uploadData.uploadUrl, {

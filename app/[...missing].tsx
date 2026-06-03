@@ -8,11 +8,9 @@ export default function NotFoundScreen() {
   const { isSignedIn } = useAuth();
 
   useEffect(() => {
-    console.log('404/Invalid route accessed, redirecting to dashboard. isSignedIn:', isSignedIn);
     
     // Redirect to dashboard regardless of auth state
     const timer = setTimeout(() => {
-      console.log('Redirecting to dashboard from 404 page');
       router.replace('/screens/dashboard');
     }, 1000);
 
