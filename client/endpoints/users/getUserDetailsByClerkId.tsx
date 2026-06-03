@@ -3,7 +3,7 @@ import { backendClient } from "../../backendClient";
 export const GET_USER_DETAILS_BY_CLERK_ID= "get-user-details-by-clerk-id"
 export const getUserDetailsByClerkId = async (userClerkId:string) => {
   try {
-    const response = await backendClient.get(`/users/clerk/${userClerkId}`);
+    const response = await backendClient.get(`/users/me`);
     return response;
 
   } catch (error) {
