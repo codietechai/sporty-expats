@@ -14,7 +14,7 @@ import { MessageInput } from "./MessageInput";
 import { ChatAvatar, AvatarStack } from "./ChatAvatar";
 import { ThreadPanel } from "./ThreadPanel";
 import { useRoom } from "@/app/chat/core/useRoom";
-import { useRoomCoverImage } from "@/app/hooks/useRoomCoverImage";
+import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 import { useChatClient } from "@/app/chat/core/chatProvider";
 import type { ChatRoom, AnyMessage, ChatRoomMember, ChatAttachment } from "@sparkstrand/chat-api-client/v2/types";
 import type { EventRoomMetadata } from "@/app/chat/group/eventMetadata";
@@ -29,7 +29,8 @@ interface Props {
 
 export function GroupRoomView({ room, currentUserId, currentUserImage, onClose }: Props) {
     const meta = room.metadata as EventRoomMetadata | undefined;
-    const coverImage = useRoomCoverImage(room.roomId, meta?.coverImage?.fileUrl);
+    const rawCoverUrl = meta?.coverImage?.fileUrl ?? (room as any).image ?? "";
+    const coverImage = rawCoverUrl ? normalizeMediaUrl(rawCoverUrl) : "";
     const { uploadFiles } = useChatClient();
 
     const {

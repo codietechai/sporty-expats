@@ -2,6 +2,7 @@ import { GET_ALL_STORIES, getAllStories } from "@/client/endpoints/posts/getAllS
 import { createStory } from "@/client/endpoints/posts/addStories";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { backendClient } from "@/client/backendClient";
+import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from 'expo-image';
 import * as ImagePicker from "expo-image-picker";
@@ -225,6 +226,8 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<GroupedStory | null>(null);
   const [storyIndex, setStoryIndex] = useState(0);
+  const [previewStories, setPreviewStories] = useState<Story[] | null>(null);
+  const [previewIndex, setPreviewIndex] = useState(0);
 
   const handleOpenUploadModal = useCallback(() => {
     if (loading) {

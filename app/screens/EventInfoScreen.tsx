@@ -166,7 +166,10 @@ export default function EventInfoScreen({ route }: any) {
                     {/* Cover image */}
                     <View style={styles.coverWrap}>
                         {event.coverImage?.fileUrl ? (
-                            <Image source={{ uri: event.coverImage.fileUrl }} style={styles.coverImage} resizeMode="cover" />
+                            <>
+                                {console.log("[EventInfo] coverImage URL:", event.coverImage.fileUrl) as any}
+                                <Image source={{ uri: event.coverImage.fileUrl }} style={styles.coverImage} resizeMode="cover" />
+                            </>
                         ) : (
                             <View style={styles.coverPlaceholder}>
                                 <Ionicons name="image-outline" size={48} color="#374151" />

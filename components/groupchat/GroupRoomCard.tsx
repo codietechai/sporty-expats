@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AvatarStack } from "./ChatAvatar";
-import { useRoomCoverImage } from "@/app/hooks/useRoomCoverImage";
+import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 import type { ChatRoom } from "@sparkstrand/chat-api-client/v2/types";
 import type { EventRoomMetadata } from "@/app/chat/group/eventMetadata";
 
@@ -41,8 +41,11 @@ export const GroupRoomCard = React.memo(({ room, isSelected = false, onPress }: 
     const members = room.members ?? [];
     const past = meta ? isEventPast(meta) : false;
     const title = meta?.title ?? room.roomId;
-    const coverImage = useRoomCoverImage(room.roomId, meta?.coverImage?.fileUrl);
+    // Use coverImage.fileUrl from metadata directly — no extra API fetch needed
+    const rawUrl = meta?.coverImage?.fileUrl ?? (room as any).image ?? "";
+    const coverImage = rawUrl ? normalizeMediaUrl(rawUrl) : DEFAULT_IMAGE;
     const [imgError, setImgError] = useState(false);
+    console.log("[GroupRoomCard]", title, "→", coverImage);
 
     const handlePress = React.useCallback(() => onPress(room), [onPress, room]);
 

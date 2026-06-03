@@ -5,6 +5,7 @@ import { useUserDb } from "@/app/hooks/useUserDb";
 import PostStatusBar from "@/components/dashboard/PostStatusBar";
 import FeedSkeleton from "@/components/dashboard/PostCardSkeleton";
 import { timeAgo } from "@/helpers/date";
+import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -540,7 +541,8 @@ const pc = StyleSheet.create({
 function mapPost(p: any): Post {
   return {
     _id: p.id, desc: p.description, title: p.title, author: p.author,
-    files: p.files ?? [], vote: p.count?.likes ?? 0,
+    files: (p.files ?? []).map((f: any) => ({ ...f, fileUrl: normalizeMediaUrl(f.fileUrl) })),
+    vote: p.count?.likes ?? 0,
     total_comments: p.count?.comments ?? 0, total_reactions: p.count?.reactions ?? 0,
     createdAt: p.createdAt, isLikedByUser: p.isLikedByUser ?? false,
     isBookmarkedByUser: p.isBookmarkedByUser ?? false,
@@ -585,6 +587,14 @@ const MyFeed = () => {
   useEffect(() => {
     if (!data || page !== 1) return;
     const incoming: Post[] = (data?.data?.data ?? []).map(mapPost);
+
+    // Log all image URLs from the feed
+    console.log('[MyFeed] Image URLs:');
+    incoming.forEach((post, i) => {
+      const urls = post.files.map(f => f.fileUrl).filter(Boolean);
+      if (urls.length) console.log(`  post[${i}] "${post.title || post._id}":`, urls);
+    });
+
     if (!initializedRef.current) {
       initializedRef.current = true;
       setPosts(incoming);

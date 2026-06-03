@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getEventById } from "@/client/endpoints/events/getEventById";
+import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 
 const cache = new Map<string, string>();
 
@@ -11,7 +12,7 @@ export function useRoomCoverImage(
 ): string {
     const [url, setUrl] = useState<string>(() => {
         if (eventId && cache.has(eventId)) return cache.get(eventId)!;
-        if (fallbackUrl && fallbackUrl.startsWith("http")) return fallbackUrl;
+        if (fallbackUrl && fallbackUrl.startsWith("http")) return normalizeMediaUrl(fallbackUrl);
         return DEFAULT;
     });
 
@@ -23,8 +24,9 @@ export function useRoomCoverImage(
             .then((event) => {
                 const fresh = event?.coverImage?.fileUrl;
                 if (fresh && fresh.startsWith("http")) {
-                    cache.set(eventId, fresh);
-                    setUrl(fresh);
+                    const normalized = normalizeMediaUrl(fresh);
+                    cache.set(eventId, normalized);
+                    setUrl(normalized);
                 }
             })
             .catch((err) => {
