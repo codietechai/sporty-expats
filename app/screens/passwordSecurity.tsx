@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
-  Alert, ActivityIndicator, Modal, ScrollView, StatusBar,
+  ActivityIndicator, Modal, ScrollView, StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useUser } from "@clerk/clerk-expo";
+import { getErrorMessage } from "@/helpers/getErrorMessage";
+import { showToast } from "@/components/common/Toast";
 
 const VERIFICATION_OPTIONS = ["Phone SMS", "Email", "Authenticator App"];
 
@@ -53,22 +55,24 @@ export default function PasswordSecurityScreen() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleUpdate = async () => {
-    if (!user) { Alert.alert("Error", "User not authenticated."); return; }
+    if (!user) { showToast("User not authenticated.", "error"); return; }
     if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert("Error", "Please fill in all fields."); return;
+      showToast("Please fill in all fields.", "warning"); return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match."); return;
+      showToast("Passwords do not match.", "warning"); return;
     }
     try {
       setLoading(true);
       await user.updatePassword({ newPassword, currentPassword });
-      Alert.alert("Success", "Password updated successfully!");
+      showToast("Password updated successfully.", "success");
       setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
-    } catch (error) {
-      Alert.alert("Update Failed",
-        (error as any)?.[0]?.Error ?? (error as any)?.message ?? "Unknown error."
-      );
+    } catch (error: any) {
+      const msg =
+        error?.errors?.[0]?.longMessage ??
+        error?.errors?.[0]?.message ??
+        getErrorMessage(error, "Failed to update password.");
+      showToast(msg, "error");
     } finally { setLoading(false); }
   };
 

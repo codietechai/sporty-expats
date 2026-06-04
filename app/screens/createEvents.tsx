@@ -14,7 +14,8 @@ import InviteMembers from "@/components/Create-Events/InviteMembers";
 import PreviewEvent from "@/components/Create-Events/PreviewEvent";
 import { createEvent } from "@/client/endpoints/events/createEvent";
 import type { Event } from "@/client/endpoints/events/types";
-import { Alert } from "react-native";
+import { getErrorMessage } from "@/helpers/getErrorMessage";
+import { showToast } from "@/components/common/Toast";
 
 export type EventFormValues = {
   title: string;
@@ -105,25 +106,25 @@ const CreateEvents = () => {
     const availableTickets = Number(data.availableTickets) || 0;
     const ticketPrice = Number(data.ticketPrice) || 0;
 
-    if (!data.title.trim()) { Alert.alert("Validation", "Event title is required."); return; }
-    if (!data.category.trim()) { Alert.alert("Validation", "Event category is required."); return; }
-    if (!data.location.name.trim()) { Alert.alert("Validation", "Event location is required."); return; }
-    if (!data.coverImage.fileUrl) { Alert.alert("Validation", "Cover image is required."); return; }
-    if (!data.description.trim()) { Alert.alert("Validation", "Event description is required."); return; }
-    if (!data.ticketDescription.trim()) { Alert.alert("Validation", "Ticket description is required."); return; }
-    if (!data.organizers.length) { Alert.alert("Validation", "Please add at least one organizer."); return; }
-    if (startDate < now) { Alert.alert("Validation", "Start date cannot be in the past."); return; }
-    if (endDate <= startDate) { Alert.alert("Validation", "End date must be after the start date."); return; }
-    if (paymentDeadline >= startDate) { Alert.alert("Validation", "Payment deadline must be before the start date."); return; }
-    if (refundDeadline && refundDeadline >= startDate) { Alert.alert("Validation", "Refund deadline must be before the start date."); return; }
-    if (minAttendees < 1) { Alert.alert("Validation", "Minimum attendees must be at least 1."); return; }
-    if (maxAttendees < minAttendees) { Alert.alert("Validation", "Maximum attendees must be ≥ minimum attendees."); return; }
-    if (availableTickets < 1) { Alert.alert("Validation", "Available tickets must be at least 1."); return; }
-    if (availableTickets > maxAttendees) { Alert.alert("Validation", "Available tickets cannot exceed maximum attendees."); return; }
-    if (!verified && data.isPaidEvent) { Alert.alert("Validation", "Only hosts and admins can create paid events."); return; }
-    if (data.isPaidEvent && ticketPrice <= 0) { Alert.alert("Validation", "Ticket price must be > 0 for paid events."); return; }
+    if (!data.title.trim()) { showToast("Event title is required.", "warning"); return; }
+    if (!data.category.trim()) { showToast("Event category is required.", "warning"); return; }
+    if (!data.location.name.trim()) { showToast("Event location is required.", "warning"); return; }
+    if (!data.coverImage.fileUrl) { showToast("Cover image is required.", "warning"); return; }
+    if (!data.description.trim()) { showToast("Event description is required.", "warning"); return; }
+    if (!data.ticketDescription.trim()) { showToast("Ticket description is required.", "warning"); return; }
+    if (!data.organizers.length) { showToast("Please add at least one organizer.", "warning"); return; }
+    if (startDate < now) { showToast("Start date cannot be in the past.", "warning"); return; }
+    if (endDate <= startDate) { showToast("End date must be after the start date.", "warning"); return; }
+    if (paymentDeadline >= startDate) { showToast("Payment deadline must be before the start date.", "warning"); return; }
+    if (refundDeadline && refundDeadline >= startDate) { showToast("Refund deadline must be before the start date.", "warning"); return; }
+    if (minAttendees < 1) { showToast("Minimum attendees must be at least 1.", "warning"); return; }
+    if (maxAttendees < minAttendees) { showToast("Maximum attendees must be ≥ minimum attendees.", "warning"); return; }
+    if (availableTickets < 1) { showToast("Available tickets must be at least 1.", "warning"); return; }
+    if (availableTickets > maxAttendees) { showToast("Available tickets cannot exceed maximum attendees.", "warning"); return; }
+    if (!verified && data.isPaidEvent) { showToast("Only hosts and admins can create paid events.", "warning"); return; }
+    if (data.isPaidEvent && ticketPrice <= 0) { showToast("Ticket price must be > 0 for paid events.", "warning"); return; }
     const adjustedAvailableTickets = availableTickets - data.participantOrganizers.length;
-    if (adjustedAvailableTickets < 1) { Alert.alert("Validation", "Available tickets must stay at least 1 after organizer participants."); return; }
+    if (adjustedAvailableTickets < 1) { showToast("Available tickets must stay at least 1 after organizer participants.", "warning"); return; }
 
     try {
       const createdEvent = await createEvent({
@@ -152,8 +153,7 @@ const CreateEvents = () => {
       setFormResetKey((key) => key + 1);
       setPublishedEvent(createdEvent);
     } catch (err: any) {
-      const msg = err?.response?.data?.message ?? err?.response?.data?.error ?? err?.message ?? "Failed to create event.";
-      Alert.alert("Error", Array.isArray(msg) ? msg.join("\n") : msg);
+      showToast(getErrorMessage(err, "Failed to create event."), "error");
     }
   });
 

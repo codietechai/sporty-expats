@@ -228,6 +228,13 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
   const [storyIndex, setStoryIndex] = useState(0);
   const [previewStories, setPreviewStories] = useState<Story[] | null>(null);
   const [previewIndex, setPreviewIndex] = useState(0);
+  const [previewIsRejected, setPreviewIsRejected] = useState(false);
+
+  const openStatusPreview = useCallback((stories: Story[], isRejected: boolean) => {
+    setPreviewStories(stories);
+    setPreviewIndex(0);
+    setPreviewIsRejected(isRejected);
+  }, []);
 
   const handleOpenUploadModal = useCallback(() => {
     if (loading) {
@@ -253,6 +260,16 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
     retry: 0,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
+
+  // If userDb just became available (post-login), refetch stories so they
+  // load with a valid auth token (avoids the race with the auth interceptor).
+  const prevUserIdRef = React.useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (userId && prevUserIdRef.current !== userId) {
+      prevUserIdRef.current = userId;
+      refetch();
+    }
+  }, [userId]);
 
   // Fetch story statuses (pending / rejected)
   const fetchStatus = useCallback(() => {
@@ -375,13 +392,16 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
 
             if (item.type === "status") {
               const isRejected = storyStatus.rejected.length > 0;
-              const count = isRejected ? storyStatus.rejected.length : storyStatus.pending.length;
-              const previewUrl = isRejected
-                ? storyStatus.rejected[0]?.file?.fileUrl
-                : storyStatus.pending[0]?.file?.fileUrl;
+              const stories = isRejected ? storyStatus.rejected : storyStatus.pending;
+              const count = stories.length;
+              const previewUrl = stories[0]?.file?.fileUrl;
 
               return (
-                <View style={[styles.statusTile, isRejected ? styles.statusTileRejected : styles.statusTilePending]}>
+                <TouchableOpacity
+                  style={[styles.statusTile, isRejected ? styles.statusTileRejected : styles.statusTilePending]}
+                  onPress={() => openStatusPreview(stories, isRejected)}
+                  activeOpacity={0.8}
+                >
                   {previewUrl && (
                     <Image source={{ uri: previewUrl }} style={styles.statusBg} blurRadius={4} />
                   )}
@@ -398,7 +418,7 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
                   <View style={[styles.countBadge, isRejected && styles.countBadgeRejected]}>
                     <Text style={styles.countBadgeText}>{count}</Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             }
 
@@ -451,6 +471,62 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
                 <View style={styles.tapLeft} />
               </TouchableWithoutFeedback>
               <TouchableWithoutFeedback onPress={nextStory}>
+                <View style={styles.tapRight} />
+              </TouchableWithoutFeedback>
+            </View>
+          </View>
+        )}
+      </Modal>
+
+      {/* ── Status preview modal (pending / rejected) ── */}
+      <Modal visible={!!previewStories} transparent animationType="fade">
+        {previewStories && (
+          <View style={styles.viewerBg}>
+            {/* Progress dots */}
+            <View style={styles.progressRow}>
+              {previewStories.map((_, i) => (
+                <View key={i} style={[styles.progressDot, i === previewIndex && styles.progressDotActive]} />
+              ))}
+            </View>
+
+            {/* Header */}
+            <View style={styles.viewerHeader}>
+              <View style={[styles.statusBadge, previewIsRejected ? styles.statusBadgeRejected : styles.statusBadgePending]}>
+                <Ionicons
+                  name={previewIsRejected ? "alert-circle-outline" : "time-outline"}
+                  size={14}
+                  color={previewIsRejected ? "#f87171" : "#fbbf24"}
+                />
+                <Text style={[styles.statusBadgeText, previewIsRejected && styles.statusBadgeTextRejected]}>
+                  {previewIsRejected ? "Rejected" : "Under Review"}
+                </Text>
+              </View>
+              <Text style={styles.viewerName}>
+                {previewIndex + 1} / {previewStories.length}
+              </Text>
+              <TouchableOpacity onPress={() => setPreviewStories(null)} hitSlop={12}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Image */}
+            <Image
+              source={{ uri: previewStories[previewIndex]?.file?.fileUrl }}
+              style={styles.viewerImage}
+              contentFit="cover"
+            />
+
+            {/* Tap zones */}
+            <View style={styles.tapZones}>
+              <TouchableWithoutFeedback onPress={() => {
+                if (previewIndex > 0) setPreviewIndex(i => i - 1);
+              }}>
+                <View style={styles.tapLeft} />
+              </TouchableWithoutFeedback>
+              <TouchableWithoutFeedback onPress={() => {
+                if (previewIndex < previewStories.length - 1) setPreviewIndex(i => i + 1);
+                else setPreviewStories(null);
+              }}>
                 <View style={styles.tapRight} />
               </TouchableWithoutFeedback>
             </View>
@@ -576,4 +652,17 @@ const styles = StyleSheet.create({
   tapZones: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, flexDirection: "row" },
   tapLeft: { flex: 1 },
   tapRight: { flex: 1 },
+
+  // Status preview modal badge
+  statusBadge: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
+    backgroundColor: "rgba(251,191,36,0.15)", borderWidth: 1, borderColor: "rgba(251,191,36,0.4)",
+  },
+  statusBadgeRejected: {
+    backgroundColor: "rgba(239,68,68,0.15)", borderColor: "rgba(239,68,68,0.4)",
+  },
+  statusBadgePending: {},
+  statusBadgeText: { color: "#fbbf24", fontSize: 12, fontWeight: "600" },
+  statusBadgeTextRejected: { color: "#f87171" },
 });

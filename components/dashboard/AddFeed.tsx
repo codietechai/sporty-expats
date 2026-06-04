@@ -18,6 +18,8 @@ import { GET_ALL_POSTS } from "@/client/endpoints/posts/getAllPosts";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { useNavigation } from "@react-navigation/native";
 import { useQueryClient } from "react-query";
+import { getErrorMessage } from "@/helpers/getErrorMessage";
+import { showToast } from "@/components/common/Toast";
 
 type Privacy = "Public" | "Private";
 
@@ -45,7 +47,7 @@ const AddFeedForm = () => {
   const pickImages = async () => {
     const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!granted) {
-      Alert.alert("Permission required", "Please allow media access to continue.");
+      showToast("Please allow media access to continue.", "warning");
       return;
     }
 
@@ -58,7 +60,7 @@ const AddFeedForm = () => {
     if (!result.canceled && result.assets) {
       const remaining = MAX_FILES - files.length;
       if (remaining <= 0) {
-        Alert.alert("Limit reached", `You can upload a maximum of ${MAX_FILES} images.`);
+        showToast(`You can upload a maximum of ${MAX_FILES} images.`, "warning");
         return;
       }
       const picked: PickedFile[] = result.assets.slice(0, remaining).map((a) => ({
@@ -73,19 +75,17 @@ const AddFeedForm = () => {
   const removeFile = (uri: string) =>
     setFiles((prev) => prev.filter((f) => f.uri !== uri));
 
-  // ── Submit ──────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (userLoading) {
-      Alert.alert("Please wait", "Your profile is still loading.");
+      showToast("Your profile is still loading. Please wait.", "info");
       return;
     }
-
     if (!userId) {
-      Alert.alert("Error", "User not found. Please sign in again.");
+      showToast("User not found. Please sign in again.", "error");
       return;
     }
     if (!description.trim()) {
-      Alert.alert("Validation", "Please enter a description.");
+      showToast("Please enter a description.", "warning");
       return;
     }
 
@@ -93,12 +93,10 @@ const AddFeedForm = () => {
     try {
       await createPost(userId, { description: description.trim(), privacy, files });
       await queryClient.invalidateQueries(GET_ALL_POSTS);
-      Alert.alert("Success", "Post published!", [
-        { text: "OK", onPress: () => navigation.goBack() },
-      ]);
+      showToast("Post published!", "success");
+      navigation.goBack();
     } catch (err: any) {
-      const msg = err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? "Something went wrong.";
-      Alert.alert("Error", Array.isArray(msg) ? msg.map((item) => typeof item === "string" ? item : Object.values(item).join(", ")).join("\n") : msg);
+      showToast(getErrorMessage(err, "Something went wrong."), "error");
     } finally {
       setLoading(false);
     }
@@ -108,11 +106,7 @@ const AddFeedForm = () => {
     if (description.trim() || files.length > 0) {
       Alert.alert("Discard post?", "Your changes will be lost.", [
         { text: "Cancel", style: "cancel" },
-        {
-          text: "Discard",
-          style: "destructive",
-          onPress: () => navigation.goBack(),
-        },
+        { text: "Discard", style: "destructive", onPress: () => navigation.goBack() },
       ]);
     } else {
       navigation.goBack();

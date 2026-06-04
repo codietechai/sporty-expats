@@ -1,5 +1,6 @@
 // client/backendClient.ts
 import axios from "axios";
+import { getErrorMessage } from "@/helpers/getErrorMessage";
 
 let authInterceptorId: number | null = null;
 
@@ -10,6 +11,17 @@ export const backendClient = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+// ── Response interceptor — enrich error.message with the backend's actual text
+backendClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    error.message = getErrorMessage(error);
+    return Promise.reject(error);
+  }
+);
+
+
 
 const getSafeHeadersForLog = (headers: any) => {
   const rawHeaders =

@@ -7,6 +7,7 @@ import { DrawerNavigationProp } from "@react-navigation/drawer";
 type HeaderProps = {
   myFeed?: boolean;
   onAddPress?: () => void;
+  onMenuPress?: () => void;
 };
 
 type BrandWordmarkProps = {
@@ -20,11 +21,17 @@ export const BrandWordmark: React.FC<BrandWordmarkProps> = ({ size = 20, centere
   </Text>
 );
 
-const Header: React.FC<HeaderProps> = ({ myFeed, onAddPress }) => {
+const Header: React.FC<HeaderProps> = ({ myFeed, onAddPress, onMenuPress }) => {
   const navigation = useNavigation();
 
   const handleMenuPress = () => {
-    const drawer = navigation.getParent<DrawerNavigationProp<any>>("MainDrawer" as any);
+    if (onMenuPress) {
+      // Preferred: caller passes openDrawer directly from drawer navigation context
+      onMenuPress();
+      return;
+    }
+    // Fallback for screens that don't pass onMenuPress
+    const drawer = navigation.getParent<DrawerNavigationProp<any>>();
     if (drawer?.openDrawer) {
       drawer.openDrawer();
     }

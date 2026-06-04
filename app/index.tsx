@@ -11,6 +11,7 @@ import ContactUs from "./screens/contactus";
 import AboutUs from "./screens/aboutus";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "@clerk/clerk-expo";
+import { useNavigation } from "@react-navigation/native";
 import { setUpAuthInterceptor } from "@/client/backendClient";
 import CreateEvents from "./screens/createEvents";
 import AddFeed from "./screens/AddFeed";
@@ -32,11 +33,9 @@ import MyCreatedEventsScreen from "./screens/MyCreatedEventsScreen";
 
 const Drawer = createDrawerNavigator<any, "MainDrawer">();
 
-export default function AppNavigator() {
+function DrawerNavigator() {
   const { t } = useTranslation("sidebar");
-  const { getToken, isSignedIn } = useAuth();
-
-  setUpAuthInterceptor(getToken);
+  const { isSignedIn } = useAuth();
 
   return (
     <Drawer.Navigator
@@ -174,4 +173,14 @@ export default function AppNavigator() {
       />
     </Drawer.Navigator>
   );
+}
+
+export default function AppNavigator() {
+  const { getToken } = useAuth();
+
+  React.useEffect(() => {
+    setUpAuthInterceptor(getToken);
+  }, [getToken]);
+
+  return <DrawerNavigator />;
 }

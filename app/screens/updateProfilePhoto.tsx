@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ActivityIndicator, Alert, StatusBar,
+  ActivityIndicator, StatusBar,
 } from "react-native";
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,6 +11,8 @@ import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { addProfilePhoto, getProfilePhoto } from "@/client/endpoints/users/addProfilePhoto";
 import { useUserDb } from "../hooks/useUserDb";
+import { getErrorMessage } from "@/helpers/getErrorMessage";
+import { showToast } from "@/components/common/Toast";
 
 const UpdateProfilePhotoScreen = () => {
   const navigation = useNavigation();
@@ -40,16 +42,16 @@ const UpdateProfilePhotoScreen = () => {
   };
 
   const handleUpdate = async () => {
-    if (!image) { Alert.alert("No image", "Please select a photo first."); return; }
-    if (!userId) { Alert.alert("Error", "User not found."); return; }
+    if (!image) { showToast("Please select a photo first.", "warning"); return; }
+    if (!userId) { showToast("User not found. Please sign in again.", "error"); return; }
     setLoading(true);
     try {
       const filename = `profile_photo_${Math.floor(1000000 + Math.random() * 9000000)}.jpg`;
       await addProfilePhoto(userId, { fileUrl: image, fileType: "Image", filename });
       refresh();
-      Alert.alert("Saved", "Profile photo updated successfully.");
-    } catch {
-      Alert.alert("Error", "Failed to update profile photo.");
+      showToast("Profile photo updated successfully.", "success");
+    } catch (err: any) {
+      showToast(getErrorMessage(err, "Failed to update profile photo."), "error");
     } finally { setLoading(false); }
   };
 

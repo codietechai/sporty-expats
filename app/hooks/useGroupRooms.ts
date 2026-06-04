@@ -60,7 +60,7 @@ export function useGroupRooms() {
     useEffect(() => {
         if (!token || !userId || !userInfo) return;
         connectUser(token, userInfo).catch(() => { });
-    }, [token, userId]);
+    }, [token, userId]); // userInfo object is rebuilt each render, only key on token+userId
 
     const fetchRooms = useCallback(async (p: number) => {
         if (!token || !userId || fetchingRef.current) return;
@@ -88,11 +88,12 @@ export function useGroupRooms() {
             if (!msg?.roomId) return;
             setAllRooms((prev) => sortByActivity(prev.map((r) => r.roomId === msg.roomId ? { ...r, lastMessageAt: msg.createdAt } : r)));
         };
-        const onRoomAdded = () => fetchRooms(page);
+        // Use ref for page so this listener doesn't get re-registered on every page change
+        const onRoomAdded = () => fetchRooms(1);
         on("message.new", onNewMsg);
         on("room.added", onRoomAdded);
         return () => { off("message.new", onNewMsg); off("room.added", onRoomAdded); };
-    }, [on, off, fetchRooms, page]);
+    }, [on, off, fetchRooms]);
 
     const pastRooms = allRooms.filter((r) => isEventPast((r.metadata ?? {}) as EventRoomMetadata));
     const upcomingRooms = allRooms.filter((r) => isEventUpcoming((r.metadata ?? {}) as EventRoomMetadata));

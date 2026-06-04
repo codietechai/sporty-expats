@@ -69,7 +69,6 @@ export default function Sidebar(props: DrawerContentComponentProps) {
   ] : [
     { label: t("home"), icon: "home-outline", screen: "Home" },
     { label: t("events"), icon: "star-outline", screen: "Events" },
-    { label: t("Events List"), icon: "calendar-outline", screen: "Events List" },
     { label: t("market"), icon: "storefront-outline", screen: "Market" },
   ];
 
@@ -222,7 +221,8 @@ export default function Sidebar(props: DrawerContentComponentProps) {
         onClose={() => setModalVisible(false)}
         onSuccess={() => {
           setModalVisible(false);
-          props.navigation.navigate("Dashboard" as any);
+          // Delay navigation slightly so the drawer navigator settles after auth state change
+          setTimeout(() => props.navigation.navigate("Dashboard" as any), 300);
         }}
       />
 

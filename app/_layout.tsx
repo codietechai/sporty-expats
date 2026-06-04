@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
-import React from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/translations/i18n";
@@ -11,6 +11,10 @@ import { DrawerProvider } from "@/contexts/DrawerContext";
 import { UserProvider } from "@/contexts/UserContext";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BrandWordmark } from "@/components/Header";
+import * as SplashScreen from 'expo-splash-screen';
+import { ToastProvider } from "@/components/common/Toast";
+
+SplashScreen.preventAutoHideAsync();
 
 // Create QueryClient outside component to prevent recreation
 const queryClient = new QueryClient({
@@ -32,13 +36,9 @@ export default function RootLayout() {
 
   const Publishable_key = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-  if (!fontsLoaded) {
-    return (
-      <View style={styles.splash}>
-        <BrandWordmark size={34} centered />
-      </View>
-    );
-  }
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync();
+  }, [fontsLoaded]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -49,6 +49,7 @@ export default function RootLayout() {
               <DrawerProvider>
                 <UserProvider>
                   <Stack screenOptions={{ headerShown: false }} />
+                  <ToastProvider />
                 </UserProvider>
               </DrawerProvider>
             </ClerkLoaded>
@@ -59,11 +60,3 @@ export default function RootLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  splash: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#000",
-  },
-});

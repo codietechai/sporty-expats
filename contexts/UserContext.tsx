@@ -22,19 +22,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<any>(null);
   const { user, isLoaded } = useUser();
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
 
   const fetchUserDb = useCallback(async (retryCount = 0) => {
+    if (!mountedRef.current) return;
     if (retryCount === 0) {
       setLoading(true);
       setError(null);
     }
     try {
       const response = await getUserById();
+      if (!mountedRef.current) return;
       const userData = response?.data?.data || response?.data || response;
       setUserDb(userData);
       setError(null);
       setLoading(false);
     } catch (err: any) {
+      if (!mountedRef.current) return;
       const status = err?.response?.status;
       if ((status === 401 || status === 404) && retryCount < 3) {
         const delay = (retryCount + 1) * 800;
@@ -47,7 +51,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  useEffect(() => {
     if (!isLoaded) return;
+    // Cancel any in-flight retry from a previous user
+    if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
     if (user) {
       fetchUserDb();
     } else {

@@ -11,6 +11,8 @@ import {
 import { Stack } from "expo-router";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useNavigation } from "@react-navigation/native";
+import { DrawerNavigationProp } from "@react-navigation/drawer";
 
 const { width } = Dimensions.get("window");
 
@@ -27,6 +29,7 @@ import Horse from "@/assets/images/horse.jpg";
 import YogaPose from "@/assets/images/yogapose.jpg";
 
 export default function Event() {
+  const navigation = useNavigation<DrawerNavigationProp<any>>();
   const marqueeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {

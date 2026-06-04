@@ -4,7 +4,6 @@ import {
   TextInput,
   View,
   TouchableOpacity,
-  Alert,
   ScrollView,
   StyleSheet,
   StatusBar,
@@ -13,7 +12,7 @@ import {
   FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useUser } from "@clerk/clerk-expo";
@@ -22,6 +21,8 @@ import { updateUser } from "@/client/endpoints/users/updateUser";
 import { backendClient } from "@/client/backendClient";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { getNames } from "country-list";
+import { getErrorMessage } from "@/helpers/getErrorMessage";
+import { showToast } from "@/components/common/Toast";
 
 const countries = getNames().map((c) => ({ label: c, value: c }));
 
@@ -146,6 +147,7 @@ function StyledInput({
 
 export default function PersonalInfo() {
   const navigation = useNavigation();
+  const router = useRouter();
   const { userDb, loading: userLoading, refresh } = useUserDb();
   const { user: clerkUser } = useUser();
   const [saving, setSaving] = useState(false);
@@ -194,7 +196,25 @@ export default function PersonalInfo() {
   const set = (field: keyof FormData) => (value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
+  const validate = (): string | null => {
+    if (!formData.firstName.trim()) return "First name is required.";
+    if (!formData.lastName.trim()) return "Last name is required.";
+    if (!formData.username.trim()) return "Username is required.";
+    if (formData.username.trim().length < 3) return "Username must be at least 3 characters.";
+    if (formData.phone && !/^\+?[\d\s\-().]{7,20}$/.test(formData.phone))
+      return "Please enter a valid phone number (e.g. +31612345678).";
+    if (!formData.visibility) return "Please select a visibility setting.";
+    if (!formData.language) return "Please select a language.";
+    return null;
+  };
+
   const handleSave = async () => {
+    const validationError = validate();
+    if (validationError) {
+      showToast(validationError, "warning");
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -205,12 +225,12 @@ export default function PersonalInfo() {
           const updated = res.data?.data ?? res.data;
           await AsyncStorage.setItem("userDetails", JSON.stringify(updated));
           refresh();
-          Alert.alert("Saved", "Your details have been updated.");
+          showToast("Your details have been updated.", "success");
+          setTimeout(() => router.replace('/'), 500); // go to Drawer → Dashboard
         } else {
-          Alert.alert("Error", res?.data?.message ?? "Something went wrong.");
+          showToast(getErrorMessage(res?.data, "Something went wrong."), "error");
         }
       } else {
-        // No user ID yet — create via POST /users/save
         const payload = {
           ...formData,
           email: clerkUser?.primaryEmailAddress?.emailAddress ?? "",
@@ -222,13 +242,14 @@ export default function PersonalInfo() {
           const sessionData = { ...user, personalDetails: personalDetail };
           await AsyncStorage.setItem("userDetails", JSON.stringify(sessionData));
           refresh();
-          Alert.alert("Saved", "Your profile has been created.");
+          showToast("Your profile has been created.", "success");
+          setTimeout(() => router.replace('/'), 500);
         } else {
-          Alert.alert("Error", res?.data?.message ?? "Something went wrong.");
+          showToast(getErrorMessage(res?.data, "Something went wrong."), "error");
         }
       }
     } catch (err: any) {
-      Alert.alert("Error", err?.message ?? "An unexpected error occurred.");
+      showToast(getErrorMessage(err), "error");
     } finally {
       setSaving(false);
     }
@@ -243,7 +264,7 @@ export default function PersonalInfo() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.canGoBack() ? navigation.goBack() : router.replace('/')}
             style={styles.backBtn}
             hitSlop={8}
           >

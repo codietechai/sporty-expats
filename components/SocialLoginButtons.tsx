@@ -1,4 +1,4 @@
-import { useOAuth, useUser } from "@clerk/clerk-expo";
+import { useOAuth, useUser, useAuth } from "@clerk/clerk-expo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useState, useCallback, useEffect } from "react";
 import {
@@ -37,6 +37,7 @@ const SocialLoginButton = ({
 
   const { startOAuthFlow } = useOAuth({ strategy: getStrategy() });
   const { user } = useUser();
+  const { userId } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -49,42 +50,40 @@ const SocialLoginButton = ({
   const onSocialLoginPress = useCallback(async () => {
     try {
       setIsLoading(true);
-      console.log("Starting OAuth flow...");
       
       const { createdSessionId, setActive } = await startOAuthFlow({});
       
       if (createdSessionId) {
-        console.log("OAuth successful, setting session...");
         await setActive!({ session: createdSessionId });
-        await user?.reload();
 
-        // Try to get existing user data
+        // Wait for Clerk session to propagate — user hook hasn't re-rendered yet
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Use the session's userId directly instead of user?.id which is still null
+        const clerkUserId = userId ?? user?.id;
+
         try {
-          const userData = await getUserDetailsByClerkId(user?.id as string);
+          const userData = await getUserDetailsByClerkId(clerkUserId as string);
           await AsyncStorage.setItem("userDetails", JSON.stringify(userData?.data));
-          console.log("Existing user found:", userData?.data);
           ToastAndroid.show("Welcome back!", 2);
         } catch (error: any) {
-          // If user doesn't exist (404), create a new user
           if (error?.response?.status === 404) {
-            console.log("User not found in backend, creating new user...");
             try {
+              router.replace("/screens/personalInfo");
               const newUserData = {
-                clerkId: user?.id as string,
+                clerkId: clerkUserId as string,
                 email: user?.primaryEmailAddress?.emailAddress as string,
                 username: user?.username || user?.firstName || "user",
                 firstName: user?.firstName || "",
                 lastName: user?.lastName || "",
                 imageUrl: user?.imageUrl || "",
               };
-              
-              const createdUser = await createUser(newUserData);
-              await AsyncStorage.setItem("userDetails", JSON.stringify(createdUser?.data));
-              console.log("New user created:", createdUser?.data);
+              // const createdUser = await createUser(newUserData);
+              // await AsyncStorage.setItem("userDetails", JSON.stringify(createdUser?.data));
               ToastAndroid.show("Welcome to SportyExpats!", 2);
             } catch (createError) {
-              console.error("Failed to create user:", createError);
-              ToastAndroid.show("Account setup failed. Redirecting to profile setup.", 2);
+              // console.error("Failed to create user:", createError);
+              ToastAndroid.show("Account setup failed.", 2);
               onClose();
               router.replace("/screens/personalInfo");
               return;
@@ -95,8 +94,9 @@ const SocialLoginButton = ({
           }
         }
 
-        // Close the modal and navigate
         onClose();
+        // Small delay so the drawer navigator fully settles before navigation
+        await new Promise(resolve => setTimeout(resolve, 150));
         onSuccess?.();
       }
     } catch (err) {
@@ -105,7 +105,7 @@ const SocialLoginButton = ({
     } finally {
       setIsLoading(false);
     }
-  }, [startOAuthFlow, user, onClose, onSuccess]);
+  }, [startOAuthFlow, user, userId, onClose, onSuccess]);
 
   const buttonText = () => {
     if (isLoading) return "Loading...";

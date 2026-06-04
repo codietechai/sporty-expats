@@ -11,6 +11,7 @@ import { useUserDb } from "@/app/hooks/useUserDb";
 import { registerFreeEvent, TicketInfo } from "@/client/endpoints/events/eventRegistration";
 import InlineAlert from "@/components/Create-Events/InlineAlert";
 import type { Event } from "@/client/endpoints/events/types";
+import { getErrorMessage } from "@/helpers/getErrorMessage";
 
 type Step = "Select Ticket" | "Assign Participants" | "Review & Confirm";
 
@@ -187,11 +188,7 @@ export default function EventRegistrationScreen({ route }: any) {
                 [{ text: "OK", onPress: () => navigation.goBack() }]
             );
         } catch (err: any) {
-            const msg =
-                err?.response?.data?.error ??
-                err?.message ??
-                "Registration failed. Please try again.";
-            setStepError(Array.isArray(msg) ? msg.join("\n") : msg);
+            setStepError(getErrorMessage(err, "Registration failed. Please try again."));
         } finally {
             setSubmitting(false);
         }

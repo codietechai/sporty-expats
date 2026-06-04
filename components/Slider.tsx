@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -12,31 +12,33 @@ import { useFocusEffect } from '@react-navigation/native';
 const { height } = Dimensions.get('window');
 
 const images = [
-  { id: '1', uri: 'https://picsum.photos/id/1011/400/600' }, // Reduced resolution
-  { id: '2', uri: 'https://picsum.photos/id/1012/400/600' },
-  { id: '3', uri: 'https://picsum.photos/id/1013/400/600' },
+  { id: '1', source: require('../assets/images/slider_image.png') },
+  { id: '2', source: require('../assets/images/slider_image2.png') },
+  { id: '3', source: require('../assets/images/slider_image3.png') },
 ];
 
 export const VerticalCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [prevImage, setPrevImage] = useState(images[0]);
-  const [isScreenFocused, setIsScreenFocused] = useState(true);
   const translateY = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0)).current;
-  const [isAnimating, setIsAnimating] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Use refs for flags accessed inside setInterval to avoid stale closures
+  const isAnimatingRef = useRef(false);
+  const isFocusedRef = useRef(true);
+  const currentIndexRef = useRef(0);
 
-  const scrollToNext = () => {
-    if (isAnimating || !isScreenFocused) return;
+  const scrollToNext = useCallback(() => {
+    if (isAnimatingRef.current || !isFocusedRef.current) return;
 
-    const nextIndex = (currentIndex + 1) % images.length;
-    setPrevImage(images[currentIndex]);
+    const nextIndex = (currentIndexRef.current + 1) % images.length;
+    setPrevImage(images[currentIndexRef.current]);
+    currentIndexRef.current = nextIndex;
     setCurrentIndex(nextIndex);
 
-    // Reset animations
     translateY.setValue(0);
     scale.setValue(0);
-    setIsAnimating(true);
+    isAnimatingRef.current = true;
 
     Animated.parallel([
       Animated.timing(translateY, {
@@ -50,65 +52,58 @@ export const VerticalCarousel = () => {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      setIsAnimating(false);
+      isAnimatingRef.current = false;
     });
-  };
+  }, []);  // stable — no state deps, uses refs
 
-  const startInterval = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      if (!isAnimating && isScreenFocused) {
-        scrollToNext();
-      }
-    }, 2000);
-  };
-
-  const stopInterval = () => {
+  const stopInterval = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-  };
+  }, []);
 
-  // Handle screen focus changes
+  const startInterval = useCallback(() => {
+    stopInterval();
+    intervalRef.current = setInterval(scrollToNext, 2000);
+  }, [scrollToNext, stopInterval]);
+
+  // Focus: start/stop interval — stable deps, no re-registration on each animation
   useFocusEffect(
-    React.useCallback(() => {
-      setIsScreenFocused(true);
+    useCallback(() => {
+      isFocusedRef.current = true;
       startInterval();
       return () => {
-        setIsScreenFocused(false);
+        isFocusedRef.current = false;
         stopInterval();
       };
-    }, [isAnimating])
+    }, [startInterval, stopInterval])
   );
 
-  // Handle app state changes
+  // App state: pause when backgrounded
   useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active') {
-        setIsScreenFocused(true);
+        isFocusedRef.current = true;
         startInterval();
       } else {
-        setIsScreenFocused(false);
+        isFocusedRef.current = false;
         stopInterval();
       }
     };
-
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     return () => subscription?.remove();
-  }, []);
+  }, [startInterval, stopInterval]);
 
   // Cleanup on unmount
-  useEffect(() => {
-    return () => stopInterval();
-  }, []);
+  useEffect(() => () => stopInterval(), [stopInterval]);
 
   return (
     <View style={styles.container}>
-      {/* Bottom: New image zooms out */}
+      {/* Bottom: New image zooms in */}
       <Animated.View style={[styles.imageContainer, { transform: [{ scale }] }]}>
         <Image
-          source={{ uri: images[currentIndex].uri }}
+          source={images[currentIndex].source}
           style={styles.image}
           contentFit="cover"
           transition={300}
@@ -117,26 +112,21 @@ export const VerticalCarousel = () => {
       </Animated.View>
 
       {/* Top: Old image slides down */}
-      {isAnimating && (
-        <Animated.View style={[styles.imageContainer, { transform: [{ translateY }] }]}>
-          <Image
-            source={{ uri: prevImage.uri }}
-            style={styles.image}
-            contentFit="cover"
-            transition={300}
-            cachePolicy="memory-disk"
-          />
-        </Animated.View>
-      )}
+      <Animated.View style={[styles.imageContainer, { transform: [{ translateY }] }]}>
+        <Image
+          source={prevImage.source}
+          style={styles.image}
+          contentFit="cover"
+          transition={300}
+          cachePolicy="memory-disk"
+        />
+      </Animated.View>
 
       <View style={styles.indicatorWrapper}>
         {images.map((_, index) => (
           <View
             key={index}
-            style={[
-              styles.indicator,
-              index === currentIndex && styles.activeIndicator,
-            ]}
+            style={[styles.indicator, index === currentIndex && styles.activeIndicator]}
           />
         ))}
       </View>
@@ -149,13 +139,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
     overflow: 'hidden',
-    minHeight:600,
+    minHeight: 600,
+  },
+  imageContainer: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
   },
   image: {
     width: '100%',
     height: '100%',
-    position: 'absolute',
-    resizeMode: 'cover',
   },
   indicatorWrapper: {
     position: 'absolute',

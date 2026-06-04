@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 import React, { useState } from "react";
+import { useAuth } from "@clerk/clerk-expo";
 import { VerticalCarousel } from "@/components/Slider";
 import { Stack } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
@@ -23,6 +24,15 @@ type RootDrawerParamList = {
 export default function Home() {
   const navigation = useNavigation<DrawerNavigationProp<RootDrawerParamList>>();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const { isSignedIn } = useAuth();
+
+  // When user signs in while Home is active (OAuth redirects to '/' which shows Home first),
+  // push them to Dashboard. This navigation is on the Drawer so openDrawer() works correctly.
+  React.useEffect(() => {
+    if (isSignedIn) {
+      navigation.navigate('Dashboard' as any);
+    }
+  }, [isSignedIn]);
 
   const toggleAccordion = (index: number) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
