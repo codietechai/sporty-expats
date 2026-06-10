@@ -28,7 +28,9 @@ export const addComment = async (
     return response.data;
 };
 
-export const getPostComments = async (postId: string) => {
-    const response = await backendClient.get(`/posts/${postId}/comments`);
+export const getPostComments = async (postId: string, startingAfter?: string) => {
+    const response = await backendClient.get(`/posts/${postId}/comments`, {
+        params: startingAfter ? { startingAfter } : undefined,
+    });
     return response.data;
 };

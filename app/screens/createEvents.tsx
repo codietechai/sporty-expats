@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StatusBar, StyleSheet, Modal } from "react-native";
 import { Stack } from "expo-router";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { useForm, FormProvider } from "react-hook-form";
 import { Ionicons } from "@expo/vector-icons";
@@ -197,8 +197,8 @@ const CreateEvents = () => {
       <SafeAreaView style={styles.safe} edges={["top"]}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={8}>
-            <Ionicons name="arrow-back" size={22} color="#fff" />
+          <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.openDrawer())} style={styles.menuBtn} hitSlop={8}>
+            <Ionicons name="menu" size={22} color="#fff" />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>Create Event</Text>
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#1e1e1e",
     backgroundColor: "#111",
   },
-  backBtn: {
+  menuBtn: {
     width: 38,
     height: 38,
     borderRadius: 10,

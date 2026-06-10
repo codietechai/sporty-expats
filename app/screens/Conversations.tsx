@@ -10,6 +10,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
+import { DrawerNavigationProp } from "@react-navigation/drawer";
 
 const notifications = [
     { id: "1", unread: true },
@@ -18,19 +20,23 @@ const notifications = [
     { id: "4", unread: true },
 ];
 
-export default function ConversationScreen({ navigation }: any) {
+export default function ConversationScreen({ navigation: navProp }: any) {
+    const navigation = useNavigation();
+    const drawer = navigation.getParent<DrawerNavigationProp<any>>();
+
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
 
             <SafeAreaView style={styles.safe}>
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>
-                        Conversations/Notifications
-                    </Text>
-                    <Pressable onPress={() => navigation.goBack()}>
-                        <Ionicons name="close" size={22} color="#1a1a1a" />
+                    <Pressable style={styles.menuBtn} onPress={() => drawer?.openDrawer?.()}>
+                        <Ionicons name="menu" size={22} color="#1a1a1a" />
                     </Pressable>
+                    <Text style={styles.headerTitle}>
+                        Conversations
+                    </Text>
+                    <View style={{ width: 36 }} />
                 </View>
 
                 <View style={styles.actionsRow}>
@@ -114,9 +120,16 @@ const styles = StyleSheet.create({
     },
 
     headerTitle: {
+        flex: 1,
+        textAlign: "center",
         fontSize: 16,
         fontWeight: "600",
         color: "#1a1a1a",
+    },
+
+    menuBtn: {
+        width: 36, height: 36,
+        alignItems: "center", justifyContent: "center",
     },
 
     actionsRow: {

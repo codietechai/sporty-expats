@@ -9,7 +9,7 @@ import GroupChatsContent from "./GroupChatsContent";
 import GroupChatSkeleton from "@/components/groupchat/GroupChatSkeleton";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { Stack } from "expo-router";
 
 const CHAT_API_KEY = process.env.EXPO_PUBLIC_CHAT_API_KEY;
@@ -22,10 +22,13 @@ function LoadingShell({ error }: { error?: string | null }) {
         <>
             <Stack.Screen options={{ headerShown: false }} />
             <SafeAreaView style={styles.safe} edges={["top"]}>
-                {/* Consistent header */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={8}>
-                        <Ionicons name="arrow-back" size={22} color="#fff" />
+                    <TouchableOpacity
+                        style={styles.menuBtn}
+                        onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+                        hitSlop={8}
+                    >
+                        <Ionicons name="menu" size={22} color="#fff" />
                     </TouchableOpacity>
                     <View style={styles.headerCenter}>
                         <Text style={styles.headerTitle}>Group Chats</Text>
@@ -122,7 +125,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16, paddingVertical: 12,
         borderBottomWidth: 1, borderBottomColor: "#1e1e1e", backgroundColor: "#111",
     },
-    backBtn: {
+    menuBtn: {
         width: 38, height: 38, borderRadius: 10,
         backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
         alignItems: "center", justifyContent: "center",

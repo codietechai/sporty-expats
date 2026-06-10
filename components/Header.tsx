@@ -2,7 +2,7 @@ import React from "react";
 import { Text, View, TouchableOpacity, StyleSheet } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useNavigation } from "@react-navigation/native";
-import { DrawerNavigationProp } from "@react-navigation/drawer";
+import { DrawerActions } from "@react-navigation/native";
 
 type HeaderProps = {
   myFeed?: boolean;
@@ -26,15 +26,10 @@ const Header: React.FC<HeaderProps> = ({ myFeed, onAddPress, onMenuPress }) => {
 
   const handleMenuPress = () => {
     if (onMenuPress) {
-      // Preferred: caller passes openDrawer directly from drawer navigation context
       onMenuPress();
       return;
     }
-    // Fallback for screens that don't pass onMenuPress
-    const drawer = navigation.getParent<DrawerNavigationProp<any>>();
-    if (drawer?.openDrawer) {
-      drawer.openDrawer();
-    }
+    navigation.dispatch(DrawerActions.openDrawer());
   };
 
   const handleAddFeedPress = () => {
@@ -50,7 +45,14 @@ const Header: React.FC<HeaderProps> = ({ myFeed, onAddPress, onMenuPress }) => {
     <View style={styles.headerContainer}>
       <View style={styles.row}>
         <TouchableOpacity onPress={handleMenuPress} style={styles.menuButton} activeOpacity={0.7}>
-          <BrandWordmark />
+          <View style={styles.menuRow}>
+            <View style={styles.hamburger}>
+              <View style={styles.bar} />
+              <View style={styles.bar} />
+              <View style={[styles.bar, { width: 16 }]} />
+            </View>
+            <BrandWordmark />
+          </View>
         </TouchableOpacity>
 
         <View style={styles.actions}>
@@ -92,6 +94,21 @@ const styles = StyleSheet.create({
   menuButton: {
     paddingLeft: 20,
     marginRight: 10,
+  },
+  menuRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  hamburger: {
+    gap: 4,
+    justifyContent: "center",
+  },
+  bar: {
+    width: 20,
+    height: 2,
+    backgroundColor: "#fff",
+    borderRadius: 2,
   },
   wordmark: {
     color: "#fff",

@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { DrawerContentComponentProps } from "@react-navigation/drawer";
+import { DrawerActions, useNavigation } from "@react-navigation/native";
 import { RootDrawerParamList } from "@/components/Sidebar";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { useUser } from "@clerk/clerk-expo";
@@ -45,8 +46,8 @@ export default function Profile(props: DrawerContentComponentProps) {
 
         {/* Header */}
         <View style={s.header}>
-          <TouchableOpacity onPress={() => props.navigation.goBack()} style={s.backBtn} hitSlop={8}>
-            <Ionicons name="arrow-back" size={22} color="#fff" />
+          <TouchableOpacity onPress={() => props.navigation.dispatch(DrawerActions.openDrawer())} style={s.menuBtn} hitSlop={8}>
+            <Ionicons name="menu" size={22} color="#fff" />
           </TouchableOpacity>
           <View style={s.headerCenter}>
             <Text style={s.headerTitle}>Profile</Text>
@@ -110,7 +111,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 12,
     borderBottomWidth: 1, borderBottomColor: "#1e1e1e", backgroundColor: "#111",
   },
-  backBtn: {
+  menuBtn: {
     width: 38, height: 38, borderRadius: 10,
     backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
     alignItems: "center", justifyContent: "center",

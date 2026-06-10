@@ -8,7 +8,7 @@ import { timeAgo } from "@/helpers/date";
 import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator, Alert, Animated, FlatList, KeyboardAvoidingView,
   Modal, Platform, ScrollView, Share, StyleSheet, Text,
@@ -24,6 +24,7 @@ interface CommentAuthor {
 interface IComment {
   id: string; comment: string; createdAt: string;
   author: CommentAuthor; parentId?: string | null; children?: IComment[];
+  mentionName?: string; // injected client-side for display
 }
 interface Post {
   _id: string; desc: string; files: { fileUrl: string; fileType?: string }[];
@@ -146,15 +147,17 @@ const csk = StyleSheet.create({
 });
 
 // ─── Comment item ─────────────────────────────────────────────────────────────
-// Max one level of nesting. Replies show @username inline. No deeper nesting.
-function CommentItem({ comment, isReply = false, onReply }: {
+function CommentItem({ comment, depth = 0, onReply }: {
   comment: IComment;
-  isReply?: boolean;
+  depth?: number;
   onReply: (parentId: string, username: string, displayName: string) => void;
 }) {
   const name = getDisplayName(comment.author);
   const username = comment.author?.username || name;
+  const isReply = depth > 0;
 
+  // Find who is being replied to from the comment text or parentId context
+  // The mention name comes from the parent — passed via the tree render, not stored here
   return (
     <View style={[ci.wrap, isReply && ci.replyWrap]}>
       <Avatar uri={comment.author?.imageUrl} name={name} size={isReply ? 28 : 34} />
@@ -164,7 +167,7 @@ function CommentItem({ comment, isReply = false, onReply }: {
           <Text style={ci.time}>{timeAgo(comment.createdAt)}</Text>
         </View>
         <Text style={ci.text} numberOfLines={0}>
-          {isReply ? <Text style={ci.mention}>@{username} </Text> : null}
+          {comment.mentionName ? <Text style={ci.mention}>@{comment.mentionName} </Text> : null}
           {comment.comment}
         </Text>
         <TouchableOpacity onPress={() => onReply(comment.id, username, name)} hitSlop={8}>
@@ -175,17 +178,23 @@ function CommentItem({ comment, isReply = false, onReply }: {
   );
 }
 
-// Renders a top-level comment + its replies at one indent level (no deeper)
-function CommentThread({ comment, onReply }: {
+// Recursively renders a comment and all its nested children — all replies at ONE indent level
+function CommentNode({ comment, isReply = false, onReply }: {
   comment: IComment;
+  isReply?: boolean;
   onReply: (parentId: string, username: string, displayName: string) => void;
 }) {
+  const parentMention = comment.author?.username || getDisplayName(comment.author);
   return (
     <View>
-      <CommentItem comment={comment} isReply={false} onReply={onReply} />
-      {comment.children?.map((child) => (
-        <CommentItem key={child.id} comment={child} isReply={true} onReply={onReply} />
-      ))}
+      <CommentItem comment={comment} depth={isReply ? 1 : 0} onReply={onReply} />
+      {comment.children?.map((child) => {
+        const childWithMention = { ...child, mentionName: parentMention };
+        return (
+          // All descendants indented at same level — isReply=true always for children
+          <CommentNode key={child.id} comment={childWithMention} isReply={true} onReply={onReply} />
+        );
+      })}
     </View>
   );
 }
@@ -210,35 +219,58 @@ function CommentsModal({ visible, postId, total, userId, onClose, onPosted, init
 }) {
   const [comments, setComments] = useState<IComment[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<{ id: string; username: string; displayName: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const slide = useRef(new Animated.Value(600)).current;
 
+  const loadComments = async (startingAfter?: string, replace = false) => {
+    try {
+      const r = await getPostComments(postId, startingAfter);
+      // Keep nested tree as-is — CommentNode walks children directly
+      const incoming: IComment[] = r?.data ?? [];
+      setComments((prev) => replace ? incoming : [...prev, ...incoming]);
+      // Use nextCursor from API for pagination
+      const nextCursor = r?.nextCursor ?? "";
+      setCursor(nextCursor || undefined);
+      setHasMore(!!nextCursor);
+    } catch {}
+  };
+
   useEffect(() => {
     if (visible) {
       Animated.spring(slide, { toValue: 0, useNativeDriver: true, tension: 65, friction: 11 }).start();
-      // Load comments
       setLoading(true);
-      getPostComments(postId)
-        .then((r) => setComments(r?.data ?? []))
-        .catch(() => {})
-        .finally(() => setLoading(false));
+      setComments([]);
+      setCursor(undefined);
+      setHasMore(true);
+      loadComments(undefined, true).finally(() => setLoading(false));
     } else {
       slide.setValue(600);
       setText("");
       setReplyTo(null);
+      setCursor(undefined);
+      setHasMore(true);
     }
   }, [visible]);
 
-  // When opened via Reply tap — set reply target and focus input
   useEffect(() => {
     if (visible && initialReply) {
       setReplyTo(initialReply);
       setTimeout(() => inputRef.current?.focus(), 400);
     }
   }, [visible, initialReply]);
+
+  const handleLoadMore = async () => {
+    if (loadingMore || !hasMore || loading || !cursor) return;
+    setLoadingMore(true);
+    await loadComments(cursor, false);
+    setLoadingMore(false);
+  };
 
   const handleReply = (parentId: string, username: string, displayName: string) => {
     setReplyTo({ id: parentId, username, displayName });
@@ -250,7 +282,6 @@ function CommentsModal({ visible, postId, total, userId, onClose, onPosted, init
     const t = text.trim();
     if (!t || submitting) return;
     setSubmitting(true);
-    // Optimistic: add comment immediately
     const optimistic: IComment = {
       id: `_opt_${Date.now()}`,
       comment: t,
@@ -264,11 +295,14 @@ function CommentsModal({ visible, postId, total, userId, onClose, onPosted, init
     onPosted();
     try {
       await addComment(userId, postId, t, replyTo?.id);
-      // Refresh to get real data
+      // Reload from start to get real data
       const r = await getPostComments(postId);
-      setComments(r?.data ?? []);
+      const incoming: IComment[] = r?.data ?? [];
+      setComments(incoming);
+      const nextCursor = r?.nextCursor ?? "";
+      setCursor(nextCursor || undefined);
+      setHasMore(!!nextCursor);
     } catch {
-      // Roll back optimistic
       setComments((prev) => prev.filter((c) => c.id !== optimistic.id));
       Alert.alert("Error", "Could not post comment.");
     } finally {
@@ -290,13 +324,29 @@ function CommentsModal({ visible, postId, total, userId, onClose, onPosted, init
           <TouchableOpacity onPress={onClose} hitSlop={8}><Ionicons name="close" size={22} color="#9CA3AF" /></TouchableOpacity>
         </View>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={{ flex: 1 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            onScroll={({ nativeEvent }) => {
+              const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+              if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 100) {
+                handleLoadMore();
+              }
+            }}
+            scrollEventThrottle={200}
+          >
             {loading ? (
               <><CommentSkeleton /><CommentSkeleton /><CommentSkeleton /><CommentSkeleton /></>
             ) : comments.length === 0 ? (
               <View style={cm.empty}><Text style={cm.emptyTxt}>No comments yet. Be the first!</Text></View>
             ) : (
-              comments.map((c) => <CommentThread key={c.id} comment={c} onReply={handleReply} />)
+              comments.map((c) => <CommentNode key={c.id} comment={c} isReply={false} onReply={handleReply} />)
+            )}
+            {loadingMore && (
+              <View style={cm.loadingMore}>
+                <ActivityIndicator size="small" color="#4ade80" />
+              </View>
             )}
             <View style={{ height: 20 }} />
           </ScrollView>
@@ -344,6 +394,7 @@ const cm = StyleSheet.create({
   title: { color: "#fff", fontSize: 15, fontWeight: "700" },
   empty: { paddingVertical: 40, alignItems: "center" },
   emptyTxt: { color: "#555", fontSize: 14 },
+  loadingMore: { paddingVertical: 16, alignItems: "center" },
   replyBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 16, marginBottom: 4, backgroundColor: "#1a1a1a", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 },
   replyTxt: { color: "#9CA3AF", fontSize: 12 },
   inputBar: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: "#1e1e1e", backgroundColor: "#111" },

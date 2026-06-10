@@ -2,7 +2,6 @@ import React from "react";
 import {
     View,
     Text,
-    TextInput,
     Image,
     Pressable,
     StyleSheet,
@@ -11,15 +10,25 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import Input from "@/components/common/input";
+import { useNavigation } from "@react-navigation/native";
+import { DrawerNavigationProp } from "@react-navigation/drawer";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function EditUserScreen() {
+    const navigation = useNavigation();
+    const drawer = navigation.getParent<DrawerNavigationProp<any>>();
+
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
 
             <SafeAreaView style={styles.safe}>
                 <View style={styles.header}>
+                    <Pressable style={styles.menuBtn} onPress={() => drawer?.openDrawer?.()}>
+                        <Ionicons name="menu" size={22} color="#1a1a1a" />
+                    </Pressable>
                     <Text style={styles.headerTitle}>Edit User Details</Text>
+                    <View style={{ width: 36 }} />
                 </View>
 
                 <ScrollView contentContainerStyle={styles.container}>
@@ -67,11 +76,17 @@ const styles = StyleSheet.create({
     },
     header: {
         height: 56,
-        justifyContent: "center",
+        justifyContent: "space-between",
+        flexDirection: "row",
+        alignItems: "center",
         paddingHorizontal: 20,
         borderBottomWidth: 1,
         borderBottomColor: "#E5E7EB",
         backgroundColor: "#FFFFFF",
+    },
+    menuBtn: {
+        width: 36, height: 36,
+        alignItems: "center", justifyContent: "center",
     },
     headerTitle: {
         fontSize: 18,

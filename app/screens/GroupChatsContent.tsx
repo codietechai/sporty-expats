@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { useGroupRooms } from "@/app/chat/group/hooks/useGroupRoom";
 import { useChatClient } from "@/app/chat/core/chatProvider";
 import { GroupRoomCard } from "@/components/groupchat/GroupRoomCard";
@@ -77,20 +77,15 @@ export default function GroupChatsContent() {
             <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
         {/* Header */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={8}>
-                        <Ionicons name="arrow-back" size={22} color="#fff" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Group Chats</Text>
                     <TouchableOpacity
-                        style={styles.backBtn}
+                        style={styles.menuBtn}
                         hitSlop={8}
-                        onPress={() => {
-                            const drawer = (navigation as any).getParent?.("MainDrawer");
-                            drawer?.openDrawer?.();
-                        }}
+                        onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
                     >
                         <Ionicons name="menu" size={22} color="#fff" />
                     </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Group Chats</Text>
+                    <View style={{ width: 38 }} />
                 </View>
 
                 {/* Search */}
@@ -225,6 +220,11 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     backBtn: {
+        width: 38, height: 38, borderRadius: 10,
+        backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
+        alignItems: "center", justifyContent: "center",
+    },
+    menuBtn: {
         width: 38, height: 38, borderRadius: 10,
         backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
         alignItems: "center", justifyContent: "center",

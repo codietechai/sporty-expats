@@ -10,7 +10,8 @@ import {
   Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Stack, useNavigation } from "expo-router";
+import { Stack } from "expo-router";
+import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { getUploadedMediaByUser } from "@/client/endpoints/users/getUserUploadedMedia";
 import MediaGallery from "@/components/profile/mediaGallery";
@@ -129,11 +130,11 @@ const MediaUploadScreen = () => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backBtn}
+            onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+            style={styles.menuBtn}
             hitSlop={8}
           >
-            <Ionicons name="arrow-back" size={22} color="#fff" />
+            <Ionicons name="menu" size={22} color="#fff" />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>Media</Text>
@@ -216,7 +217,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#1e1e1e",
     backgroundColor: "#111",
   },
-  backBtn: {
+  menuBtn: {
     width: 38,
     height: 38,
     borderRadius: 10,
