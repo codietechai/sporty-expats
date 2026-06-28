@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   addBtn: {
-    marginRight: 15,
+    marginRight: 0,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "green",
