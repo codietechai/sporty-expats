@@ -333,15 +333,18 @@ const styles = StyleSheet.create({
     pillsScroll: {
         flexGrow: 0,
         borderBottomWidth: 1, borderBottomColor: "#1a1a1a",
+        minHeight: 58,
     },
     pillsContent: {
         paddingHorizontal: 14, paddingVertical: 10, gap: 8,
+        alignItems: "center",
     },
     pill: {
         flexDirection: "row", alignItems: "center", gap: 5,
-        paddingHorizontal: 14, paddingVertical: 7,
+        paddingHorizontal: 14, paddingVertical: 9,
         borderRadius: 20, borderWidth: 1,
         borderColor: "#2a2a2a", backgroundColor: "#1a1a1a",
+        height: 40,
     },
     pillActive: {
         backgroundColor: "#0f2a1a", borderColor: "#2ecc71",
