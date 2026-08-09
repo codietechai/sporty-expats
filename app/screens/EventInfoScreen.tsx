@@ -1,18 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
     View, Text, Image, ScrollView, TouchableOpacity,
-    StyleSheet, ActivityIndicator, Alert,
+    StyleSheet, ActivityIndicator, Alert, Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { WebView } from "react-native-webview";
 import { getEventById } from "@/client/endpoints/events/getEventById";
 import { getAttendee, withdrawParticipation, AttendeeData } from "@/client/endpoints/events/eventRegistration";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 import type { Event } from "@/client/endpoints/events/types";
-import { HomeScreenNavigationProp } from "../home";
 
 function formatDate(dateString: string): string {
     return new Intl.DateTimeFormat("en-US", {
@@ -35,11 +35,11 @@ function DeadlineBadge({ date }: { date: string }) {
 }
 
 export default function EventInfoScreen({ route }: any) {
-    const navigation = useNavigation<HomeScreenNavigationProp>();
+    const navigation = useNavigation<any>();
     const eventFromRoute: Event | undefined = route?.params?.event;
 
     const [event, setEvent] = useState<Event | null>(eventFromRoute ?? null);
-    const [loading, setLoading] = useState(!eventFromRoute);
+    const [loading] = useState(!eventFromRoute);
     const [attendee, setAttendee] = useState<AttendeeData | null>(null);
     const [isOrganizer, setIsOrganizer] = useState(false);
     const [statusLoading, setStatusLoading] = useState(true);
@@ -58,23 +58,30 @@ export default function EventInfoScreen({ route }: any) {
         }
     }, [eventFromRoute?.id]);
 
-    // Fetch attendee record — mirrors GET /api/users/{id}/events/{eventId}/attendee
-    useEffect(() => {
-        if (!userId || !event?.id) {
-            setStatusLoading(false);
-            return;
-        }
-        if (username && event.organizers?.includes(username)) {
-            setIsOrganizer(true);
-            setStatusLoading(false);
-            return;
-        }
-        setStatusLoading(true);
-        getAttendee(userId, event.id)
-            .then(setAttendee)
-            .catch(() => setAttendee(null))
-            .finally(() => setStatusLoading(false));
-    }, [userId, event?.id, username]);
+    // Fetch attendee record every time this screen is focused
+    // This ensures buttons update after registration or refund flows
+    useFocusEffect(
+        useCallback(() => {
+            if (!userId || !event?.id) {
+                setStatusLoading(false);
+                return;
+            }
+            if (username && event.organizers?.includes(username)) {
+                setIsOrganizer(true);
+                setStatusLoading(false);
+                return;
+            }
+            setStatusLoading(true);
+            // Also refresh event to get latest availableTickets
+            getEventById(event.id)
+                .then(setEvent)
+                .catch(() => {});
+            getAttendee(userId, event.id)
+                .then(setAttendee)
+                .catch(() => setAttendee(null))
+                .finally(() => setStatusLoading(false));
+        }, [userId, event?.id, username])
+    );
 
     const isRegistered = !!attendee && attendee.attendantStatus !== "Withdrew";
     const hasWithdrawn = attendee?.attendantStatus === "Withdrew";
@@ -93,9 +100,9 @@ export default function EventInfoScreen({ route }: any) {
                         setWithdrawing(true);
                         try {
                             await withdrawParticipation(userId, event.id);
-                            setAttendee((prev) =>
-                                prev ? { ...prev, attendantStatus: "Withdrew" } : null
-                            );
+                            // Refresh attendee status after withdrawal
+                            const updated = await getAttendee(userId, event.id);
+                            setAttendee(updated);
                             Alert.alert("Done", "You have withdrawn from this event.");
                         } catch {
                             Alert.alert("Error", "Could not withdraw. Please try again.");
@@ -261,6 +268,28 @@ export default function EventInfoScreen({ route }: any) {
                                 <Ionicons name="location-outline" size={15} color="#2ecc71" />
                                 <Text style={styles.locationText}>{event.location?.name ?? "—"}</Text>
                             </View>
+                            {event.location?.latitude && event.location?.longitude && (
+                                <View>
+                                    <View style={styles.mapContainer}>
+                                        <WebView
+                                            style={styles.map}
+                                            source={{
+                                                html: `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"/><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><style>*{margin:0;padding:0}html,body,#map{width:100%;height:100vh;background:#111}</style></head><body><div id="map"></div><script>var map=L.map('map',{zoomControl:true,scrollWheelZoom:false}).setView([${event.location.latitude},${event.location.longitude}],15);L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);L.marker([${event.location.latitude},${event.location.longitude}]).addTo(map).bindPopup(${JSON.stringify(event.location.name ?? "")}).openPopup();</script></body></html>`,
+                                            }}
+                                        />
+                                    </View>
+                                    <TouchableOpacity
+                                        style={styles.openMapsBtn}
+                                        onPress={() => Linking.openURL(
+                                            `https://www.google.com/maps/search/?api=1&query=${event.location.latitude},${event.location.longitude}`
+                                        )}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Ionicons name="navigate-outline" size={14} color="#2ecc71" />
+                                        <Text style={styles.openMapsBtnText}>Open in Maps</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </View>
 
                         <View style={styles.divider} />
@@ -327,7 +356,10 @@ export default function EventInfoScreen({ route }: any) {
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={[styles.registerBtn, styles.refundBtn]}
-                                            onPress={() => Alert.alert("Refund", "Please request a refund via the web app.")}
+                                            onPress={() => navigation.navigate("Refund" as any, {
+                                                event,
+                                                ticketsAssigned: attendee?.ticketsAssigned ?? 1,
+                                            })}
                                         >
                                             <Text style={styles.registerBtnText}>Request Refund</Text>
                                         </TouchableOpacity>
@@ -441,8 +473,19 @@ const styles = StyleSheet.create({
     badgeWarn: { backgroundColor: "rgba(251,191,36,0.1)", borderWidth: 1, borderColor: "rgba(251,191,36,0.3)", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
     badgeWarnText: { fontSize: 10, fontWeight: "700", color: "#fbbf24", textTransform: "uppercase" },
 
-    locationRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    locationRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
     locationText: { fontSize: 14, color: "#D1D5DB", flex: 1 },
+    mapContainer: {
+        height: 200, borderRadius: 12, overflow: "hidden",
+        borderWidth: 1, borderColor: "#2a2a2a",
+    },
+    map: { flex: 1, backgroundColor: "#111" },
+    openMapsBtn: {
+        flexDirection: "row", alignItems: "center", justifyContent: "center",
+        gap: 6, marginTop: 8, paddingVertical: 10, borderRadius: 10,
+        backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
+    },
+    openMapsBtnText: { color: "#2ecc71", fontSize: 13, fontWeight: "600" },
 
     organizerText: { fontSize: 14, color: "#2ecc71", marginBottom: 4 },
 

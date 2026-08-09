@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { useUser } from "@clerk/clerk-expo";
 import { getUserById } from "@/client/endpoints/users/getUserById";
+import { backendClient } from "@/client/backendClient";
 
 interface UserContextValue {
   userDb: any;
@@ -15,6 +16,18 @@ const UserContext = createContext<UserContextValue>({
   error: null,
   refresh: () => {},
 });
+
+// Registers the device with the notification system so the backend
+// can send push/in-app notifications to this user.
+// Mirrors what the web app does at POST /api/notifications/auth on login.
+async function registerNotifications(): Promise<void> {
+  try {
+    await backendClient.post("notifications/auth");
+  } catch (err) {
+    // Non-fatal — notifications won't work but the app still functions
+    console.warn("[Notifications] Failed to register device:", err);
+  }
+}
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [userDb, setUserDb] = useState<any>(null);

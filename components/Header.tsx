@@ -8,6 +8,7 @@ type HeaderProps = {
   myFeed?: boolean;
   onAddPress?: () => void;
   onMenuPress?: () => void;
+  unreadNotifications?: number;
 };
 
 type BrandWordmarkProps = {
@@ -21,8 +22,8 @@ export const BrandWordmark: React.FC<BrandWordmarkProps> = ({ size = 20, centere
   </Text>
 );
 
-const Header: React.FC<HeaderProps> = ({ myFeed, onAddPress, onMenuPress }) => {
-  const navigation = useNavigation();
+const Header: React.FC<HeaderProps> = ({ myFeed, onAddPress, onMenuPress, unreadNotifications = 0 }) => {
+  const navigation = useNavigation<any>();
 
   const handleMenuPress = () => {
     if (onMenuPress) {
@@ -56,7 +57,7 @@ const Header: React.FC<HeaderProps> = ({ myFeed, onAddPress, onMenuPress }) => {
         </TouchableOpacity>
 
         <View style={styles.actions}>
-          <TouchableOpacity style={{ marginRight: 15 }}>
+          <TouchableOpacity style={styles.bellBtn} onPress={() => navigation.navigate("Notifications" as any)}>
             <Svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="white" width={24} height={24}>
               <Path
                 strokeLinecap="round"
@@ -64,6 +65,13 @@ const Header: React.FC<HeaderProps> = ({ myFeed, onAddPress, onMenuPress }) => {
                 d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
               />
             </Svg>
+            {unreadNotifications > 0 && (
+              <View style={styles.bellBadge}>
+                <Text style={styles.bellBadgeText}>
+                  {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
           {myFeed && (
             <TouchableOpacity style={styles.addBtn} onPress={handleAddFeedPress}>
@@ -125,6 +133,29 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  bellBtn: {
+    marginRight: 15,
+    position: "relative",
+  },
+  bellBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#ef4444",
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 3,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#000",
+  },
+  bellBadgeText: {
+    color: "#fff",
+    fontSize: 9,
+    fontWeight: "700",
   },
   addBtn: {
     marginRight: 0,

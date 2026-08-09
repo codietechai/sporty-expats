@@ -31,6 +31,9 @@ import EventsListScreen from "./screens/EventsListScreen";
 import GroupChatsScreen from "./screens/GroupChatsScreen";
 import MyCreatedEventsScreen from "./screens/MyCreatedEventsScreen";
 
+import RefundScreen from "./screens/RefundScreen";
+import NotificationsContainer from "./screens/NotificationsContainer";
+
 const Drawer = createDrawerNavigator<any, "MainDrawer">();
 
 function DrawerNavigator() {
@@ -107,6 +110,16 @@ function DrawerNavigator() {
         name="EventRegistration"
         component={EventRegistrationScreen}
         options={{ drawerLabel: t("Event Registration"), drawerItemStyle: { display: "none" } }}
+      />
+      <Drawer.Screen
+        name="Refund"
+        component={RefundScreen}
+        options={{ drawerLabel: "Refund", drawerItemStyle: { display: "none" } }}
+      />
+      <Drawer.Screen
+        name="Notifications"
+        component={NotificationsContainer}
+        options={{ drawerLabel: "Notifications", drawerItemStyle: { display: "none" }, headerShown: false }}
       />
 
       <Drawer.Screen

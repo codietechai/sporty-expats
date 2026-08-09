@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import {
     View, Text, ScrollView, TouchableOpacity,
-    StyleSheet, ActivityIndicator, Alert, TextInput, Linking,
+    StyleSheet, ActivityIndicator, Alert, TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,11 +9,12 @@ import { Stack } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { registerFreeEvent, TicketInfo } from "@/client/endpoints/events/eventRegistration";
+import { processPaypalPayment, CardDetails } from "@/client/endpoints/payments/paypalClient";
 import InlineAlert from "@/components/Create-Events/InlineAlert";
 import type { Event } from "@/client/endpoints/events/types";
 import { getErrorMessage } from "@/helpers/getErrorMessage";
 
-type Step = "Select Ticket" | "Assign Participants" | "Review & Confirm";
+type Step = "Select Ticket" | "Assign Participants" | "Ticket And Payment";
 
 type LocalTicket = {
     name: string;
@@ -22,7 +23,63 @@ type LocalTicket = {
     note: string;
 };
 
-const STEPS: Step[] = ["Select Ticket", "Assign Participants", "Review & Confirm"];
+type CardType = "visa" | "mastercard" | "amex" | "discover" | "unknown";
+
+const STEPS: Step[] = ["Select Ticket", "Assign Participants", "Ticket And Payment"];
+
+// ── Card type detection ──────────────────────────────────────────────────────
+
+function detectCardType(number: string): CardType {
+    const digits = number.replace(/\s/g, "");
+    if (/^4/.test(digits)) return "visa";
+    if (/^5[1-5]/.test(digits) || /^2[2-7]/.test(digits)) return "mastercard";
+    if (/^3[47]/.test(digits)) return "amex";
+    if (/^6(?:011|5)/.test(digits)) return "discover";
+    return "unknown";
+}
+
+const CARD_LABELS: Record<CardType, string> = {
+    visa: "Visa",
+    mastercard: "Mastercard",
+    amex: "American Express",
+    discover: "Discover",
+    unknown: "",
+};
+
+const CARD_COLORS: Record<CardType, string> = {
+    visa: "#1a1f71",
+    mastercard: "#eb001b",
+    amex: "#007bc1",
+    discover: "#e65c00",
+    unknown: "#374151",
+};
+
+const CARD_ICONS: Record<CardType, any> = {
+    visa: "card-outline",
+    mastercard: "card-outline",
+    amex: "card-outline",
+    discover: "card-outline",
+    unknown: "card-outline",
+};
+
+// ── Expiry helpers ───────────────────────────────────────────────────────────
+
+function isExpired(mmyy: string): boolean {
+    const match = mmyy.match(/^(\d{2})\/(\d{2})$/);
+    if (!match) return false;
+    const month = parseInt(match[1], 10);
+    const year = 2000 + parseInt(match[2], 10);
+    const now = new Date();
+    const expiry = new Date(year, month, 0); // last day of the expiry month
+    return expiry < now;
+}
+
+function isValidMonth(mmyy: string): boolean {
+    const match = mmyy.match(/^(\d{2})\/\d{2}$/);
+    if (!match) return true; // incomplete — don't flag yet
+    const month = parseInt(match[1], 10);
+    return month >= 1 && month <= 12;
+}
 
 export default function EventRegistrationScreen({ route }: any) {
     const navigation = useNavigation<any>();
@@ -45,8 +102,19 @@ export default function EventRegistrationScreen({ route }: any) {
         { name: "", email: "", phone: "", note: "" },
     ]);
 
+    // Payment card fields
+    const [cardHolderName, setCardHolderName] = useState("");
+    const [cardNumber, setCardNumber] = useState("");
+    const [expirationDate, setExpirationDate] = useState("");
+    const [cvv, setCvv] = useState("");
+    const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+
     const totalPrice = (event?.ticketPrice ?? 0) * participants;
     const isFree = !event?.isPaidEvent || event?.ticketPrice === 0;
+
+    // Derived card type — updates as user types
+    const cardType = detectCardType(cardNumber);
+    const cvvLength = cardType === "amex" ? 4 : 3;
 
     // ── Participant counter ──────────────────────────────────────────────────
 
@@ -117,6 +185,33 @@ export default function EventRegistrationScreen({ route }: any) {
                 return false;
             }
         }
+        if (activeStep === "Ticket And Payment" && !isFree) {
+            if (!cardHolderName.trim()) {
+                setStepError("Card holder name is required.");
+                return false;
+            }
+            const cleanCard = cardNumber.replace(/\s/g, "");
+            if (!/^\d{13,19}$/.test(cleanCard)) {
+                setStepError("Please enter a valid card number.");
+                return false;
+            }
+            if (!/^\d{2}\/\d{2}$/.test(expirationDate)) {
+                setStepError("Please enter a valid expiration date (MM/YY).");
+                return false;
+            }
+            if (!isValidMonth(expirationDate)) {
+                setStepError("Month must be between 01 and 12.");
+                return false;
+            }
+            if (isExpired(expirationDate)) {
+                setStepError("Card has expired. Please use a valid card.");
+                return false;
+            }
+            if (cvv.length !== cvvLength) {
+                setStepError(`CVV must be ${cvvLength} digits${cardType === "amex" ? " for American Express" : ""}.`);
+                return false;
+            }
+        }
         return true;
     };
 
@@ -138,28 +233,11 @@ export default function EventRegistrationScreen({ route }: any) {
 
     const handleSubmit = async () => {
         if (!userId || !event?.id) return;
-
-        // Paid events: redirect to web app
-        if (!isFree) {
-            Alert.alert(
-                "Payment Required",
-                `This event costs €${totalPrice.toFixed(2)}. Complete payment on the web app via PayPal.`,
-                [
-                    { text: "Cancel", style: "cancel" },
-                    {
-                        text: "Open Web App",
-                        onPress: () =>
-                            Linking.openURL(
-                                `https://www.sportyexpats.fr/event-registration/${event.id}`
-                            ),
-                    },
-                ]
-            );
-            return;
-        }
+        if (!validateStep()) return;
 
         setSubmitting(true);
         setStepError(null);
+        setPaymentStatus(null);
         try {
             const firstTicket = tickets[0];
             const payerName = firstTicket.name.trim() || username || "Guest";
@@ -173,24 +251,47 @@ export default function EventRegistrationScreen({ route }: any) {
                 note: t.note ?? "",
             }));
 
-            await registerFreeEvent({
-                userId,
-                eventId: event.id,
-                participants,
-                tickets: ticketsInfo,
-                payerName,
-                payerEmail,
-            });
+            if (isFree) {
+                setPaymentStatus("Registering...");
+                await registerFreeEvent({
+                    userId,
+                    eventId: event.id,
+                    participants,
+                    tickets: ticketsInfo,
+                    payerName,
+                    payerEmail,
+                });
+            } else {
+                const card: CardDetails = {
+                    cardHolderName: cardHolderName.trim(),
+                    cardNumber: cardNumber.replace(/\s/g, ""),
+                    expirationDate,
+                    cvv,
+                };
+                // Runs all 4 steps: createOrder → confirmPaymentSource → captureOrder → recordPayment
+                setPaymentStatus("Creating order...");
+                await processPaypalPayment({
+                    userId,
+                    eventId: event.id,
+                    participants,
+                    amount: totalPrice,
+                    payerName,
+                    payerEmail,
+                    tickets: ticketsInfo,
+                    card,
+                }, setPaymentStatus);
+            }
 
             Alert.alert(
                 "Registered!",
-                "You have been registered for this event.",
+                "You have been successfully registered for this event.",
                 [{ text: "OK", onPress: () => navigation.goBack() }]
             );
         } catch (err: any) {
-            setStepError(getErrorMessage(err, "Registration failed. Please try again."));
+            setStepError(getErrorMessage(err, "Payment failed. Please check your card details and try again."));
         } finally {
             setSubmitting(false);
+            setPaymentStatus(null);
         }
     };
 
@@ -410,11 +511,10 @@ export default function EventRegistrationScreen({ route }: any) {
                         </View>
                     )}
 
-                    {/* ── Step 3: Review & Confirm ── */}
-                    {activeStep === "Review & Confirm" && (
+                    {/* ── Step 3: Ticket And Payment ── */}
+                    {activeStep === "Ticket And Payment" && (
                         <View style={styles.stepContent}>
-                            <Text style={styles.sectionTitle}>Review & Confirm</Text>
-
+                            {/* Summary */}
                             <View style={styles.summaryCard}>
                                 <Text style={styles.summaryTitle}>{event.title}</Text>
                                 <View style={styles.summaryRow}>
@@ -427,14 +527,6 @@ export default function EventRegistrationScreen({ route }: any) {
                                         Total: {isFree ? "Free" : `€${totalPrice.toFixed(2)}`}
                                     </Text>
                                 </View>
-                                {!isFree && (
-                                    <View style={styles.paymentNotice}>
-                                        <Ionicons name="information-circle-outline" size={16} color="#fbbf24" />
-                                        <Text style={styles.paymentNoticeText}>
-                                            Payment is completed via PayPal on the web app. Tapping "Proceed" will open it in your browser.
-                                        </Text>
-                                    </View>
-                                )}
                             </View>
 
                             {tickets.map((t, i) => (
@@ -447,7 +539,123 @@ export default function EventRegistrationScreen({ route }: any) {
                                 </View>
                             ))}
 
+                            {/* PayPal card form — only shown for paid events */}
+                            {!isFree && (
+                                <View style={styles.paymentSection}>
+                                    <View style={styles.paymentHeader}>
+                                        <Text style={styles.paymentVia}>Payment via</Text>
+                                        <Text style={styles.paymentBrand}>PayPal</Text>
+                                        <Text style={styles.paymentSubtitle}>Please pay with any of these methods</Text>
+                                        <View style={styles.paypalLogoRow}>
+                                            <Ionicons name="card-outline" size={16} color="#009cde" />
+                                            <Text style={styles.paypalText}>PayPal</Text>
+                                        </View>
+                                    </View>
+
+                                    <Text style={styles.cardSectionLabel}>Card Details</Text>
+
+                                    {/* Card holder */}
+                                    <Text style={styles.fieldLabel}>Card Holder Name</Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        value={cardHolderName}
+                                        onChangeText={setCardHolderName}
+                                        placeholder="Card Holder Name"
+                                        placeholderTextColor="#6b7280"
+                                        autoCapitalize="words"
+                                        returnKeyType="next"
+                                    />
+
+                                    {/* Card number + detected type badge */}
+                                    <Text style={styles.fieldLabel}>Card Number</Text>
+                                    <View style={styles.cardNumberWrap}>
+                                        <TextInput
+                                            style={[styles.input, styles.cardNumberInput]}
+                                            value={cardNumber}
+                                            onChangeText={(v) => {
+                                                const digits = v.replace(/\D/g, "").slice(0, 19);
+                                                const formatted = digits.replace(/(.{4})/g, "$1 ").trim();
+                                                setCardNumber(formatted);
+                                                // reset CVV when card type might change
+                                                setCvv("");
+                                            }}
+                                            placeholder="1234 5678 9012 3456"
+                                            placeholderTextColor="#6b7280"
+                                            keyboardType="number-pad"
+                                            maxLength={23}
+                                            returnKeyType="next"
+                                        />
+                                        {cardType !== "unknown" && (
+                                            <View style={[styles.cardTypeBadge, { backgroundColor: CARD_COLORS[cardType] + "33", borderColor: CARD_COLORS[cardType] + "88" }]}>
+                                                <Ionicons name="card-outline" size={13} color={CARD_COLORS[cardType]} />
+                                                <Text style={[styles.cardTypeText, { color: CARD_COLORS[cardType] }]}>
+                                                    {CARD_LABELS[cardType]}
+                                                </Text>
+                                            </View>
+                                        )}
+                                    </View>
+
+                                    <View style={styles.cardRow}>
+                                        {/* Expiry */}
+                                        <View style={styles.cardFieldWrap}>
+                                            <Text style={styles.fieldLabel}>Expiration Date</Text>
+                                            <TextInput
+                                                style={[
+                                                    styles.input,
+                                                    expirationDate.length === 5 && isExpired(expirationDate) && styles.inputError,
+                                                ]}
+                                                value={expirationDate}
+                                                onChangeText={(v) => {
+                                                    const digits = v.replace(/\D/g, "").slice(0, 4);
+                                                    const formatted = digits.length > 2
+                                                        ? `${digits.slice(0, 2)}/${digits.slice(2)}`
+                                                        : digits;
+                                                    setExpirationDate(formatted);
+                                                }}
+                                                placeholder="MM/YY"
+                                                placeholderTextColor="#6b7280"
+                                                keyboardType="number-pad"
+                                                maxLength={5}
+                                                returnKeyType="next"
+                                            />
+                                            {expirationDate.length === 5 && isExpired(expirationDate) && (
+                                                <Text style={styles.fieldError}>Card expired</Text>
+                                            )}
+                                            {expirationDate.length === 5 && !isValidMonth(expirationDate) && (
+                                                <Text style={styles.fieldError}>Invalid month</Text>
+                                            )}
+                                        </View>
+
+                                        {/* CVV — length hint changes per card type */}
+                                        <View style={styles.cardFieldWrap}>
+                                            <Text style={styles.fieldLabel}>
+                                                CVV
+                                                <Text style={styles.cvvHint}> ({cvvLength} digits)</Text>
+                                            </Text>
+                                            <TextInput
+                                                style={styles.input}
+                                                value={cvv}
+                                                onChangeText={(v) => setCvv(v.replace(/\D/g, "").slice(0, cvvLength))}
+                                                placeholder={"•".repeat(cvvLength)}
+                                                placeholderTextColor="#6b7280"
+                                                keyboardType="number-pad"
+                                                maxLength={cvvLength}
+                                                secureTextEntry
+                                                returnKeyType="done"
+                                            />
+                                        </View>
+                                    </View>
+                                </View>
+                            )}
+
                             <InlineAlert message={stepError} />
+
+                            {/* {submitting && paymentStatus && (
+                                <View style={styles.paymentStatusRow}>
+                                    <ActivityIndicator size="small" color="#2ecc71" />
+                                    <Text style={styles.paymentStatusText}>{paymentStatus}</Text>
+                                </View>
+                            )} */}
 
                             <TouchableOpacity
                                 style={[styles.primaryBtn, submitting && styles.primaryBtnDisabled]}
@@ -457,7 +665,7 @@ export default function EventRegistrationScreen({ route }: any) {
                                 {submitting
                                     ? <ActivityIndicator color="#fff" />
                                     : <Text style={styles.primaryBtnText}>
-                                        {isFree ? "Confirm Registration" : "Proceed to Payment"}
+                                        {isFree ? "Confirm Registration" : "Pay"}
                                     </Text>
                                 }
                             </TouchableOpacity>
@@ -559,6 +767,31 @@ const styles = StyleSheet.create({
     summaryTitle: { color: "#fff", fontSize: 16, fontWeight: "700", marginBottom: 4 },
     summaryRow: { flexDirection: "row", alignItems: "center", gap: 8 },
     summaryText: { color: "#d1d5db", fontSize: 14 },
+
+    paymentSection: { backgroundColor: "#1f1f1f", borderRadius: 12, padding: 16, gap: 12 },
+    paymentHeader: { alignItems: "center" as const, gap: 4, marginBottom: 4 },
+    paymentVia: { color: "#9ca3af", fontSize: 12 },
+    paymentBrand: { color: "#fff", fontSize: 18, fontWeight: "700" as const },
+    paymentSubtitle: { color: "#9ca3af", fontSize: 12 },
+    paypalLogoRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: 6, marginTop: 4 },
+    paypalText: { color: "#009cde", fontSize: 14, fontWeight: "700" as const },
+    cardSectionLabel: { color: "#d1d5db", fontSize: 14, fontWeight: "600" as const },
+    cardRow: { flexDirection: "row" as const, gap: 10 },
+    cardFieldWrap: { flex: 1 },
+
+    cardNumberWrap: { position: "relative" as const, marginBottom: 2 },
+    cardNumberInput: { marginBottom: 0 },
+    cardTypeBadge: {
+        position: "absolute" as const, right: 10, top: 10,
+        flexDirection: "row" as const, alignItems: "center" as const, gap: 4,
+        paddingHorizontal: 8, paddingVertical: 3,
+        borderRadius: 6, borderWidth: 1,
+    },
+    cardTypeText: { fontSize: 11, fontWeight: "700" as const },
+    inputError: { borderColor: "#ef4444" },
+    fieldError: { color: "#ef4444", fontSize: 11, marginTop: 3 },
+    cvvHint: { color: "#6b7280", fontSize: 11, fontWeight: "400" as const },
+
     paymentNotice: {
         flexDirection: "row", alignItems: "flex-start", gap: 8,
         backgroundColor: "rgba(251,191,36,0.1)", borderRadius: 8,
@@ -577,4 +810,10 @@ const styles = StyleSheet.create({
     },
     primaryBtnDisabled: { opacity: 0.6 },
     primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+
+    paymentStatusRow: {
+        flexDirection: "row", alignItems: "center", gap: 8,
+        justifyContent: "center", paddingVertical: 4,
+    },
+    paymentStatusText: { color: "#2ecc71", fontSize: 13 },
 });
