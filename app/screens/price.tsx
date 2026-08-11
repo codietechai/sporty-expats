@@ -1,6 +1,7 @@
 import AddFeedForm from "@/components/dashboard/AddFeed";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import { useNotificationsContext } from "@/contexts/NotificationsContext";
 import { Button } from "@react-navigation/elements";
 import { useNavigation } from "@react-navigation/native";
 import { Stack } from "expo-router";
@@ -11,11 +12,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { ClipPath, Defs, G, Path, Rect } from "react-native-svg";
 
 export default function Price() {
+  const { unreadCount } = useNotificationsContext();
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={{ flex: 1, backgroundColor: "black" }}>
-        <Header />
+        <Header unreadNotifications={unreadCount} />
         <ScrollView style={{ flex: 1 }}>
           <Text className="text-white text-5xl font-oswald pt-14  text-center">
             OUR MEMBERSHIP PLANS

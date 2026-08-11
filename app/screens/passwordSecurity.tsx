@@ -10,6 +10,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useUser } from "@clerk/clerk-expo";
 import { getErrorMessage } from "@/helpers/getErrorMessage";
 import { showToast } from "@/components/common/Toast";
+import { useNotificationsContext } from "@/contexts/NotificationsContext";
 
 const VERIFICATION_OPTIONS = ["Phone SMS", "Email", "Authenticator App"];
 
@@ -43,6 +44,7 @@ function PasswordField({
 export default function PasswordSecurityScreen() {
   const navigation = useNavigation();
   const { user } = useUser();
+  const { unreadCount } = useNotificationsContext();
 
   const [verificationMethod, setVerificationMethod] = useState("Phone SMS");
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -91,7 +93,12 @@ export default function PasswordSecurityScreen() {
             <Text style={s.headerTitle}>Password & Security</Text>
             <Text style={s.headerSub}>Manage your account security</Text>
           </View>
-          <View style={{ width: 38 }} />
+          <TouchableOpacity style={s.backBtn} hitSlop={8} onPress={() => navigation.navigate("Notifications" as never)}>
+            <Ionicons name="notifications-outline" size={22} color="#fff" />
+            {unreadCount > 0 && (
+              <View style={s.bellBadge}><Text style={s.bellBadgeText}>{unreadCount > 99 ? "99+" : unreadCount}</Text></View>
+            )}
+          </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -203,6 +210,14 @@ const s = StyleSheet.create({
   headerCenter: { flex: 1, alignItems: "center" },
   headerTitle: { fontSize: 17, fontWeight: "700", color: "#fff" },
   headerSub: { fontSize: 11, color: "#6B7280", marginTop: 1 },
+  bellBadge: {
+    position: "absolute", top: -4, right: -4,
+    backgroundColor: "#ef4444", borderRadius: 8,
+    minWidth: 16, height: 16, paddingHorizontal: 3,
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 1.5, borderColor: "#0d0d0d",
+  },
+  bellBadgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 48 },
   sectionHeader: {

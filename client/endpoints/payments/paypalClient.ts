@@ -103,16 +103,29 @@ export const capturePaypalOrder = async (orderId: string): Promise<string> => {
 // ── Step 4: Record payment ───────────────────────────────────────────────────
 
 export const recordPaypalPayment = async (
-    payload: Omit<PaypalPaymentPayload, "card"> & { transactionId: string },
+    payload: Omit<PaypalPaymentPayload, "card"> & {
+        transactionId: string;
+        refundTransactionId: string;
+    },
 ): Promise<void> => {
-    const { userId, eventId, participants, amount, payerName, payerEmail, tickets, transactionId } = payload;
+    const {
+        userId,
+        eventId,
+        participants,
+        amount,
+        payerName,
+        payerEmail,
+        tickets,
+        transactionId,
+        refundTransactionId,
+    } = payload;
 
     await backendClient.post("payments", {
         userId,
         amount,
         paymentType: "paypal",
         transactionId,
-        refundTransactionId: transactionId,
+        refundTransactionId,
         payer: { name: payerName, email: payerEmail },
         products: [{ purchaseType: "events", productId: eventId, quantity: participants }],
         metaData: { ticketsInfo: tickets },
@@ -134,8 +147,18 @@ export const processPaypalPayment = async (
     await confirmPaypalOrder(orderId, card);
 
     // onStatus?.("Completing payment...");
-    const transactionId = await capturePaypalOrder(orderId);
+    const refundTransactionId = await capturePaypalOrder(orderId);
 
     // onStatus?.("Saving registration...");
-    await recordPaypalPayment({ userId, eventId, participants, amount, payerName, payerEmail, tickets, transactionId });
+    await recordPaypalPayment({
+        userId,
+        eventId,
+        participants,
+        amount,
+        payerName,
+        payerEmail,
+        tickets,
+        transactionId: orderId,
+        refundTransactionId,
+    });
 };

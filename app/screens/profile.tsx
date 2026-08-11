@@ -10,6 +10,7 @@ import { DrawerActions, useNavigation } from "@react-navigation/native";
 import { RootDrawerParamList } from "@/components/Sidebar";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { useUser } from "@clerk/clerk-expo";
+import { useNotificationsContext } from "@/contexts/NotificationsContext";
 
 type MenuItem = {
   label: string;
@@ -28,6 +29,7 @@ const MENU_ITEMS: MenuItem[] = [
 export default function Profile(props: DrawerContentComponentProps) {
   const { userDb } = useUserDb();
   const { user: clerkUser } = useUser();
+  const { unreadCount } = useNotificationsContext();
 
   const u = userDb?.data?.data ?? userDb?.data ?? userDb;
   const firstName = u?.personalDetails?.firstName ?? u?.firstName ?? clerkUser?.firstName ?? "";
@@ -53,7 +55,12 @@ export default function Profile(props: DrawerContentComponentProps) {
             <Text style={s.headerTitle}>Profile</Text>
             <Text style={s.headerSub}>Manage your account</Text>
           </View>
-          <View style={{ width: 38 }} />
+          <TouchableOpacity style={s.menuBtn} hitSlop={8} onPress={() => props.navigation.navigate("Notifications" as any)}>
+            <Ionicons name="notifications-outline" size={22} color="#fff" />
+            {unreadCount > 0 && (
+              <View style={s.bellBadge}><Text style={s.bellBadgeText}>{unreadCount > 99 ? "99+" : unreadCount}</Text></View>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* User card */}
@@ -119,6 +126,14 @@ const s = StyleSheet.create({
   headerCenter: { flex: 1, alignItems: "center" },
   headerTitle: { fontSize: 17, fontWeight: "700", color: "#fff" },
   headerSub: { fontSize: 11, color: "#6B7280", marginTop: 1 },
+  bellBadge: {
+    position: "absolute", top: -4, right: -4,
+    backgroundColor: "#ef4444", borderRadius: 8,
+    minWidth: 16, height: 16, paddingHorizontal: 3,
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 1.5, borderColor: "#0d0d0d",
+  },
+  bellBadgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
 
   // User card
   userCard: {

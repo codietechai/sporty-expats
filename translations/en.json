@@ -1,0 +1,985 @@
+{
+  "General": {
+    "Light": "Light",
+    "Dark": "Dark",
+    "System": "System"
+  },
+  "NavBar": {
+    "Dashboard": "Dashboard",
+    "Transaction": "Transaction",
+    "Logout": "Sign out",
+    "Login": "To log in",
+    "SignUp": "Register",
+    "AboutUs": "About Us",
+    "OurEvents": "Our Events",
+    "OurCourses": "Our Courses",
+    "OurMentors": "Our mentors",
+    "Reviews": "Reviews",
+    "Contacts": "Contacts",
+    "Event": "Events",
+    "Market": "Market",
+    "Pricing": "Pricing",
+    "ContactUs": "Contact Us",
+    "Signup": "Sign up",
+    "Signin": "Sign In",
+    "logout": "Logout",
+    "GroupChats": "Group Chats",
+    "Media": "Media",
+    "Wallet": "Wallet",
+    "CreateEvent": "Create Event",
+    "Chats": "Chats",
+    "ComplaintChats": "Complaint Chats",
+    "MessageRequests": "Message Requests",
+    "ContactAdmin": "Contact Admin",
+    "Subscription": "Subscription",
+    "Profile": "Profile",
+    "newPost": "New Post"
+  },
+  "Footer": {
+    "AboutUs": "About Us",
+    "OurEvents": "Our Events",
+    "OurCourses": "Our Courses",
+    "Reviews": "Reviews",
+    "PrivacyPolicy": "Privacy Policy",
+    "Subscribe": "Subscribe",
+    "Contacts": "Contacts",
+    "EnterYourEmail": "Enter your email"
+  },
+  "LandingPageSecondSection": {
+    "HERE": "HERE",
+    "TOUR": "S A TOUR OF",
+    "OUR": "OUR",
+    "ACTIVITIES": "ACTIVITIES"
+  },
+  "LandingPageThirdSection": {
+    "WHYSIGNUP": "WHY SIGN UP",
+    "SIGNUPTEXT": "There's no sports without community. SportyExpats is a diverse group of sports and fitness enthusiasts. So, whether you're a professional athlete or just looking to connect and make new friends who share your love for sports... we've got you covered",
+    "Events": "Events",
+    "EventsDetail": "Participate in regular events across all sports right in the heart of Paris",
+    "Community": "Community",
+    "CommunityDetail": "Strong and supportive community. Meet and connect with like-minded people",
+    "Competitions": "Competitions",
+    "CompetitionsDetail": "Join organized teams and participate in local competitions",
+    "HostActivities": "Host Activities",
+    "HostActivitiesDetail": "Create and promote your own events within our community",
+    "Market": "Market",
+    "MarketDetail": "Buy and sell sport items both used and new. Find the very best thrift deals in the sportyexpats community",
+    "Networking": "Networking",
+    "NetworkingDetail": "Make new friends and network. We'd love to share your sports enthusiasm with you"
+  },
+  "LandingPageFirstSection1": {
+    "JOIN US": "JOIN US",
+    "Connecting Through Sports and Smiles": "Connecting through sport and smiles",
+    "Start Now": "Start now",
+    "Amazing Sports": "AMAZING SPORTS",
+    "Strong Community": "STRONG COMMUNITY",
+    "Explore Community": "EXPLORE COMMUNITY"
+  },
+  "Events": "Events",
+  "LandingPageFirstSection2": {
+    "Event1": "Yesterday we had our first volleyball and picnic event of the year! ",
+    "Event2": "Last night's first birthday celebration was awesome! ",
+    "Event3": "Yesterday we organized a mini golf event with 17 participants, everyone had a great time and are looking forward to the next one 🤞🏻There were 18 different mini golf courses, each representing a different Paris landmark"
+  },
+  "LandingPageFirstSection3": {
+    "GetInvolved": "To be involved",
+    "GetInvolved1": {
+      "image": "PeopleIcon",
+      "Join Our Events": "Join our events",
+      "PeopleIcon": "Whether you're sporty or just want to meet new people, sign up for an event and get ready to have fun while staying active."
+    },
+    "GetInvolved2": {
+      "image": "VolunteerActivismIcon",
+      "Start Your Own Activity": "Start your own business",
+      "VolunteerActivismIcon": "Do you have a favorite sport or activity that you would like to share? "
+    },
+    "GetInvolved3": {
+      "image": "Diversity3Icon",
+      "Connect and Socialize": "Connect and socialize",
+      "Diversity3Icon": "Join our social gatherings, cultural outings and informal meetings to explore Paris and build a lasting friendship"
+    },
+    "Join Us": "Join us"
+  },
+  "LandingPageFourSection": {},
+  "SignIn": {
+    "SignInTo": "Sign In",
+    "Username": "Username",
+    "Password": "Password",
+    "SignIn": "SignIn",
+    "NoAccount": "Don't have an account yet? ",
+    "Create": "Join SportyExpats",
+    "ForgotPassword": "Forgot Password? "
+  },
+  "SignUp": {
+    "Username": "Username",
+    "Password": "Password",
+    "Join Community": "Join Community",
+    "SignUp": "Sign Up",
+    "CreateUp": "Create an account",
+    "SignIn": "Sign In",
+    "Email Address": "Email Address",
+    "Already": " Already have an account? ",
+    "Continue": "Continue to Sign Up",
+    "Continues": "Continue",
+    "VerifyEC": "Verify Email Code",
+    "EmailC": "Email code",
+    "Verify": "Verify",
+    "Dob": "Date of Birth",
+    "Gender": {
+      "Gender": "Gender",
+      "Male": "Male",
+      "Female": "Female",
+      "Other": "Other"
+    },
+    "Favorite": "Favorite Sports or Activities",
+    "Notification": {
+      "Notification": "Notification prefrencaes ",
+      "Email": "Email",
+      "SMS": "SMS",
+      "Facebook": "Facebook",
+      "Etc": "Etc"
+    },
+    "More": "MORE THAN JUST SPORTS",
+    "Community": "BRINGS COMMUNITY TO PASSION"
+  },
+  "HomePage": {
+    "amazingSports": "AMAZING SPORTS",
+    "strongCommunity": "STRONG COMMUNITY",
+    "exploreCommunity": "Explore Community",
+    "aTour": "HERE'S A TOUR OF",
+    "our": "OUR",
+    "activities": "ACTIVITIES",
+    "whySignUp": "WHY SIGN UP",
+    "signUpText": "There's no sports without community. SportyExpats is a diverse group of sports and fitness enthusiasts. So, whether you're a professional athlete or just looking to connect and make new friends who share your love for sports... we've got you covered"
+  },
+  "Registration": {
+    "FullName": "Full Name",
+    "NumberOfTicket": "Number Of Ticket",
+    "PhNumber": "Phone Number",
+    "Email": "Email Address",
+    "NoteToOrganizer": "Note To Organizer",
+    "Participants": "Participants",
+    "NotePlaceholder": "Information you'd like the organizer to know like disabilities",
+    "Participant1": "First Participant",
+    "Participant2": "Second Participant",
+    "Participant3": "Third Participant",
+    "Participant4": "Fourth Participant",
+    "Participant5": "Fifth Participant",
+    "Participant6": "Sixth Participant",
+    "Participant7": "Seventh Participant",
+    "Participant8": "Eighth Participant",
+    "Participant9": "Ninth Participant",
+    "Participant10": "Tenth Participant",
+    "SelectTicket": "Select Ticket",
+    "AssignParticipants": "Assign Participants",
+    "Ticket&Payment": "Ticket And Payment",
+    "SelfAttendance": "I will be attending",
+    "Register": "Register ",
+    "MakePayment": "Make Payment",
+    "AddParticipant": "Add Participant",
+    "TicketPrice": "Ticket Price",
+    "Continue": "Continue"
+  },
+  "Refund": {
+    "RequestRefund": "Request a Refund",
+    "ReasonForRequest": "Reason for request",
+    "AttachDocuments": "Attach Documents (optional)",
+    "UploadProof": "Upload proof of the reason stated above",
+    "SubmitRequest": "Submit Request",
+    "GoBack": "Go Back to Events",
+    "SuccessMessage": "Your refund request has been received and shall be reviewed by our team. We shall get back to you soon!",
+    "UserError": "Something went wrong. Please try again later.",
+    "DescriptionError": "Please provide a reason for your request.",
+    "FileError": "File upload failed. Please try again.",
+    "NotAvailable": "The refund request form is no longer available",
+    "NumOfTickets": "Number Of Tickets To Refund"
+  },
+  "ReportToAdmin": {
+    "ContactAdmin": "Contact Admin",
+    "ComplaintInfoTag": "You can send complaints or observations directly to the Admin!",
+    "ComplaintCategory": "Complaint Category",
+    "Funding/PaymentError": "Funding/Payment Error",
+    "EventRegistration": "Event Registration",
+    "RefundRequest": "Refund Request",
+    "OffensiveContent": "Offensive Content",
+    "EventCreation": "Event Creation",
+    "ReportUser": "Report User",
+    "EmptyMessage": "Please enter a message before sending.",
+    "EmptyIdentifier": "Please enter an identifier before sending.",
+    "SomethingWrong": "something went wrong! Please try again later.",
+    "TypeYourMessage": "Type Your Message",
+    "IncludeAnyInformationYouThinkTheAdminWillNeedToAddressTheIssue": "Include any information you think the admin will need to address the issue",
+    "SendMessage": "Send Message",
+    "GoToDashboard": "Go to Dashboard",
+    "ReportSent": "Report Sent",
+    "ReportingUserSuccessful": "Complaint sent successfully.",
+    "ProvideEventIdentifier": "Provide Event Identifier",
+    "ProvideContentIdentifier": "Provide Content Identifier",
+    "Name/ID/URL of the event": "Name/ID/URL of the event",
+    "UploadAnImage": "Upload an Image (Optional)",
+    "provide Refund resone with Transaction details": "provide Refund resone with Transaction details",
+    "ProvideTransactionDetails": "Provide Transaction Details",
+    "PleaseMentionAnyDetailsThatWouldBeNecessaryToProcessYourRequest": "Please mention any details that would be necessary to process your request"
+  },
+  "CreateEvent": {
+    "UploadingImage": "Uploading image...",
+    "Email": "Email",
+    "Organizer": "Organizer",
+    "CreateAnEvent": "Create an Event",
+    "EventInformation": "Event Information",
+    "ImageUpload": "Image Upload",
+    "TicketAndAdditionalInformation": "Ticket And Additional Information",
+    "InviteMembers": "Invite Members",
+    "PreviewEvent": "Preview Event",
+    "EventTitle": "Event Title",
+    "EventCategory": "Event Category",
+    "StartDate&Time": "Start Date & Time",
+    "EndDate&Time": "End Date & Time",
+    "RefundNoticeDeadline": "Refund Notice Deadline",
+    "RefundPercentage": "Refund Percentage",
+    "EventDescription": "Event Description",
+    "DescribeYourEventHere": "Describe your event here",
+    "EnterTheEventTitle": "Enter the event title",
+    "PrivateEvent": "Private event?",
+    "PrivateEventInfo": "Check this box if you'd like to invite only specific people.",
+    "ValidCoordinates": "Valid coordinates",
+    "InvalidLocationCoordinates": "Selected location has invalid coordinates. Please try another.",
+    "NoOrganizers": "No organizers selected",
+    "LoadingOrganizers": "Loading organizers...",
+    "LocationNotSet": "Location not set",
+    "Continue": "Continue",
+    "ClickToUploadOrDrag&Drop": "Click to Upload or Drag & Drop",
+    "ImageFormat": "JPG, PNG, or GIF (Recommended file size 1000x1000px)",
+    "HowManyInvites": "How many invites",
+    "invites": "invites",
+    "MemberName": "Member Name",
+    "EnterMemberName": "Enter Member Name",
+    "MemberEmailAddress": "Member Email Address",
+    "EnterMemberEmailAddress": "Enter member email address",
+    "Price": "Price",
+    "Date&Time": "Date & Time",
+    "Start": "Start",
+    "End": "End",
+    "SelectOrganizers": "Select Organizers",
+    "AddToCalendar": "Add to calendar",
+    "RegisterForEvent": "Register For Event",
+    "EventLocation": "Event Location",
+    "Organizers": "Organizers",
+    "IsOrganizer": "is Organizer",
+    "IncreaseInviteCount": "Increase Invite Count",
+    "DecreaseInviteCount": "Decrease Invite Count",
+    "Select as organiser": "Select as organiser",
+    "FollowOrganizers": "follow organizers",
+    "SaveToDrafts": "Save To Drafts",
+    "PublishEvent": "Publish Event",
+    "TicketPrice": "Ticket Price €",
+    "OrganizersLabel": "Organizers",
+    "OrganizersLabel2": "Organizers (put a comma after each organizer)",
+    "OrganizersPlaceholder": "Add organizers separated by commas",
+    "NumberOfTickets": "Number of Tickets",
+    "NumberTicketPlaceholder": "Enter the number of tickets",
+    "EventURL": "Event URL",
+    "EventUrlPlaceholder": "Enter the event URL(if its an online event)",
+    "LocationPlaceholder": "Type an address or location",
+    "TicketDescription": "Ticket Description",
+    "TicketDiscriptionPlaceHolder": "What special features come with purchasing a ticket",
+    "SelectACategory": "Select a Category",
+    "PleaseCompleteTheRequiredFields": "Please complete the required fields",
+    "ImageExampleWillBeHere": "Image Example will be here",
+    "PleaseUploadAnImage": "Please Upload an Image",
+    "FillPreviousTabs": "Please fill all the previous tabs",
+    "SomethingWentWrong": "Something Went Wrong",
+    "PleaseTryAgainLater": "Please Try Again Later",
+    "FreeEventInfo": "As a member, you can create free events effortlessly. To unlock the ability to host paid events and expand your reach, please verify your profile today!",
+    "Verify": "Verify",
+    "minAttendees": "Minimum Attendees",
+    "maxAttendees": "Maximumm Attendees",
+    "paymentDeadline": "Payment Deadline",
+    "RefundDateMustBeBeforeStartDate": "refund date must be Before start date.",
+    "FileUploadError": "File upload failed",
+    "SearchOrganizers": "Search Organizers",
+    "FailedToLoadOrganizers": "Failed to load organizers. Please try again later.",
+    "NoOrganizersFound": "No organizers found.",
+    "MarkYourselfAsParticipant": "Mark yourself as a participant?",
+    "SearchMembers": "Search Members",
+    "SelectMember": "Select Member",
+    "FailedToLoadMembers": "Failed to load members. Please try again later.",
+    "NoMembersFound": "No members found.",
+    "AddOrganizer": "Add Organizer",
+    "RemoveOrganizer": "Remove Organizer",
+    "AddParticipant": "Add Participant",
+    "RemoveParticipant": "Remove Participant",
+    "EventCreated": "Event Created",
+    "OrganizerParticipants": "Mark organizers as participants",
+    "you": "You"
+  },
+  "Media": {
+    "SomethingWentWrong": "Something Went Wrong",
+    "noMedia": "No media uploaded yet"
+  },
+  "StripeCheckout": {
+    "SomethingWentWrong": "Something Went Wrong",
+    "PleaseTryAgainLater": "Please Try Again Later"
+  },
+  "notification": {
+    "general": {
+      "hello": "Hello {userName}!"
+    },
+    "messages": {
+      "welcome": {
+        "title": "Welcome to SportyExpats! 🎉",
+        "message": "You're all set! Start exploring events, meet new people, and get active.",
+        "push": {
+          "title": "Welcome to SportyExpats!",
+          "body": "Start exploring events and get active near you."
+        },
+        "email": {
+          "subject": "Welcome to SportyExpats - Let's Get Moving!",
+          "greeting": "Hey {userName}, welcome aboard!",
+          "intro": "We're thrilled to have you join SportyExpats - the community where expats find their sporting tribe. Whether you're into football, volleyball, tennis, or something in between, there's a game waiting for you.",
+          "cta": "Explore Events",
+          "footer": "If you have questions, feel free to reach out to our support team. We're here to help."
+        }
+      },
+      "security": {
+        "newLogin": {
+          "title": "New Login Detected",
+          "message": "Your account was accessed from a new device or location. If this wasn't you, please secure your account immediately.",
+          "push": {
+            "title": "New Login Detected",
+            "body": "A new device just logged into your account. Not you? Act now."
+          },
+          "email": {
+            "subject": "Security Alert - New Login to Your SportyExpats Account",
+            "greeting": "Hi {userName},",
+            "intro": "We noticed a login to your SportyExpats account from a new device or location.",
+            "details": "If this was you, no action is needed. If you did not initiate this login, we strongly recommend securing your account right away.",
+            "cta": "Secure My Account",
+            "warning": "If you didn't recognize this activity, change your password immediately and contact our support team.",
+            "footer": "This is an automated security alert from SportyExpats."
+          }
+        },
+        "passwordChanged": {
+          "title": "Password Updated Successfully",
+          "message": "Your password has been changed. If you did not make this change, please contact support immediately.",
+          "push": {
+            "title": "Password Updated",
+            "body": "Your SportyExpats password has been changed successfully."
+          },
+          "email": {
+            "subject": "Your SportyExpats Password Was Changed",
+            "greeting": "Hi {userName},",
+            "intro": "Your SportyExpats account password was successfully updated.",
+            "warning": "If you did not make this change, please contact our support team immediately to secure your account.",
+            "cta": "Contact Support",
+            "footer": "This is an automated security notification from SportyExpats."
+          }
+        }
+      },
+      "events": {
+        "created": {
+          "title": "New Event Near You!",
+          "message": "A new {eventCategory} event has been posted near you. Check it out before spots fill up!",
+          "push": {
+            "title": "New Event: {eventName}",
+            "body": "{eventName} - {eventDate} near you. Tap to view details."
+          },
+          "email": {
+            "subject": "New Event: {eventName} - Don't Miss Out!",
+            "greeting": "Hey {userName},",
+            "intro": "A new event matching your interests has just been posted on SportyExpats.",
+            "detailsTitle": "Event Details",
+            "eventName": "Event",
+            "eventDate": "Date & Time",
+            "eventLocation": "Location",
+            "cta": "View Event",
+            "footer": "You're receiving this because you have notifications enabled for new events. Manage your preferences in the app."
+          }
+        },
+        "reminder": {
+          "title": "Event Reminder",
+          "message": "Reminder: {eventName} starts in {hoursUntil} hour(s). Get ready!",
+          "push": {
+            "title": "Starting Soon: {eventName}",
+            "body": "{eventName} kicks off in {hoursUntil} hour(s). Don't be late!"
+          },
+          "email": {
+            "subject": "Reminder: {eventName} is Starting Soon",
+            "greeting": "Hey {userName},",
+            "intro": "Just a quick reminder that your upcoming event is starting soon.",
+            "detailsTitle": "Event Details",
+            "eventName": "Event",
+            "eventDate": "Date & Time",
+            "eventLocation": "Location",
+            "cta": "View Event",
+            "footer": "You're receiving this reminder because you're attending this event."
+          }
+        },
+        "cancelled": {
+          "title": "Event Cancelled",
+          "message": "Unfortunately, {eventName} has been cancelled by the organizer. Any applicable refunds will be processed shortly.",
+          "push": {
+            "title": "Event Cancelled: {eventName}",
+            "body": "{eventName} has been cancelled. Refunds will be processed where applicable."
+          },
+          "email": {
+            "subject": "Event Cancelled: {eventName}",
+            "greeting": "Hi {userName},",
+            "intro": "We're sorry to let you know that {eventName} has been cancelled by the organizer.",
+            "refundNote": "If you made a payment, your refund will be processed within 5 - 7 business days.",
+            "cta": "Browse Other Events",
+            "footer": "We apologise for the inconvenience. Explore other events happening near you."
+          }
+        },
+        "joinedConfirmation": {
+          "title": "You've Joined {eventName}!",
+          "message": "You're going to {eventName}! Complete your payment to secure your spot.",
+          "push": {
+            "title": "Spot Reserved - Complete Payment",
+            "body": "You've joined {eventName}. Pay now to lock in your spot."
+          }
+        },
+        "userCreated": {
+          "title": "Your Event is Live!",
+          "message": "{eventName} has been created and is now visible to the community. Good luck!",
+          "push": {
+            "title": "Event Created: {eventName}",
+            "body": "Your event is live! Share it with friends to fill your spots."
+          }
+        },
+        "full": {
+          "title": "Event Full - You're on the Waitlist",
+          "message": "{eventName} is fully booked. You've been added to the waitlist and will be notified if a spot opens up.",
+          "push": {
+            "title": "Added to Waitlist",
+            "body": "{eventName} is full. You're on the waitlist - we'll let you know if a spot opens."
+          }
+        },
+        "review": {
+          "title": "How Was {eventName}?",
+          "message": "You attended {eventName}. Share your experience to help others in the community!",
+          "push": {
+            "title": "Leave a Review",
+            "body": "How was {eventName}? Tap to share your thoughts."
+          }
+        },
+        "rejected": {
+          "title": "Event Not Approved — {eventName}",
+          "message": "Unfortunately, {eventName} was not approved by our team. Please review the feedback and make any necessary changes.",
+          "push": {
+            "title": "Event Not Approved",
+            "body": "{eventName} was not approved. Tap to see why and make changes."
+          },
+          "email": {
+            "subject": "Your Event Was Not Approved — {eventName}",
+            "greeting": "Hi {userName},",
+            "intro": "Thank you for submitting {eventName}. After reviewing your event, our team was unable to approve it at this time.",
+            "reasonLabel": "Reason for rejection",
+            "nextSteps": "Please review the feedback above, make the necessary changes to your event, and resubmit it for approval. If you believe this decision was made in error or need further clarification, please contact our support team.",
+            "cta": "Go to My Events",
+            "footer": "Thank you for being part of the SportyExpats community."
+          }
+        }
+      },
+      "payments": {
+        "successful": {
+          "title": "Payment Confirmed",
+          "message": "Your payment for {eventName} was successful. Your spot is reserved - see you there!",
+          "push": {
+            "title": "Payment Confirmed",
+            "body": "You're all set for {eventName}. Your spot is secured!"
+          },
+          "email": {
+            "subject": "Payment Confirmed - {eventName}",
+            "greeting": "Hi {userName},",
+            "paymentConfirm": "✅ Payment Confirmed",
+            "intro": "Your payment for {eventName} has been successfully processed.",
+            "detailsTitle": "Booking Summary",
+            "eventName": "Event",
+            "eventDate": "Date & Time",
+            "amountPaid": "Amount Paid",
+            "cta": "View My Events",
+            "footer": "Thank you for using SportyExpats. See you at the game!"
+          }
+        },
+        "receivedForYou": {
+          "title": "Someone Paid for Your Spot!",
+          "message": "{payerName} has covered your spot in {eventName}. You're confirmed - enjoy the event!",
+          "push": {
+            "title": "Spot Paid by {payerName}",
+            "body": "{payerName} paid for your place in {eventName}. You're good to go!"
+          },
+          "email": {
+            "subject": "{payerName} Paid for Your Spot in {eventName}",
+            "greeting": "Hi {userName},",
+            "intro": "Great news! {payerName} has paid for your spot in {eventName}.",
+            "cta": "View Event Details",
+            "footer": "Enjoy the event and don't forget to thank {payerName}!"
+          }
+        },
+        "paidForOthers": {
+          "title": "Payment Confirmed for Your Group",
+          "message": "You've successfully paid for {participantCount, plural, one {# person} other {# people}} in {eventName}. They've been notified.",
+          "push": {
+            "title": "Group Payment Confirmed",
+            "body": "You've covered {participantCount, plural, one {# spot} other {# spots}} in {eventName}. All set!"
+          },
+          "email": {
+            "subject": "You Paid for {participantCount, plural, one {# Person} other {# People}} in {eventName}",
+            "greeting": "Hi {userName},",
+            "intro": "Your group payment for {eventName} was successful. You've covered {participantCount, plural, one {# spot} other {# spots}}.",
+            "cta": "View Event",
+            "footer": "Thank you for organising. See you all at {eventName}!"
+          }
+        },
+        "pendingReminder": {
+          "title": "Complete Your Payment",
+          "message": "You haven't completed your payment for {eventName} yet. Secure your spot before it's taken!",
+          "push": {
+            "title": "Payment Pending - {eventName}",
+            "body": "Don't lose your spot in {eventName}. Complete your payment now."
+          }
+        },
+        "withdraw": {
+          "title": "You've Withdrawn",
+          "message": "You've successfully withdrawn from {eventName}. Your spot has been released.",
+          "push": {
+            "title": "Withdrawal Confirmed",
+            "body": "You've left {eventName}. Your spot has been released."
+          }
+        },
+        "refundRequested": {
+          "user": {
+            "title": "Refund Request Received",
+            "message": "Your refund request for {eventName} has been received. We'll review it and get back to you shortly.",
+            "push": {
+              "title": "Refund Request Submitted",
+              "body": "Your refund request for {eventName} is under review."
+            },
+            "email": {
+              "subject": "Refund Request Received – {eventName}",
+              "greeting": "Hi {userName},",
+              "intro": "We've received your refund request for {eventName} ({numberOfTickets} ticket(s)). Our team will review it and respond within 5–7 business days.",
+              "nextSteps": "What happens next?",
+              "timeline": "Once approved, your refund will be processed back to your original payment method within 5–7 business days.",
+              "cta": "View My Refund Requests",
+              "footer": "If you have any questions, please contact our support team."
+            }
+          },
+          "organizer": {
+            "title": "Refund Request from {requesterName}",
+            "message": "{requesterName} has requested a refund of {numberOfTickets} ticket(s) for {eventName}.",
+            "push": {
+              "title": "Refund Request — {requesterName}",
+              "body": "{requesterName} requested a refund of {numberOfTickets} ticket(s) for {eventName}."
+            }
+          }
+        }
+      },
+      "waitlist": {
+        "spotAvailable": {
+          "title": "A Spot Opened in {eventName}!",
+          "message": "Great news! A spot is now available in {eventName}. You have {timeLimit} to confirm and pay.",
+          "push": {
+            "title": "Spot Available - Act Fast!",
+            "body": "A spot opened in {eventName}! You have {timeLimit} to confirm. Tap now."
+          }
+        },
+        "expired": {
+          "title": "Waitlist Spot Expired",
+          "message": "Your time to claim a spot in {eventName} has passed. The spot has been offered to the next person.",
+          "push": {
+            "title": "Spot Expired - {eventName}",
+            "body": "Your waitlist spot for {eventName} has been passed on. Better luck next time!"
+          }
+        },
+        "movedUp": {
+          "title": "You've Moved Up the Waitlist!",
+          "message": "Good news! You're now #{newPosition} on the waitlist for {eventName}. Hang tight!",
+          "push": {
+            "title": "Waitlist Update - {eventName}",
+            "body": "You moved up! You're now #{newPosition} on the waitlist for {eventName}."
+          }
+        }
+      },
+      "profile": {
+        "incomplete": {
+          "title": "Complete Your Profile",
+          "message": "Your profile is incomplete. Add your sports preferences to get personalised event recommendations.",
+          "push": {
+            "title": "Finish Setting Up Your Profile",
+            "body": "Complete your profile to discover events tailored just for you."
+          }
+        }
+      },
+      "activity": {
+        "inactive": {
+          "title": "We Miss You at SportyExpats!",
+          "message": "It's been a while! There are exciting events happening near you this weekend. Come check them out.",
+          "push": {
+            "title": "New Events Near You!",
+            "body": "Don't miss out - there are events happening near you this weekend."
+          }
+        }
+      },
+      "organizer": {
+        "participantCancelled": {
+          "title": "Participant Cancelled",
+          "message": "{userName} has left {eventName}. One spot is now available.",
+          "push": {
+            "title": "Spot Available in Your Event",
+            "body": "{userName} cancelled their spot in {eventName}. 1 spot is now open."
+          }
+        },
+        "participantWithdrew": {
+          "title": "Participant Withdrew",
+          "message": "{userName} has withdrawn from {eventName}. One spot is now available.",
+          "push": {
+            "title": "Spot Available in Your Event",
+            "body": "{userName} withdrew from {eventName}. 1 spot is now open."
+          }
+        },
+        "paymentNotCompleted": {
+          "title": "Pending Payment from {userName}",
+          "message": "{userName} hasn't completed their payment for {eventName} yet. You may want to follow up.",
+          "push": {
+            "title": "Payment Pending - {userName}",
+            "body": "{userName} hasn't paid for {eventName} yet."
+          }
+        },
+        "autoCancelWarning": {
+          "title": "Low Attendance Warning",
+          "message": "{eventName} has only {participantCount} participants so far. Consider reaching out or adjusting the event.",
+          "push": {
+            "title": "Low Attendance - {eventName}",
+            "body": "Only {participantCount} participants for {eventName}. Review before it starts."
+          }
+        },
+        "paymentForYourEvent": {
+          "title": "New payment received",
+          "message": "{payerName} just paid for {eventName}",
+          "push": {
+            "title": "{payerName} paid for your event",
+            "body": "{payerName} paid {amountPaid} for {eventName}"
+          },
+          "email": {
+            "subject": "Payment received for {eventName} from {payerName}",
+            "greeting": "Hi {organizerName},",
+            "intro": "{payerName} has just completed their payment for {eventName}. The amount has been recorded and will be transferred to you after the event.",
+            "paymentConfirm": "✓ Payment Confirmed",
+            "detailsTitle": "Payment Details",
+            "payerName": "Paid by",
+            "eventName": "Event",
+            "eventDate": "Date & Time",
+            "amountPaid": "Amount",
+            "cta": "View Your Event",
+            "footer": "You're receiving this because you organise events on SportyExpats."
+          }
+        },
+        "userJoinedWaitlist": {
+          "title": "New waitlist sign-up",
+          "message": "{waitlistUserName} joined the waitlist for {eventName} (position #{waitlistPosition})",
+          "push": {
+            "title": "{waitlistUserName} joined your waitlist",
+            "body": "{waitlistUserName} is now on the waitlist for {eventName}"
+          }
+        },
+        "eventReviewReceived": {
+          "title": "New review for {eventName}",
+          "message": "{reviewerName} left a {rating}-star review for {eventName} ({stars})",
+          "push": {
+            "title": "{reviewerName} reviewed your event",
+            "body": "{reviewerName} gave {eventName} {rating} stars ({stars})"
+          }
+        },
+         "customBroadcast": {
+          "title": "Message about {eventName}",
+          "intro": "The organiser of {eventName} says:",
+          "push": {
+            "title": "New message about {eventName}"
+          }
+        }
+      },
+      "privateEvent": {
+        "invitation": {
+          "title": "You've Been Invited!",
+          "message": "{organizerName} has invited you to a private event: {eventName}. Accept to reserve your spot.",
+          "push": {
+            "title": "Private Event Invitation",
+            "body": "{organizerName} invited you to {eventName}. Tap to respond."
+          }
+        },
+        "accepted": {
+          "title": "You've Joined {eventName}",
+          "message": "You've successfully accepted the invitation and joined {eventName}. See you there!",
+          "push": {
+            "title": "Invitation Accepted",
+            "body": "You're in! You've joined the private event {eventName}."
+          }
+        },
+        "declined": {
+          "title": "Invitation Declined",
+          "message": "You've declined the invitation to {eventName}. Your spot has been released.",
+          "push": {
+            "title": "Invitation Declined",
+            "body": "You've declined the invite to {eventName}."
+          }
+        }
+      },
+      "system": {
+        "generic": {
+          "title": "SportyExpats Update",
+          "message": "You have a new notification from SportyExpats.",
+          "push": {
+            "title": "SportyExpats",
+            "body": "You have a new update. Tap to view."
+          }
+        }
+      },
+      "complaints": {
+        "assigned": {
+          "title": "Your complaint has been picked up",
+          "message": "An admin has been assigned to your complaint: \"{complaintTitle}\". We'll be in touch soon.",
+          "push": {
+            "title": "Complaint assigned",
+            "body": "An admin is now handling your complaint: \"{complaintTitle}\"."
+          }
+        },
+        "statusUpdated": {
+          "InProgress": {
+            "title": "Your complaint is in progress",
+            "message": "We're actively working on your complaint: \"{complaintTitle}\".",
+            "push": {
+              "title": "Complaint in progress",
+              "body": "Your complaint \"{complaintTitle}\" is being handled."
+            }
+          },
+          "Resolved": {
+            "title": "Your complaint has been resolved",
+            "message": "Great news! Your complaint \"{complaintTitle}\" has been resolved. Please let us know if you need further help.",
+            "push": {
+              "title": "Complaint resolved",
+              "body": "Your complaint \"{complaintTitle}\" has been resolved."
+            }
+          },
+          "Rejected": {
+            "title": "Your complaint was not approved",
+            "message": "After review, your complaint \"{complaintTitle}\" could not be approved. Contact support if you have questions.",
+            "push": {
+              "title": "Complaint rejected",
+              "body": "Your complaint \"{complaintTitle}\" was not approved."
+            }
+          },
+          "Closed": {
+            "title": "Your complaint has been closed",
+            "message": "Your complaint \"{complaintTitle}\" has been closed. Thank you for reaching out.",
+            "push": {
+              "title": "Complaint closed",
+              "body": "Your complaint \"{complaintTitle}\" has been closed."
+            }
+          }
+        }
+      },
+      "admin": {
+        "eventPendingReview": {
+          "title": "New Event Pending Review",
+          "message": "{creatorName} submitted \"{eventName}\" for approval. Review it now.",
+          "push": {
+            "title": "New Event to Review",
+            "body": "{creatorName} submitted \"{eventName}\". Tap to approve or reject."
+          }
+        },
+        "newComplaint": {
+          "title": "New Complaint Submitted",
+          "message": "{userName} submitted a new complaint: \"{complaintTitle}\"",
+          "push": {
+            "title": "New Complaint",
+            "body": "{userName} submitted \"{complaintTitle}\". Tap to review."
+          }
+        },
+         "postPendingReview": {
+            "title": "New Post Pending Review",
+            "message": "{authorName} submitted a new post for approval.",
+            "push": {
+              "title": "New Post to Review",
+              "body": "{authorName} submitted a post. Tap to approve or reject."
+            }
+          },
+          "storyPendingReview": {
+            "title": "New Story Pending Review",
+            "message": "{authorName} submitted a new story for approval.",
+            "push": {
+              "title": "New Story to Review",
+              "body": "{authorName} submitted a story. Tap to approve or reject."
+            }
+          }
+      },
+      "posts": {
+        "approved": {
+          "title": "Your Post Was Approved!",
+          "message": "Your post is now live and visible to the community.",
+          "push": {
+            "title": "Post Approved",
+            "body": "Your post has been approved and is now live."
+          }
+        },
+        "rejected": {
+          "title": "Your Post Was Not Approved",
+          "message": "Unfortunately, your post was not approved. Reason: {rejectionReason}",
+          "push": {
+            "title": "Post Not Approved",
+            "body": "Your post wasn't approved. Tap to see why."
+          }
+        }
+      },
+      "stories": {
+        "approved": {
+          "title": "Your Story Was Approved!",
+          "message": "Your story is now live and visible to the community.",
+          "push": {
+            "title": "Story Approved",
+            "body": "Your story has been approved and is now live."
+          }
+        },
+        "rejected": {
+          "title": "Your Story Was Not Approved",
+          "message": "Unfortunately, your story was not approved. Reason: {rejectionReason}",
+          "push": {
+            "title": "Story Not Approved",
+            "body": "Your story wasn't approved. Tap to see why."
+          }
+        }
+      }
+    }
+  },
+  "DirectChat": {
+    "title": "Messages",
+    "searchPlaceholder": "Search messages",
+    "conversations": "Conversations",
+    "noConversations": "No conversations yet.",
+    "noResults": "No results for \"{query}\"",
+    "selectConversation": "Select a conversation",
+    "selectConversationSub": "Pick a message thread from the list to start chatting",
+    "noMessagesYet": "No messages yet",
+    "attachment": "Attachment",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "MessageRequests": {
+    "title": "Message Requests",
+    "pendingRequests": "{count} pending request",
+    "pendingRequestsPlural": "{count} pending requests",
+    "newMessage": "New Message",
+    "received": "Received",
+    "sent": "Sent",
+    "noReceivedRequests": "No message requests yet",
+    "noSentRequests": "You haven't sent any requests yet",
+    "sendFirstRequest": "Send your first request",
+    "requestSent": "Request Sent!",
+    "waitingForAcceptance": "Waiting for {name} to accept.",
+    "done": "Done",
+    "toLabel": "To",
+    "searchPlaceholder": "Search by name or username...",
+    "messageLabel": "Message",
+    "messageOptional": "(optional)",
+    "messagePlaceholder": "Say something to introduce yourself...",
+    "sendRequest": "Send Request",
+    "sending": "Sending...",
+    "noUsersFound": "No users found",
+    "openChat": "Open Chat",
+    "accept": "Accept",
+    "decline": "Decline",
+    "cancel": "Cancel",
+    "cancelRequest": "Cancel",
+    "respondToRequest": "Respond to Request",
+    "receivedLabel": "Received",
+    "sentLabel": "Sent"
+  },
+  "Complaints": {
+    "title": "Complaints",
+    "total": "{count} total",
+    "newButton": "New",
+    "allStatuses": "All",
+    "selectComplaint": "Select a complaint",
+    "selectComplaintSub": "Choose one from the list to view details or chat with support.",
+    "detailsTab": "Details",
+    "chatTab": "Chat",
+    "typeLabel": "Type",
+    "priorityLabel": "Priority",
+    "submittedLabel": "Submitted",
+    "resolvedLabel": "Resolved",
+    "assignedAdminLabel": "Assigned admin",
+    "relatedEventLabel": "Related event",
+    "descriptionLabel": "Description",
+    "attachedFileLabel": "Attached file",
+    "openChatWithAdmin": "Open chat with admin",
+    "waitingForAdmin": "Waiting for an admin to be assigned. A chat room will be created when someone picks this up.",
+    "noChatRoomYet": "No chat room yet",
+    "noChatRoomSub": "An admin will create a chat room when they pick up your complaint. Check back soon.",
+    "participants": "{count} participant",
+    "participantsPlural": "{count} participants",
+    "noMessagesYet": "No messages yet",
+    "noMessagesSub": "Send a message to start the conversation with support.",
+    "messageSupportPlaceholder": "Message support…",
+    "loading": "Loading…",
+    "retry": "Retry",
+    "submitComplaint": "Submit a complaint",
+    "statusPending": "Pending",
+    "statusInProgress": "In Progress",
+    "statusResolved": "Resolved",
+    "statusRejected": "Rejected",
+    "statusClosed": "Closed"
+  },
+  "Dashboard": {
+    "search": "Search people, features, and actions",
+    "aboutSportyExpats": "About SportyExpats",
+    "myFeed": "My Feed",
+    "selectedEvents": "Selected Events",
+    "joinedGroups": "Joined Groups",
+    "itemSales": "Item Sales",
+    "myPurchases": "My Purchases",
+    "inbox": "Inbox",
+    "chats": "Chats",
+    "direct": "Direct",
+    "groups": "Groups",
+    "complaints": "Complaints",
+    "noMessagesYet": "No messages yet",
+    "noChatsYet": "No {category} chats yet.",
+    "storyRejected": "story rejected",
+    "storiesRejected": "stories rejected",
+    "storyRejectedTitle": "{count} story rejected – click to see more details",
+    "storiesRejectedTitle": "{count} stories rejected – click to see more details",
+    "underReview": "Under review",
+    "storyUnderReview": "{count} story under review",
+    "storiesUnderReview": "{count} stories under review",
+    "upload": "Upload",
+    "newStory": "New Story",
+    "posted": "Posted",
+    "loadingComments": "Loading comments...",
+    "comments": "Comments",
+    "noComments": "No comments available.",
+    "addComment": "Add comment",
+    "likes": "likes",
+    "commentsLabel": "comments",
+    "reactions": "reactions",
+    "commentEmpty": "Comment cannot be empty.",
+    "loadingFeeds": "Loading feeds...",
+    "loadMore": "Load More",
+    "postRejected": "1 post rejected – click to see more details",
+    "postsRejected": "{count} posts rejected – click to see more details",
+    "postUnderReview": "1 post under review by admin",
+    "postsUnderReview": "{count} posts under review by admin",
+    "dismissRejected": "Dismiss rejected notification",
+    "dismissPending": "Dismiss pending notification",
+    "linkCopied": "Post link copied successfully",
+    "linkCopyFailed": "Failed to copy Post link.",
+    "cancel": "Cancel",
+    "reply": "Reply",
+    "writeReply": "Write a reply...",
+    "postReply": "Post Reply",
+    "viewReply": "View {count} reply",
+    "viewReplies": "View {count} replies",
+    "hideReplies": "Hide replies",
+    "unknownUser": "Unknown User"
+  }
+}

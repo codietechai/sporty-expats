@@ -14,6 +14,7 @@ import { GroupRoomView } from "@/components/groupchat/GroupRoomView";
 import GroupChatSkeleton from "@/components/groupchat/GroupChatSkeleton";
 import type { ChatRoom } from "@sparkstrand/chat-api-client/v2/types";
 import type { EventRoomMetadata } from "@/app/chat/group/hooks/eventMetadata";
+import { useNotificationsContext } from "@/contexts/NotificationsContext";
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -26,6 +27,7 @@ type Tab = "past" | "upcoming";
 export default function GroupChatsContent() {
     const navigation = useNavigation();
     const { user } = useChatClient();
+    const { unreadCount } = useNotificationsContext();
     const { pastRooms, upcomingRooms, isLoading, error, page, pastTotalPages, upcomingTotalPages, setPage, refetch } = useGroupRooms();
 
     const [activeTab, setActiveTab] = useState<Tab>("past");
@@ -85,7 +87,20 @@ export default function GroupChatsContent() {
                         <Ionicons name="menu" size={22} color="#fff" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Group Chats</Text>
-                    <View style={{ width: 38 }} />
+                    <TouchableOpacity
+                        style={styles.bellBtn}
+                        hitSlop={8}
+                        onPress={() => (navigation as any).navigate("Notifications")}
+                    >
+                        <Ionicons name="notifications-outline" size={22} color="#fff" />
+                        {unreadCount > 0 && (
+                            <View style={styles.bellBadge}>
+                                <Text style={styles.bellBadgeText}>
+                                    {unreadCount > 99 ? "99+" : unreadCount}
+                                </Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
                 </View>
 
                 {/* Search */}
@@ -230,7 +245,19 @@ const styles = StyleSheet.create({
         alignItems: "center", justifyContent: "center",
     },
     headerTitle: { flex: 1, fontSize: 17, fontWeight: "700", color: "#fff", textAlign: "center" },
-
+    bellBtn: {
+        width: 38, height: 38, borderRadius: 10,
+        backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
+        alignItems: "center", justifyContent: "center",
+    },
+    bellBadge: {
+        position: "absolute", top: -4, right: -4,
+        backgroundColor: "#ef4444", borderRadius: 8,
+        minWidth: 16, height: 16, paddingHorizontal: 3,
+        alignItems: "center", justifyContent: "center",
+        borderWidth: 1.5, borderColor: "#0d0d0d",
+    },
+    bellBadgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
     // Search
     searchWrap: {
         paddingHorizontal: 16,

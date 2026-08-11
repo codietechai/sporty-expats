@@ -13,10 +13,12 @@ import Input from "@/components/common/input";
 import { useNavigation } from "@react-navigation/native";
 import { DrawerNavigationProp } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
+import { useNotificationsContext } from "@/contexts/NotificationsContext";
 
 export default function EditUserScreen() {
     const navigation = useNavigation();
     const drawer = navigation.getParent<DrawerNavigationProp<any>>();
+    const { unreadCount } = useNotificationsContext();
 
     return (
         <>
@@ -28,7 +30,12 @@ export default function EditUserScreen() {
                         <Ionicons name="menu" size={22} color="#1a1a1a" />
                     </Pressable>
                     <Text style={styles.headerTitle}>Edit User Details</Text>
-                    <View style={{ width: 36 }} />
+                    <TouchableOpacity style={styles.menuBtn} hitSlop={8} onPress={() => navigation.navigate("Notifications" as never)}>
+                        <Ionicons name="notifications-outline" size={22} color="#1a1a1a" />
+                        {unreadCount > 0 && (
+                            <View style={styles.bellBadge}><Text style={styles.bellBadgeText}>{unreadCount > 99 ? "99+" : unreadCount}</Text></View>
+                        )}
+                    </TouchableOpacity>
                 </View>
 
                 <ScrollView contentContainerStyle={styles.container}>
@@ -88,6 +95,14 @@ const styles = StyleSheet.create({
         width: 36, height: 36,
         alignItems: "center", justifyContent: "center",
     },
+    bellBadge: {
+        position: "absolute", top: -4, right: -4,
+        backgroundColor: "#ef4444", borderRadius: 8,
+        minWidth: 16, height: 16, paddingHorizontal: 3,
+        alignItems: "center", justifyContent: "center",
+        borderWidth: 1.5, borderColor: "#fff",
+    },
+    bellBadgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
     headerTitle: {
         fontSize: 18,
         fontWeight: "600",

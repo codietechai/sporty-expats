@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useNotificationsHook } from "@/app/hooks/useNotifications";
+import { useNotificationsContext } from "@/contexts/NotificationsContext";
 import NotificationsScreen, { NotificationCategory } from "./NotificationsScreen";
 import type { NotificationType } from "@sparkstrand/notifications-react";
 
@@ -37,7 +37,7 @@ export default function NotificationsContainer() {
         deleteNotification,
         fetchNotifications,
         refreshNotifications,
-    } = useNotificationsHook();
+    } = useNotificationsContext();
 
     const [activeCategory, setActiveCategory] = useState<NotificationCategory>("all");
 

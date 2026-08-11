@@ -13,12 +13,12 @@ import ItemSales from "@/components/dashboard/ItemSales";
 import MyPurchases from "@/components/dashboard/MyPurchases";
 import Header from "@/components/Header";
 import { useAuth } from "@clerk/clerk-expo";
-import { useNotificationsHook } from "@/app/hooks/useNotifications";
+import { useNotificationsContext } from "@/contexts/NotificationsContext";
 
 const Dashboard = () => {
   const { isSignedIn } = useAuth();
   const navigation = useNavigation<DrawerNavigationProp<any>>();
-  const { unreadCount, fetchNotifications } = useNotificationsHook();
+  const { unreadCount, fetchNotifications } = useNotificationsContext();
 
   useEffect(() => {
     if (!isSignedIn) {

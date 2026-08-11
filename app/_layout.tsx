@@ -9,10 +9,12 @@ import { tokenCache } from '@clerk/clerk-expo/token-cache'
 import { QueryClient, QueryClientProvider } from "react-query";
 import { DrawerProvider } from "@/contexts/DrawerContext";
 import { UserProvider } from "@/contexts/UserContext";
+import { NotificationsProvider } from "@/contexts/NotificationsContext";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BrandWordmark } from "@/components/Header";
 import * as SplashScreen from 'expo-splash-screen';
 import { ToastProvider } from "@/components/common/Toast";
+import { usePushNotifications } from "@/app/hooks/usePushNotifications";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -48,8 +50,11 @@ export default function RootLayout() {
             <ClerkLoaded>
               <DrawerProvider>
                 <UserProvider>
-                  <Stack screenOptions={{ headerShown: false }} />
-                  <ToastProvider />
+                  <NotificationsProvider>
+                    <PushNotificationInit />
+                    <Stack screenOptions={{ headerShown: false }} />
+                    <ToastProvider />
+                  </NotificationsProvider>
                 </UserProvider>
               </DrawerProvider>
             </ClerkLoaded>
@@ -58,5 +63,12 @@ export default function RootLayout() {
       </QueryClientProvider>
     </GestureHandlerRootView>
   );
+}
+
+// Initialises push notifications once at the root level.
+// Kept in a separate component so the hook runs inside ClerkLoaded.
+function PushNotificationInit() {
+  usePushNotifications();
+  return null;
 }
 

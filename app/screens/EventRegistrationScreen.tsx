@@ -13,6 +13,7 @@ import { processPaypalPayment, CardDetails } from "@/client/endpoints/payments/p
 import InlineAlert from "@/components/Create-Events/InlineAlert";
 import type { Event } from "@/client/endpoints/events/types";
 import { getErrorMessage } from "@/helpers/getErrorMessage";
+import { useNotificationsContext } from "@/contexts/NotificationsContext";
 
 type Step = "Select Ticket" | "Assign Participants" | "Ticket And Payment";
 
@@ -86,6 +87,7 @@ export default function EventRegistrationScreen({ route }: any) {
     const event: Event = route?.params?.event;
 
     const { userDb } = useUserDb();
+    const { refreshNotifications } = useNotificationsContext();
     const userId: string | undefined = userDb?.data?.id ?? userDb?.id;
     // /users/me returns a flat object: { id, email, firstName, lastName, username, ... }
     const userEmail: string | undefined = userDb?.data?.email ?? userDb?.email;
@@ -287,6 +289,15 @@ export default function EventRegistrationScreen({ route }: any) {
                 "You have been successfully registered for this event.",
                 [{ text: "OK", onPress: () => navigation.goBack() }]
             );
+
+            // The backend creates payment notifications asynchronously via
+            // Next.js after(). Retry fetching so mobile receives that backend
+            // notification even when the first request finishes too early.
+            [1500, 3000, 6000, 10000].forEach((delay) => {
+                setTimeout(() => {
+                    void refreshNotifications();
+                }, delay);
+            });
         } catch (err: any) {
             setStepError(getErrorMessage(err, "Payment failed. Please check your card details and try again."));
         } finally {

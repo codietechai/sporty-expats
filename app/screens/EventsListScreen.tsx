@@ -19,6 +19,7 @@ import type { Event } from "@/client/endpoints/events/types";
 import { categoriesList } from "@/components/Create-Events/categories";
 import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 import dayjs from "dayjs";
+import { useNotificationsContext } from "@/contexts/NotificationsContext";
 
 const CATEGORIES = ["All", ...categoriesList];
 
@@ -95,6 +96,7 @@ export default function EventsListScreen() {
     const [categoryOpen, setCategoryOpen] = useState(false);
     const [timeOpen, setTimeOpen] = useState(false);
     const navigation = useNavigation<any>();
+    const { unreadCount } = useNotificationsContext();
 
     const {
         events, isLoading, isError,
@@ -178,8 +180,11 @@ export default function EventsListScreen() {
                     <Text style={styles.headerTitle}>Events</Text>
                     <Text style={styles.headerSub}>Browse and filter events</Text>
                 </View>
-                <TouchableOpacity style={styles.headerBtn} onPress={handleReset} hitSlop={8}>
-                    <Ionicons name="options-outline" size={20} color="#2ecc71" />
+                <TouchableOpacity style={styles.headerBtn} hitSlop={8} onPress={() => navigation.navigate("Notifications")}>
+                    <Ionicons name="notifications-outline" size={20} color="#fff" />
+                    {unreadCount > 0 && (
+                        <View style={styles.bellBadge}><Text style={styles.bellBadgeText}>{unreadCount > 99 ? "99+" : unreadCount}</Text></View>
+                    )}
                 </TouchableOpacity>
             </View>
 
@@ -373,6 +378,14 @@ const styles = StyleSheet.create({
     headerCenter: { flex: 1, alignItems: "center" },
     headerTitle: { fontSize: 17, fontWeight: "700", color: "#fff" },
     headerSub: { fontSize: 11, color: "#6B7280", marginTop: 1 },
+    bellBadge: {
+        position: "absolute", top: -4, right: -4,
+        backgroundColor: "#ef4444", borderRadius: 8,
+        minWidth: 16, height: 16, paddingHorizontal: 3,
+        alignItems: "center", justifyContent: "center",
+        borderWidth: 1.5, borderColor: "#0d0d0d",
+    },
+    bellBadgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
 
     filterRow: {
         flexDirection: "row",

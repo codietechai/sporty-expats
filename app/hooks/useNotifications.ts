@@ -11,6 +11,6 @@ export function useNotificationsHook() {
         loginFunction: notificationsLoginFunction,
         apiUrl: "https://notifications.sparkstrand.com/api",
         enablePolling: true,
-        pollInterval: 60_000,
+        pollInterval: 30_000,
     });
 }

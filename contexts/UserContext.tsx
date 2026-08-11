@@ -47,6 +47,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       const response = await getUserById();
       if (!mountedRef.current) return;
       const userData = response?.data?.data || response?.data || response;
+
+      // Ensure the backend has this user's Sparkstrand notificationId before
+      // exposing userDb to screens that can create payments. Without this,
+      // sendPaymentSuccessful() aborts because there is no recipientId.
+      await registerNotifications();
+      if (!mountedRef.current) return;
+
       setUserDb(userData);
       setError(null);
       setLoading(false);

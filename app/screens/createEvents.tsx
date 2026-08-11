@@ -16,6 +16,7 @@ import { createEvent } from "@/client/endpoints/events/createEvent";
 import type { Event } from "@/client/endpoints/events/types";
 import { getErrorMessage } from "@/helpers/getErrorMessage";
 import { showToast } from "@/components/common/Toast";
+import { useNotificationsContext } from "@/contexts/NotificationsContext";
 
 export type EventFormValues = {
   title: string;
@@ -68,6 +69,7 @@ const getDefaultEventValues = (): EventFormValues => ({
 const CreateEvents = () => {
   const navigation = useNavigation();
   const { userDb } = useUserDb();
+  const { unreadCount } = useNotificationsContext();
   const currentUser = userDb?.data?.data ?? userDb?.data ?? userDb ?? null;
   const userId: string = currentUser?.id ?? "";
   const role = currentUser?.role;
@@ -204,7 +206,12 @@ const CreateEvents = () => {
             <Text style={styles.headerTitle}>Create Event</Text>
             <Text style={styles.headerSub}>Fill in the details below</Text>
           </View>
-          <View style={{ width: 38 }} />
+          <TouchableOpacity style={styles.menuBtn} hitSlop={8} onPress={() => navigation.navigate("Notifications" as never)}>
+            <Ionicons name="notifications-outline" size={22} color="#fff" />
+            {unreadCount > 0 && (
+              <View style={styles.bellBadge}><Text style={styles.bellBadgeText}>{unreadCount > 99 ? "99+" : unreadCount}</Text></View>
+            )}
+          </TouchableOpacity>
         </View>
         <FormProvider {...formMethods}>
           <View style={styles.body}>
@@ -274,18 +281,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#111",
   },
   menuBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: "#1a1a1a",
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-    alignItems: "center",
-    justifyContent: "center",
+    width: 38, height: 38, borderRadius: 10,
+    backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
+    alignItems: "center", justifyContent: "center",
   },
   headerCenter: { flex: 1, alignItems: "center" },
   headerTitle: { fontSize: 17, fontWeight: "700", color: "#fff" },
   headerSub: { fontSize: 11, color: "#6B7280", marginTop: 1 },
+  bellBadge: {
+    position: "absolute", top: -4, right: -4,
+    backgroundColor: "#ef4444", borderRadius: 8,
+    minWidth: 16, height: 16, paddingHorizontal: 3,
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 1.5, borderColor: "#0d0d0d",
+  },
+  bellBadgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
   body: { flex: 1, backgroundColor: "#0d0d0d" },
   memberGate: {
     flex: 1,

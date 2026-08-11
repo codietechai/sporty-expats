@@ -23,6 +23,7 @@ import { useUserDb } from "@/app/hooks/useUserDb";
 import { getNames } from "country-list";
 import { getErrorMessage } from "@/helpers/getErrorMessage";
 import { showToast } from "@/components/common/Toast";
+import { useNotificationsContext } from "@/contexts/NotificationsContext";
 
 const countries = getNames().map((c) => ({ label: c, value: c }));
 
@@ -150,6 +151,7 @@ export default function PersonalInfo() {
   const router = useRouter();
   const { userDb, loading: userLoading, refresh } = useUserDb();
   const { user: clerkUser } = useUser();
+  const { unreadCount } = useNotificationsContext();
   const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
@@ -274,7 +276,12 @@ export default function PersonalInfo() {
             <Text style={styles.headerTitle}>Personal Information</Text>
             <Text style={styles.headerSub}>Manage your profile details</Text>
           </View>
-          <View style={{ width: 38 }} />
+          <TouchableOpacity style={styles.backBtn} hitSlop={8} onPress={() => navigation.navigate("Notifications" as never)}>
+            <Ionicons name="notifications-outline" size={22} color="#fff" />
+            {unreadCount > 0 && (
+              <View style={styles.bellBadge}><Text style={styles.bellBadgeText}>{unreadCount > 99 ? "99+" : unreadCount}</Text></View>
+            )}
+          </TouchableOpacity>
         </View>
 
         {userLoading ? (
@@ -388,6 +395,14 @@ const styles = StyleSheet.create({
   headerCenter: { flex: 1, alignItems: "center" },
   headerTitle: { fontSize: 17, fontWeight: "700", color: "#fff" },
   headerSub: { fontSize: 11, color: "#6B7280", marginTop: 1 },
+  bellBadge: {
+    position: "absolute", top: -4, right: -4,
+    backgroundColor: "#ef4444", borderRadius: 8,
+    minWidth: 16, height: 16, paddingHorizontal: 3,
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 1.5, borderColor: "#0d0d0d",
+  },
+  bellBadgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
 
   centered: { flex: 1, alignItems: "center", justifyContent: "center" },
 

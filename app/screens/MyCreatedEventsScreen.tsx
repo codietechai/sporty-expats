@@ -24,6 +24,7 @@ import {
 } from "@/client/endpoints/events/getUserCreatedEvents";
 import type { Event } from "@/client/endpoints/events/types";
 import { categoriesList } from "@/components/Create-Events/categories";
+import { useNotificationsContext } from "@/contexts/NotificationsContext";
 
 const STATUS_FILTERS = ["All", "Pending", "Approved", "Rejected"] as const;
 type StatusFilter = typeof STATUS_FILTERS[number];
@@ -63,6 +64,7 @@ const sk = StyleSheet.create({
 export default function MyCreatedEventsScreen() {
     const navigation = useNavigation<any>();
     const { userDb } = useUserDb();
+    const { unreadCount } = useNotificationsContext();
     const currentUser = userDb?.data?.data ?? userDb?.data ?? userDb ?? null;
     const userId = currentUser?.id ?? "";
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
@@ -99,8 +101,11 @@ export default function MyCreatedEventsScreen() {
                     <Text style={styles.headerTitle}>My Events</Text>
                     <Text style={styles.headerSub}>Events created by you</Text>
                 </View>
-                <TouchableOpacity style={styles.headerBtn} onPress={() => refetch()} hitSlop={8}>
-                    <Ionicons name="refresh-outline" size={20} color="#2ecc71" />
+                <TouchableOpacity style={styles.headerBtn} hitSlop={8} onPress={() => navigation.navigate("Notifications")}>
+                    <Ionicons name="notifications-outline" size={20} color="#fff" />
+                    {unreadCount > 0 && (
+                        <View style={styles.bellBadge}><Text style={styles.bellBadgeText}>{unreadCount > 99 ? "99+" : unreadCount}</Text></View>
+                    )}
                 </TouchableOpacity>
             </View>
 
@@ -268,6 +273,14 @@ const styles = StyleSheet.create({
     headerCenter: { flex: 1, alignItems: "center" },
     headerTitle: { fontSize: 17, fontWeight: "700", color: "#fff" },
     headerSub: { fontSize: 11, color: "#6B7280", marginTop: 1 },
+    bellBadge: {
+        position: "absolute", top: -4, right: -4,
+        backgroundColor: "#ef4444", borderRadius: 8,
+        minWidth: 16, height: 16, paddingHorizontal: 3,
+        alignItems: "center", justifyContent: "center",
+        borderWidth: 1.5, borderColor: "#0d0d0d",
+    },
+    bellBadgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
     filterRow: {
         flexDirection: "row",
         paddingHorizontal: 16,
