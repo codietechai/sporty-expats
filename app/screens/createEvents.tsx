@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StatusBar, StyleSheet, Modal } from "react-native";
 import { Stack } from "expo-router";
@@ -178,13 +179,13 @@ const CreateEvents = () => {
             style={styles.memberGatePrimary}
             onPress={() => navigation.navigate("profile" as never)}
           >
-            <Text style={styles.memberGatePrimaryText}>Verify</Text>
+            <Text style={styles.memberGatePrimaryText}>{i18n.t("SignUp.Verify")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.memberGateSecondary}
             onPress={() => setProceedToCreateEvent(true)}
           >
-            <Text style={styles.memberGateSecondaryText}>Continue</Text>
+            <Text style={styles.memberGateSecondaryText}>{i18n.t("SignUp.Continues")}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -203,7 +204,7 @@ const CreateEvents = () => {
             <Ionicons name="menu" size={22} color="#fff" />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>Create Event</Text>
+            <Text style={styles.headerTitle}>{i18n.t("NavBar.CreateEvent")}</Text>
             <Text style={styles.headerSub}>Fill in the details below</Text>
           </View>
           <TouchableOpacity style={styles.menuBtn} hitSlop={8} onPress={() => navigation.navigate("Notifications" as never)}>
@@ -251,7 +252,7 @@ const CreateEvents = () => {
                   navigation.navigate("My Events" as never);
                 }}
               >
-                <Text style={styles.successPrimaryText}>View My Events</Text>
+                <Text style={styles.successPrimaryText}>{i18n.t("notification.messages.payments.successful.email.cta")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.successSecondary}

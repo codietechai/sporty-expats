@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useState } from "react";
 import {
     View,
@@ -155,7 +156,7 @@ export default function EventsListScreen() {
                         onPress={goToNextPage}
                         disabled={!hasNextPage}
                     >
-                        <Text style={[styles.pageBtnText, !hasNextPage && styles.pageBtnTextDisabled]}>Next</Text>
+                        <Text style={[styles.pageBtnText, !hasNextPage && styles.pageBtnTextDisabled]}>{i18n.t("DirectChat.next")}</Text>
                         <Ionicons name="chevron-forward" size={16} color={hasNextPage ? "#fff" : "#374151"} />
                     </TouchableOpacity>
                 </View>
@@ -177,7 +178,7 @@ export default function EventsListScreen() {
                     <Ionicons name="menu" size={22} color="#fff" />
                 </TouchableOpacity>
                 <View style={styles.headerCenter}>
-                    <Text style={styles.headerTitle}>Events</Text>
+                    <Text style={styles.headerTitle}>{i18n.t("NavBar.Event")}</Text>
                     <Text style={styles.headerSub}>Browse and filter events</Text>
                 </View>
                 <TouchableOpacity style={styles.headerBtn} hitSlop={8} onPress={() => navigation.navigate("Notifications")}>
@@ -265,7 +266,7 @@ export default function EventsListScreen() {
                     <Ionicons name="alert-circle-outline" size={52} color="#EF4444" />
                     <Text style={styles.stateText}>Failed to load events</Text>
                     <TouchableOpacity style={styles.retryBtn} onPress={handleReset}>
-                        <Text style={styles.retryBtnText}>Retry</Text>
+                        <Text style={styles.retryBtnText}>{i18n.t("Complaints.retry")}</Text>
                     </TouchableOpacity>
                 </View>
             ) : events.length === 0 ? (

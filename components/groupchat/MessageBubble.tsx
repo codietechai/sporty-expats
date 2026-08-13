@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useState } from "react";
 import {
     View,
@@ -224,7 +225,7 @@ export function MessageBubble({
                                     onPress={() => { onOpenThread(message); setShowActionModal(false); }}
                                 >
                                     <Ionicons name="arrow-undo-outline" size={18} color="#9CA3AF" />
-                                    <Text style={styles.actionLabel}>Reply</Text>
+                                    <Text style={styles.actionLabel}>{i18n.t("Dashboard.reply")}</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={styles.actionRow}
@@ -267,7 +268,7 @@ export function MessageBubble({
                             style={[styles.actionRow, styles.cancelRow]}
                             onPress={() => setShowActionModal(false)}
                         >
-                            <Text style={styles.cancelLabel}>Cancel</Text>
+                            <Text style={styles.cancelLabel}>{i18n.t("MessageRequests.cancel")}</Text>
                         </TouchableOpacity>
                     </View>
                 </Pressable>

@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/translations/i18n";
@@ -31,6 +31,13 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
+  const [, setLanguageVersion] = useState(0);
+
+  useEffect(() => {
+    const refreshTranslations = () => setLanguageVersion((version) => version + 1);
+    i18n.on("languageChanged", refreshTranslations);
+    return () => i18n.off("languageChanged", refreshTranslations);
+  }, []);
   const [fontsLoaded] = useFonts({
     inter: require("../assets/fonts/Inter.ttf"),
     oswald: require("../assets/fonts/Oswald.ttf"),

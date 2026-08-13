@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import { useSignIn, useSignUp, useUser } from "@clerk/clerk-expo";
 import React, { useState } from "react";
 import {
@@ -173,14 +174,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose, onSuccess }) =>
               <SocialLoginButton strategy="google" onClose={onClose} onSuccess={onSuccess} />
               <SocialLoginButton strategy="facebook" onClose={onClose} onSuccess={onSuccess} />
               <TextInput
-                placeholder="Email"
+                placeholder={i18n.t("SignUp.Notification.Email")}
                 value={emailAddress}
                 onChangeText={setEmailAddress}
                 style={styles.input}
                 keyboardType="email-address"
               />
               <TextInput
-                placeholder="Password"
+                placeholder={i18n.t("SignIn.Password")}
                 value={password}
                 onChangeText={setPassword}
                 style={styles.input}
@@ -195,7 +196,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose, onSuccess }) =>
               <TouchableOpacity onPress={() => setMode("Sign Up")}>
                 <Text style={styles.switchText}>
                   Don't have an account?{" "}
-                  <Text style={styles.linkText}>Join SportyExpats</Text>
+                  <Text style={styles.linkText}>{i18n.t("SignIn.Create")}</Text>
                 </Text>
               </TouchableOpacity>
             </>
@@ -204,28 +205,28 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose, onSuccess }) =>
           {mode === "Sign Up" && (
             <>
               <View style={styles.headerRow}>
-                <Text style={styles.title}>Join Community</Text>
+                <Text style={styles.title}>{i18n.t("SignUp.Join Community")}</Text>
                 {renderCloseButton()}
               </View>
               <Text>By continuing, you agree to our Terms and Privacy Policy.</Text>
               <SocialLoginButton strategy="google" onClose={onClose} onSuccess={onSuccess} />
               <SocialLoginButton strategy="facebook" onClose={onClose} onSuccess={onSuccess} />
               <TextInput
-                placeholder="Email"
+                placeholder={i18n.t("SignUp.Notification.Email")}
                 style={styles.input}
                 value={emailAddress}
                 onChangeText={setEmailAddress}
               />
               {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
               <TextInput
-                placeholder="Username"
+                placeholder={i18n.t("SignIn.Username")}
                 style={styles.input}
                 value={username}
                 onChangeText={setUsername}
               />
               {usernameError ? <Text style={styles.errorText}>{usernameError}</Text> : null}
               <TextInput
-                placeholder="Password"
+                placeholder={i18n.t("SignIn.Password")}
                 style={styles.input}
                 value={password}
                 onChangeText={setPassword}
@@ -233,11 +234,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose, onSuccess }) =>
               />
               {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
               <TouchableOpacity onPress={onSignUpPress} style={styles.loginButton}>
-                <Text style={styles.closeButtonText}>Sign up</Text>
+                <Text style={styles.closeButtonText}>{i18n.t("NavBar.Signup")}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setMode("Login")}>
                 <Text style={styles.switchText}>
-                  Already have an account?{" "}
+                  {i18n.t("SignUp.Already")}{" "}
                   <Text style={styles.linkText}>Login</Text>
                 </Text>
               </TouchableOpacity>
@@ -259,7 +260,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose, onSuccess }) =>
                 keyboardType="number-pad"
               />
               <TouchableOpacity style={styles.loginButton} onPress={onVerifyPress}>
-                <Text style={styles.closeButtonText}>Verify</Text>
+                <Text style={styles.closeButtonText}>{i18n.t("SignUp.Verify")}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -272,7 +273,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose, onSuccess }) =>
               </View>
               <Text>Enter your email address to receive a reset code.</Text>
               <TextInput
-                placeholder="Email"
+                placeholder={i18n.t("SignUp.Notification.Email")}
                 style={styles.input}
                 value={emailAddress}
                 onChangeText={setEmailAddress}

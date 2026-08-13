@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import { GET_SELECTED_EVENTS_BY_ID, getSelectedEvents } from "@/client/endpoints/posts/selected-events";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { Ionicons } from "@expo/vector-icons";
@@ -35,8 +36,8 @@ export type Event = {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   Approved: { label: "Approved", color: "#4ade80", bg: "rgba(74,222,128,0.1)", icon: "checkmark-circle" },
-  Pending:  { label: "Pending",  color: "#fbbf24", bg: "rgba(251,191,36,0.1)",  icon: "time" },
-  Rejected: { label: "Rejected", color: "#f87171", bg: "rgba(248,113,113,0.1)", icon: "close-circle" },
+  Pending:  { label: i18n.t("Complaints.statusPending"),  color: "#fbbf24", bg: "rgba(251,191,36,0.1)",  icon: "time" },
+  Rejected: { label: i18n.t("Complaints.statusRejected"), color: "#f87171", bg: "rgba(248,113,113,0.1)", icon: "close-circle" },
 };
 function getStatus(status: string) {
   return STATUS_CONFIG[status] ?? STATUS_CONFIG["Pending"];

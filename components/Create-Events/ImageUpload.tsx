@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useState } from "react";
 import { ActivityIndicator, Alert, View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import * as ImagePicker from "expo-image-picker";
@@ -74,7 +75,7 @@ const Image_Upload: React.FC<Props> = ({ setActiveTab, control }) => {
             {uploading ? (
               <View style={styles.placeholder}>
                 <ActivityIndicator color="#38c177" />
-                <Text style={styles.uploadText}>Uploading image...</Text>
+                <Text style={styles.uploadText}>{i18n.t("CreateEvent.UploadingImage")}</Text>
               </View>
             ) : value?.fileUrl ? (
               <Image source={{ uri: value.fileUrl }} style={styles.preview} resizeMode="cover" />

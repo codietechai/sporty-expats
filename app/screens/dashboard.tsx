@@ -14,9 +14,11 @@ import MyPurchases from "@/components/dashboard/MyPurchases";
 import Header from "@/components/Header";
 import { useAuth } from "@clerk/clerk-expo";
 import { useNotificationsContext } from "@/contexts/NotificationsContext";
+import { useTranslation } from "react-i18next";
 
 const Dashboard = () => {
   const { isSignedIn } = useAuth();
+  const { t } = useTranslation();
   const navigation = useNavigation<DrawerNavigationProp<any>>();
   const { unreadCount, fetchNotifications } = useNotificationsContext();
 
@@ -37,11 +39,11 @@ const Dashboard = () => {
   if (!isSignedIn) return null;
 
   const tabs = [
-    { key: "my_feed",      label: "My Feed",        component: MyFeed },
-    { key: "events",       label: "Selected Events", component: SelectedEvents },
-    { key: "joined_group", label: "Joined Groups",   component: JoinedGroups },
-    { key: "item_sales",   label: "Item Sales",      component: ItemSales },
-    { key: "my_purchase",  label: "My Purchase",     component: MyPurchases },
+    { key: "my_feed",      label: t("Dashboard.myFeed"),        component: MyFeed },
+    { key: "events",       label: t("Dashboard.selectedEvents"), component: SelectedEvents },
+    { key: "joined_group", label: t("Dashboard.joinedGroups"),   component: JoinedGroups },
+    { key: "item_sales",   label: t("Dashboard.itemSales"),      component: ItemSales },
+    { key: "my_purchase",  label: t("Dashboard.myPurchases"),    component: MyPurchases },
   ];
 
   return (

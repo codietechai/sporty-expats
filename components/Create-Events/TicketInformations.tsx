@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Modal, Text, TextInput, View, TouchableOpacity, StyleSheet } from "react-native";
 import { ScrollView } from "react-native";
@@ -159,7 +160,7 @@ const TicketInformation: React.FC<Props> = ({ setActiveTab, control }) => {
         name="ticketDescription"
         render={({ field: { value, onChange } }) => (
           <View style={styles.fieldWrap}>
-            <Text style={styles.label}>Ticket Description</Text>
+            <Text style={styles.label}>{i18n.t("CreateEvent.TicketDescription")}</Text>
             <TextInput
               value={value}
               onChangeText={onChange}
@@ -175,7 +176,7 @@ const TicketInformation: React.FC<Props> = ({ setActiveTab, control }) => {
       />
 
       <View style={styles.fieldWrap}>
-        <Text style={styles.label}>Organizers</Text>
+        <Text style={styles.label}>{i18n.t("CreateEvent.Organizers")}</Text>
         <TouchableOpacity style={styles.selectTrigger} onPress={() => setOrganizerOpen(true)} activeOpacity={0.75}>
           <Text style={[styles.selectText, organizers.length === 0 && styles.placeholder]} numberOfLines={1}>
             {organizers.length ? `${organizers.length} organizer${organizers.length === 1 ? "" : "s"} selected` : "Select organizers"}
@@ -232,7 +233,7 @@ const TicketInformation: React.FC<Props> = ({ setActiveTab, control }) => {
                 </ScrollView>
               )}
               <TouchableOpacity style={styles.doneBtn} onPress={() => setOrganizerOpen(false)}>
-                <Text style={styles.doneBtnText}>Done</Text>
+                <Text style={styles.doneBtnText}>{i18n.t("MessageRequests.done")}</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -244,7 +245,7 @@ const TicketInformation: React.FC<Props> = ({ setActiveTab, control }) => {
         name="eventURL"
         render={({ field: { value, onChange } }) => (
           <View style={styles.fieldWrap}>
-            <Text style={styles.label}>Event URL</Text>
+            <Text style={styles.label}>{i18n.t("CreateEvent.EventURL")}</Text>
             <TextInput value={value} onChangeText={onChange} placeholder="Optional event URL" placeholderTextColor="#999" autoCapitalize="none" style={styles.input} />
           </View>
         )}
@@ -309,7 +310,7 @@ const TicketInformation: React.FC<Props> = ({ setActiveTab, control }) => {
       />
 
       <View style={styles.fieldWrap}>
-        <Text style={styles.label}>Event Location</Text>
+        <Text style={styles.label}>{i18n.t("CreateEvent.EventLocation")}</Text>
         <View style={styles.locationWrap}>
           <TextInput
             value={locationQuery}

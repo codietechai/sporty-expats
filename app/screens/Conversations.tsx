@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React from "react";
 import {
     View,
@@ -34,7 +35,7 @@ export default function ConversationScreen({ navigation: navProp }: any) {
                         <Ionicons name="menu" size={22} color="#1a1a1a" />
                     </Pressable>
                     <Text style={styles.headerTitle}>
-                        Conversations
+                        {i18n.t("DirectChat.conversations")}
                     </Text>
                     <View style={{ width: 36 }} />
                 </View>

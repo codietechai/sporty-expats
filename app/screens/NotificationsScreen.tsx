@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React from "react";
 import {
     View, Text, StyleSheet, TouchableOpacity,
@@ -34,9 +35,9 @@ export type Notification = {
 // ── Category pills ────────────────────────────────────────────────────────────
 
 const CATEGORIES: { key: NotificationCategory; label: string }[] = [
-    { key: "all",                label: "All" },
+    { key: "all",                label: i18n.t("Complaints.allStatuses") },
     { key: "accountInformation", label: "Account" },
-    { key: "messages",           label: "Messages" },
+    { key: "messages",           label: i18n.t("DirectChat.title") },
     { key: "invites",            label: "Invites" },
     { key: "mentions",           label: "Mentions" },
     { key: "reminders",          label: "Reminders" },
@@ -141,7 +142,7 @@ function NotifCard({
                                 <Text style={styles.denyText}>Deny</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.acceptBtn}>
-                                <Text style={styles.acceptText}>Accept</Text>
+                                <Text style={styles.acceptText}>{i18n.t("MessageRequests.accept")}</Text>
                             </TouchableOpacity>
                         </View>
                     )}

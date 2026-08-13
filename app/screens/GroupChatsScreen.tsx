@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useUser } from "@clerk/clerk-expo";
@@ -31,7 +32,7 @@ function LoadingShell({ error }: { error?: string | null }) {
                         <Ionicons name="menu" size={22} color="#fff" />
                     </TouchableOpacity>
                     <View style={styles.headerCenter}>
-                        <Text style={styles.headerTitle}>Group Chats</Text>
+                        <Text style={styles.headerTitle}>{i18n.t("NavBar.GroupChats")}</Text>
                         <Text style={styles.headerSub}>Your event group rooms</Text>
                     </View>
                     <View style={{ width: 38 }} />

@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import { GET_ALL_POSTS, getAllPosts } from "@/client/endpoints/posts/getAllPosts";
 import { likePost } from "@/client/endpoints/posts/likePost";
 import { reactToPost, bookmarkPost, addComment, getPostComments } from "@/client/endpoints/posts/postActions";
@@ -171,7 +172,7 @@ function CommentItem({ comment, depth = 0, onReply }: {
           {comment.comment}
         </Text>
         <TouchableOpacity onPress={() => onReply(comment.id, username, name)} hitSlop={8}>
-          <Text style={ci.replyBtn}>Reply</Text>
+          <Text style={ci.replyBtn}>{i18n.t("Dashboard.reply")}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -528,14 +529,14 @@ const PostCard = React.memo(({ post, userId, onUpdate }: {
 
       {/* Counts */}
       <View style={pc.counts}>
-        {post.vote > 0 && <Text style={pc.countTxt}>{post.vote} {post.vote === 1 ? "like" : "likes"}</Text>}
-        {post.total_reactions > 0 && <Text style={pc.countTxt}>{post.total_reactions} {post.total_reactions === 1 ? "reaction" : "reactions"}</Text>}
+        {post.vote > 0 && <Text style={pc.countTxt}>{post.vote} {post.vote === 1 ? "like" : i18n.t("Dashboard.likes")}</Text>}
+        {post.total_reactions > 0 && <Text style={pc.countTxt}>{post.total_reactions} {post.total_reactions === 1 ? "reaction" : i18n.t("Dashboard.reactions")}</Text>}
       </View>
 
       {/* View comments + quick reply bar (Instagram style) */}
       {post.total_comments > 0 && (
         <TouchableOpacity onPress={openComments} style={pc.viewComments}>
-          <Text style={pc.viewCommentsTxt}>View all {post.total_comments} {post.total_comments === 1 ? "comment" : "comments"}</Text>
+          <Text style={pc.viewCommentsTxt}>View all {post.total_comments} {post.total_comments === 1 ? "comment" : i18n.t("Dashboard.commentsLabel")}</Text>
         </TouchableOpacity>
       )}
       <TouchableOpacity style={pc.quickBar} onPress={openComments} activeOpacity={0.7}>

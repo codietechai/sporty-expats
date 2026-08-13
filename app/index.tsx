@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import * as React from "react";
 import "../global.css";
 import { createDrawerNavigator } from "@react-navigation/drawer";
@@ -43,7 +44,7 @@ function DrawerNavigator() {
   return (
     <Drawer.Navigator
       id="MainDrawer"
-      initialRouteName={isSignedIn ? "Dashboard" : "Home"}
+      initialRouteName={isSignedIn ? i18n.t("NavBar.Dashboard") : "Home"}
       backBehavior="history"
       screenOptions={{
         headerShown: true,

@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import { backendClient } from "@/client/backendClient";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { Ionicons } from "@expo/vector-icons";
@@ -60,7 +61,7 @@ const PostStatusBar = () => {
                     <Ionicons name="time-outline" size={16} color="#fbbf24" style={styles.icon} />
                     <Text style={styles.pendingText} numberOfLines={1}>
                         {counts.pending === 1
-                            ? "1 post under review by admin"
+                            ? i18n.t("Dashboard.postUnderReview")
                             : `${counts.pending} posts under review by admin`}
                     </Text>
                     <TouchableOpacity onPress={() => setDismissedPending(true)} hitSlop={10}>

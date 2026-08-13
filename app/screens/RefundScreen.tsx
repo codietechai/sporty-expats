@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useState } from "react";
 import {
     View, Text, ScrollView, TouchableOpacity,
@@ -145,7 +146,7 @@ export default function RefundScreen({ route }: any) {
 
                             {/* Description */}
                             <Text style={styles.label}>
-                                Description <Text style={styles.required}>*</Text>
+                                {i18n.t("Complaints.descriptionLabel")} <Text style={styles.required}>*</Text>
                             </Text>
                             <TextInput
                                 style={styles.textarea}

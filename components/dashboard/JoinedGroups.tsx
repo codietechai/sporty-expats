@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useMemo, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, FlatList } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -52,7 +53,7 @@ const JoinedGroups = () => {
         <View style={styles.stateBox}>
           <Text style={styles.stateText}>{error}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={refetch}>
-            <Text style={styles.retryText}>Retry</Text>
+            <Text style={styles.retryText}>{i18n.t("Complaints.retry")}</Text>
           </TouchableOpacity>
         </View>
       ) : rooms.length === 0 ? (

@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useState } from "react";
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
 import { useWatch, Control } from "react-hook-form";
@@ -34,7 +35,7 @@ const PreviewEvent: React.FC<Props> = ({ setActiveTab, control, onSubmit }) => {
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-      <Text style={styles.sectionTitle}>Preview Event</Text>
+      <Text style={styles.sectionTitle}>{i18n.t("CreateEvent.PreviewEvent")}</Text>
 
       {/* Cover image */}
       {values.coverImage?.fileUrl ? (
@@ -56,9 +57,9 @@ const PreviewEvent: React.FC<Props> = ({ setActiveTab, control, onSubmit }) => {
 
       {/* Info rows */}
       <View style={styles.infoCard}>
-        <InfoRow icon="calendar-outline" label="Start" value={fmt(values.startDate)} />
-        <InfoRow icon="calendar-outline" label="End" value={fmt(values.endDate)} />
-        <InfoRow icon="location-outline" label="Location" value={values.location?.name || "—"} />
+        <InfoRow icon="calendar-outline" label={i18n.t("CreateEvent.Start")} value={fmt(values.startDate)} />
+        <InfoRow icon="calendar-outline" label={i18n.t("CreateEvent.End")} value={fmt(values.endDate)} />
+        <InfoRow icon="location-outline" label={i18n.t("notification.messages.events.reminder.email.eventLocation")} value={values.location?.name || "—"} />
         <InfoRow icon="eye-outline" label="Visibility" value={values.visibility || "Public"} />
         <InfoRow icon="people-outline" label="Attendees" value={`${values.minAttendees || 0} – ${values.maxAttendees || 0}`} />
         <InfoRow
@@ -67,19 +68,19 @@ const PreviewEvent: React.FC<Props> = ({ setActiveTab, control, onSubmit }) => {
           value={String(Math.max(Number(values.availableTickets || 0) - (values.participantOrganizers?.length ?? 0), 0))}
         />
         {values.isPaidEvent && (
-          <InfoRow icon="card-outline" label="Ticket Price" value={`€${values.ticketPrice || 0}`} />
+          <InfoRow icon="card-outline" label={i18n.t("Registration.TicketPrice")} value={`€${values.ticketPrice || 0}`} />
         )}
         {!values.isPaidEvent && (
-          <InfoRow icon="gift-outline" label="Ticket Price" value="Free" />
+          <InfoRow icon="gift-outline" label={i18n.t("Registration.TicketPrice")} value="Free" />
         )}
-        <InfoRow icon="time-outline" label="Payment Deadline" value={fmt(values.paymentDeadline)} />
+        <InfoRow icon="time-outline" label={i18n.t("CreateEvent.paymentDeadline")} value={fmt(values.paymentDeadline)} />
         <InfoRow icon="refresh-outline" label="Refund Deadline" value={fmt(values.refundDeadline)} />
       </View>
 
       {/* Description */}
       {values.description ? (
         <View style={styles.descCard}>
-          <Text style={styles.descLabel}>Description</Text>
+          <Text style={styles.descLabel}>{i18n.t("Complaints.descriptionLabel")}</Text>
           <Text style={styles.descText}>{values.description}</Text>
         </View>
       ) : null}
@@ -87,7 +88,7 @@ const PreviewEvent: React.FC<Props> = ({ setActiveTab, control, onSubmit }) => {
       {/* Organizers */}
       {values.organizers && values.organizers.length > 0 && (
         <View style={styles.descCard}>
-          <Text style={styles.descLabel}>Organizers</Text>
+          <Text style={styles.descLabel}>{i18n.t("CreateEvent.Organizers")}</Text>
           {values.organizers.map((o, i) => (
             <Text key={i} style={styles.organizerText}>• {o}</Text>
           ))}
@@ -120,7 +121,7 @@ const PreviewEvent: React.FC<Props> = ({ setActiveTab, control, onSubmit }) => {
         <TouchableOpacity style={styles.publishBtn} onPress={handlePublish} disabled={loading}>
           {loading
             ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.publishBtnText}>Publish Event</Text>
+            : <Text style={styles.publishBtnText}>{i18n.t("CreateEvent.PublishEvent")}</Text>
           }
         </TouchableOpacity>
       </View>

@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useCallback, useEffect, useState } from "react";
 import {
     View, Text, Image, ScrollView, TouchableOpacity,
@@ -103,7 +104,7 @@ export default function EventInfoScreen({ route }: any) {
                             // Refresh attendee status after withdrawal
                             const updated = await getAttendee(userId, event.id);
                             setAttendee(updated);
-                            Alert.alert("Done", "You have withdrawn from this event.");
+                            Alert.alert(i18n.t("MessageRequests.done"), "You have withdrawn from this event.");
                         } catch {
                             Alert.alert("Error", "Could not withdraw. Please try again.");
                         } finally {
@@ -155,7 +156,7 @@ export default function EventInfoScreen({ route }: any) {
                     <TouchableOpacity onPress={() => navigation.navigate("Events List" as any)} style={styles.backBtn} hitSlop={8}>
                         <Ionicons name="arrow-back" size={22} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Events</Text>
+                    <Text style={styles.headerTitle}>{i18n.t("NavBar.Event")}</Text>
                     <View style={{ width: 38 }} />
                 </View>
 
@@ -222,7 +223,7 @@ export default function EventInfoScreen({ route }: any) {
 
                         {/* Date & Time */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Date & Time</Text>
+                            <Text style={styles.sectionTitle}>{i18n.t("CreateEvent.Date&Time")}</Text>
                             <View style={styles.dateRow}>
                                 <Ionicons name="calendar-outline" size={15} color="#2ecc71" />
                                 <Text style={styles.dateText}>{formatDate(event.startDate)}</Text>
@@ -236,7 +237,7 @@ export default function EventInfoScreen({ route }: any) {
                         {/* Payment deadline */}
                         {event.paymentDeadline && (
                             <View style={styles.section}>
-                                <Text style={styles.sectionTitle}>Payment Deadline</Text>
+                                <Text style={styles.sectionTitle}>{i18n.t("CreateEvent.paymentDeadline")}</Text>
                                 <View style={styles.deadlineRow}>
                                     <Text style={[styles.deadlineText, isPast(event.paymentDeadline) && styles.textDanger, isApproaching(event.paymentDeadline) && styles.textWarn]}>
                                         {formatDate(event.paymentDeadline)}
@@ -263,7 +264,7 @@ export default function EventInfoScreen({ route }: any) {
 
                         {/* Location */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Event Location</Text>
+                            <Text style={styles.sectionTitle}>{i18n.t("CreateEvent.EventLocation")}</Text>
                             <View style={styles.locationRow}>
                                 <Ionicons name="location-outline" size={15} color="#2ecc71" />
                                 <Text style={styles.locationText}>{event.location?.name ?? "—"}</Text>
@@ -296,7 +297,7 @@ export default function EventInfoScreen({ route }: any) {
 
                         {/* Organizers */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Organizers</Text>
+                            <Text style={styles.sectionTitle}>{i18n.t("CreateEvent.Organizers")}</Text>
                             {event.organizers.map((org, i) => (
                                 <Text key={i} style={styles.organizerText}>@{org}</Text>
                             ))}
@@ -306,7 +307,7 @@ export default function EventInfoScreen({ route }: any) {
 
                         {/* Description */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Event Description</Text>
+                            <Text style={styles.sectionTitle}>{i18n.t("CreateEvent.EventDescription")}</Text>
                             <Text style={styles.description}>{event.description}</Text>
                         </View>
 

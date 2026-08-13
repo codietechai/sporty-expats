@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, StatusBar, Image,
@@ -52,7 +53,7 @@ export default function Profile(props: DrawerContentComponentProps) {
             <Ionicons name="menu" size={22} color="#fff" />
           </TouchableOpacity>
           <View style={s.headerCenter}>
-            <Text style={s.headerTitle}>Profile</Text>
+            <Text style={s.headerTitle}>{i18n.t("NavBar.Profile")}</Text>
             <Text style={s.headerSub}>Manage your account</Text>
           </View>
           <TouchableOpacity style={s.menuBtn} hitSlop={8} onPress={() => props.navigation.navigate("Notifications" as any)}>

@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useMemo, useState } from "react";
 import {
     View, Text, FlatList, TouchableOpacity, TextInput,
@@ -86,7 +87,7 @@ export default function GroupChatsContent() {
                     >
                         <Ionicons name="menu" size={22} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Group Chats</Text>
+                    <Text style={styles.headerTitle}>{i18n.t("NavBar.GroupChats")}</Text>
                     <TouchableOpacity
                         style={styles.bellBtn}
                         hitSlop={8}
@@ -154,7 +155,7 @@ export default function GroupChatsContent() {
                         <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
                         <Text style={styles.stateText}>{error}</Text>
                         <TouchableOpacity style={styles.retryBtn} onPress={refetch}>
-                            <Text style={styles.retryText}>Retry</Text>
+                            <Text style={styles.retryText}>{i18n.t("Complaints.retry")}</Text>
                         </TouchableOpacity>
                     </View>
                 ) : rooms.length === 0 ? (
@@ -207,7 +208,7 @@ export default function GroupChatsContent() {
                                         onPress={() => setPage(Math.min(totalPages, page + 1))}
                                         disabled={page === totalPages}
                                     >
-                                        <Text style={[styles.pageBtnText, page === totalPages && styles.pageBtnTextDisabled]}>Next</Text>
+                                        <Text style={[styles.pageBtnText, page === totalPages && styles.pageBtnTextDisabled]}>{i18n.t("DirectChat.next")}</Text>
                                         <Ionicons name="chevron-forward" size={16} color={page === totalPages ? "#374151" : "#fff"} />
                                     </TouchableOpacity>
                                 </View>

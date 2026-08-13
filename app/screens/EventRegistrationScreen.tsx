@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useState } from "react";
 import {
     View, Text, ScrollView, TouchableOpacity,
@@ -377,7 +378,7 @@ export default function EventRegistrationScreen({ route }: any) {
                     {activeStep === "Select Ticket" && (
                         <View style={styles.stepContent}>
                             <View style={styles.priceRow}>
-                                <Text style={styles.sectionTitle}>Select Ticket</Text>
+                                <Text style={styles.sectionTitle}>{i18n.t("Registration.SelectTicket")}</Text>
                                 <View style={styles.priceBadge}>
                                     <Text style={styles.priceText}>
                                         {isFree ? "Free" : `€${totalPrice.toFixed(2)}`}
@@ -409,7 +410,7 @@ export default function EventRegistrationScreen({ route }: any) {
                             <InlineAlert message={stepError} />
 
                             <TouchableOpacity style={styles.primaryBtn} onPress={goNext}>
-                                <Text style={styles.primaryBtnText}>Continue</Text>
+                                <Text style={styles.primaryBtnText}>{i18n.t("SignUp.Continues")}</Text>
                             </TouchableOpacity>
                         </View>
                     )}
@@ -418,7 +419,7 @@ export default function EventRegistrationScreen({ route }: any) {
                     {activeStep === "Assign Participants" && (
                         <View style={styles.stepContent}>
                             <View style={styles.priceRow}>
-                                <Text style={styles.sectionTitle}>Assign Participants</Text>
+                                <Text style={styles.sectionTitle}>{i18n.t("Registration.AssignParticipants")}</Text>
                                 <View style={styles.priceBadge}>
                                     <Text style={styles.priceText}>
                                         {isFree ? "Free" : `€${totalPrice.toFixed(2)}`}
@@ -454,7 +455,7 @@ export default function EventRegistrationScreen({ route }: any) {
                                         </Text>
 
                                         <Text style={styles.fieldLabel}>
-                                            Full Name <Text style={styles.required}>*</Text>
+                                            {i18n.t("Registration.FullName")} <Text style={styles.required}>*</Text>
                                         </Text>
                                         <TextInput
                                             style={[
@@ -470,7 +471,7 @@ export default function EventRegistrationScreen({ route }: any) {
                                         />
 
                                         <Text style={styles.fieldLabel}>
-                                            Email <Text style={styles.required}>*</Text>
+                                            {i18n.t("CreateEvent.Email")} <Text style={styles.required}>*</Text>
                                         </Text>
                                         <TextInput
                                             style={[
@@ -517,7 +518,7 @@ export default function EventRegistrationScreen({ route }: any) {
                             <InlineAlert message={stepError} />
 
                             <TouchableOpacity style={styles.primaryBtn} onPress={goNext}>
-                                <Text style={styles.primaryBtnText}>Continue</Text>
+                                <Text style={styles.primaryBtnText}>{i18n.t("SignUp.Continues")}</Text>
                             </TouchableOpacity>
                         </View>
                     )}

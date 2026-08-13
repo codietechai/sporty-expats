@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Modal, View, Text, TextInput, TouchableOpacity, FlatList, ScrollView, StyleSheet } from "react-native";
 import { useWatch, Control, useFormContext } from "react-hook-form";
@@ -93,7 +94,7 @@ const InviteMembers: React.FC<Props> = ({ setActiveTab, control }) => {
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-      <Text style={styles.sectionTitle}>Invite Members</Text>
+      <Text style={styles.sectionTitle}>{i18n.t("CreateEvent.InviteMembers")}</Text>
       <Text style={styles.subtitle}>Mark organizers as participants and select members to invite</Text>
 
       {organizers.length > 0 && (

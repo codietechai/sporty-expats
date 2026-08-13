@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
@@ -24,7 +25,7 @@ const COLS = 3;
 const ITEM_SIZE = (SCREEN_WIDTH - GAP * (COLS + 1)) / COLS;
 
 const FILTER_TABS = [
-  { key: "all", label: "All" },
+  { key: "all", label: i18n.t("Complaints.allStatuses") },
   { key: "week", label: "This Week" },
   { key: "month", label: "This Month" },
   { key: "year", label: "This Year" },
@@ -139,7 +140,7 @@ const MediaUploadScreen = () => {
             <Ionicons name="menu" size={22} color="#fff" />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>Media</Text>
+            <Text style={styles.headerTitle}>{i18n.t("NavBar.Media")}</Text>
             <Text style={styles.headerSub}>{userName}'s uploads</Text>
           </View>
           <TouchableOpacity style={styles.menuBtn} hitSlop={8} onPress={() => navigation.navigate("Notifications" as never)}>

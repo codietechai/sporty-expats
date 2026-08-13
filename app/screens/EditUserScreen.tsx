@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React from "react";
 import {
     View,
@@ -49,7 +50,7 @@ export default function EditUserScreen() {
                         <Text style={styles.sectionTitle}>Personal Details</Text>
                         <View style={styles.row}>
                             <Input label="Name" placeholder="Lucy Jane" />
-                            <Input label="Email" placeholder="lucyjane@mail.com" />
+                            <Input label={i18n.t("CreateEvent.Email")} placeholder="lucyjane@mail.com" />
                         </View>
 
                         <Text style={[styles.sectionTitle, { marginTop: 24 }]}>

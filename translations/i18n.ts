@@ -4,9 +4,14 @@ import * as Localization from "expo-localization";
 import { webHomeTranslations } from "./webHomeTranslations";
 import { sidebarTranslations } from "./sidebarTransaltions";
 import { footerTranslations } from "./footerTranslations";
+import en from "./en.json";
+import fr from "./fr.json";
 
 
-const getDeviceLanguage = () => Localization.locale.split("-")[0] || "fr"; 
+const getDeviceLanguage = () => {
+  const languageCode = Localization.getLocales()[0]?.languageCode;
+  return languageCode === "fr" ? "fr" : "en";
+};
 
 i18n
   .use(initReactI18next)
@@ -14,11 +19,13 @@ i18n
     compatibilityJSON: "v4",
     resources: {
       en: {
+        translation: en,
         webHome: webHomeTranslations.en,
         sidebar:sidebarTranslations.en,
         footer:footerTranslations.en,
       },
       fr: {
+        translation: fr,
         webHome: webHomeTranslations.fr,
         sidebar:sidebarTranslations.fr,
         footer:footerTranslations.fr,
@@ -26,7 +33,7 @@ i18n
     },
     
     lng: getDeviceLanguage(),
-    fallbackLng: "fr",
+    fallbackLng: "en",
     interpolation: {
       escapeValue: false, 
     },

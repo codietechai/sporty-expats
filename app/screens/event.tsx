@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useEffect, useRef } from "react";
 import {
   View,
@@ -130,7 +131,7 @@ export default function Event() {
       <View style={styles.activitiesHeading}>
         <Text style={styles.activitiesLine1}>ORGANISE YOUR</Text>
         <Text style={styles.activitiesLine2}>
-          OWN ::: <Text style={styles.activitiesGreen}>ACTIVITIES</Text>
+          OWN ::: <Text style={styles.activitiesGreen}>{i18n.t("LandingPageSecondSection.ACTIVITIES")}</Text>
         </Text>
       </View>
 

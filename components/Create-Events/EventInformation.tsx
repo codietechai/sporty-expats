@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useState } from "react";
 import { Modal, Text, TextInput, View, TouchableOpacity, StyleSheet } from "react-native";
 import { ScrollView } from "react-native";
@@ -46,14 +47,14 @@ const Event_Information: React.FC<Props> = ({ setActiveTab, control }) => {
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-      <Text style={styles.sectionTitle}>Event Information</Text>
+      <Text style={styles.sectionTitle}>{i18n.t("CreateEvent.EventInformation")}</Text>
 
       <Controller
         control={control}
         name="title"
         render={({ field: { value, onChange } }) => (
           <View style={styles.fieldWrap}>
-            <Text style={styles.label}>Event Title</Text>
+            <Text style={styles.label}>{i18n.t("CreateEvent.EventTitle")}</Text>
             <TextInput
               value={value}
               onChangeText={onChange}
@@ -70,7 +71,7 @@ const Event_Information: React.FC<Props> = ({ setActiveTab, control }) => {
         name="category"
         render={({ field: { value, onChange } }) => (
           <View style={styles.fieldWrap}>
-            <Text style={styles.label}>Event Category</Text>
+            <Text style={styles.label}>{i18n.t("CreateEvent.EventCategory")}</Text>
             <TouchableOpacity style={styles.selectTrigger} onPress={() => setCategoryOpen(true)} activeOpacity={0.75}>
               <Text style={[styles.selectText, !value && styles.placeholder]}>
                 {value || "Select a category"}
@@ -109,7 +110,7 @@ const Event_Information: React.FC<Props> = ({ setActiveTab, control }) => {
             control={control}
             name="startDate"
             render={({ field: { value, onChange } }) => (
-              <DatePickerField label="Start Date & Time" value={value} onChange={onChange} mode="datetime" minimumDate={new Date()} />
+              <DatePickerField label={i18n.t("CreateEvent.StartDate&Time")} value={value} onChange={onChange} mode="datetime" minimumDate={new Date()} />
             )}
           />
         </View>
@@ -125,7 +126,7 @@ const Event_Information: React.FC<Props> = ({ setActiveTab, control }) => {
                 : new Date();
               return (
                 <DatePickerField
-                  label="End Date & Time"
+                  label={i18n.t("CreateEvent.EndDate&Time")}
                   value={value}
                   onChange={onChange}
                   mode="datetime"
@@ -142,7 +143,7 @@ const Event_Information: React.FC<Props> = ({ setActiveTab, control }) => {
         name="paymentDeadline"
         render={({ field: { value, onChange } }) => (
           <DatePickerField
-            label="Payment Deadline"
+            label={i18n.t("CreateEvent.paymentDeadline")}
             value={value}
             onChange={onChange}
             mode="datetime"
@@ -156,7 +157,7 @@ const Event_Information: React.FC<Props> = ({ setActiveTab, control }) => {
         name="refundDeadline"
         render={({ field: { value, onChange } }) => (
           <DatePickerField
-            label="Refund Notice Deadline"
+            label={i18n.t("CreateEvent.RefundNoticeDeadline")}
             value={value ? new Date(value) : new Date()}
             onChange={(d) => onChange(d.toISOString())}
             mode="datetime"
@@ -170,7 +171,7 @@ const Event_Information: React.FC<Props> = ({ setActiveTab, control }) => {
         name="description"
         render={({ field: { value, onChange } }) => (
           <View style={styles.fieldWrap}>
-            <Text style={styles.label}>Event Description</Text>
+            <Text style={styles.label}>{i18n.t("CreateEvent.EventDescription")}</Text>
             <TextInput
               value={value}
               onChangeText={onChange}

@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import { GET_ALL_STORIES, getAllStories } from "@/client/endpoints/posts/getAllStories";
 import { createStory } from "@/client/endpoints/posts/addStories";
 import { useUserDb } from "@/app/hooks/useUserDb";
@@ -145,7 +146,7 @@ function StoryUploadModal({
 
               <View style={um.btnRow}>
                 <TouchableOpacity style={um.cancelBtn} onPress={onClose} disabled={uploading}>
-                  <Text style={um.cancelText}>Cancel</Text>
+                  <Text style={um.cancelText}>{i18n.t("MessageRequests.cancel")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[um.uploadBtn, uploading && um.uploadBtnDisabled]}
@@ -154,7 +155,7 @@ function StoryUploadModal({
                 >
                   {uploading
                     ? <ActivityIndicator color="#fff" size="small" />
-                    : <Text style={um.uploadText}>Upload</Text>
+                    : <Text style={um.uploadText}>{i18n.t("Dashboard.upload")}</Text>
                   }
                 </TouchableOpacity>
               </View>
@@ -363,7 +364,7 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
                   <View style={styles.addPostIcon}>
                     <Ionicons name="add" size={22} color="#2ecc71" />
                   </View>
-                  <Text style={styles.tileLabel}>New Post</Text>
+                  <Text style={styles.tileLabel}>{i18n.t("NavBar.newPost")}</Text>
                 </TouchableOpacity>
               );
             }
@@ -384,7 +385,7 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
                     <View style={styles.uploadBadge}>
                       <Ionicons name="add" size={12} color="#fff" />
                     </View>
-                    <Text style={styles.tileLabel}>Upload{"\n"}New Story</Text>
+                    <Text style={styles.tileLabel}>{i18n.t("Dashboard.upload")}{"\n"}{i18n.t("Dashboard.newStory")}</Text>
                   </TouchableOpacity>
                 </View>
               );
@@ -412,7 +413,7 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
                       color={isRejected ? "#f87171" : "rgba(255,255,255,0.4)"}
                     />
                     <Text style={[styles.statusLabel, isRejected && styles.statusLabelRejected]}>
-                      {isRejected ? "Rejected" : "Under\nreview"}
+                      {isRejected ? i18n.t("Complaints.statusRejected") : i18n.t("Dashboard.underReview")}
                     </Text>
                   </View>
                   <View style={[styles.countBadge, isRejected && styles.countBadgeRejected]}>
@@ -498,7 +499,7 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
                   color={previewIsRejected ? "#f87171" : "#fbbf24"}
                 />
                 <Text style={[styles.statusBadgeText, previewIsRejected && styles.statusBadgeTextRejected]}>
-                  {previewIsRejected ? "Rejected" : "Under Review"}
+                  {previewIsRejected ? i18n.t("Complaints.statusRejected") : "Under Review"}
                 </Text>
               </View>
               <Text style={styles.viewerName}>

@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -120,7 +121,7 @@ const AddFeedForm = () => {
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.pageTitle}>New Post</Text>
+      <Text style={styles.pageTitle}>{i18n.t("NavBar.newPost")}</Text>
 
 
 
@@ -128,7 +129,7 @@ const AddFeedForm = () => {
       <View style={styles.detailsCard}>
         <Text style={styles.cardTitle}>Post Details</Text>
 
-        <Text style={styles.fieldLabel}>Description</Text>
+        <Text style={styles.fieldLabel}>{i18n.t("Complaints.descriptionLabel")}</Text>
         <View style={styles.textAreaWrap}>
           <TextInput
             style={styles.textArea}

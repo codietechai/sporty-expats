@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     View,
@@ -268,9 +269,9 @@ export function GroupRoomView({ room, currentUserId, currentUserImage, onClose }
                         <Text style={styles.infoTitle}>{meta.title}</Text>
                         {meta.category && <Text style={styles.infoCategory}>{meta.category}</Text>}
                         {meta.description && <Text style={styles.infoDesc}>{meta.description}</Text>}
-                        {meta.startDate && <InfoRow label="Start" value={formatEventDate(meta.startDate)} />}
-                        {meta.endDate && <InfoRow label="End" value={formatEventDate(meta.endDate)} />}
-                        {meta.location?.name && <InfoRow label="Location" value={meta.location.name} />}
+                        {meta.startDate && <InfoRow label={i18n.t("CreateEvent.Start")} value={formatEventDate(meta.startDate)} />}
+                        {meta.endDate && <InfoRow label={i18n.t("CreateEvent.End")} value={formatEventDate(meta.endDate)} />}
+                        {meta.location?.name && <InfoRow label={i18n.t("notification.messages.events.reminder.email.eventLocation")} value={meta.location.name} />}
                         {meta.isPaidEvent && meta.ticketPrice != null && (
                             <InfoRow label="Ticket" value={`€${meta.ticketPrice}`} />
                         )}

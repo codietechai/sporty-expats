@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import { Button } from "@react-navigation/elements";
 import { useNavigation } from "@react-navigation/native";
 import { DrawerNavigationProp } from "@react-navigation/drawer";
@@ -15,7 +16,7 @@ export default function AboutUs() {
         <TouchableOpacity style={s.menuBtn} onPress={() => drawer?.openDrawer?.()} hitSlop={8}>
           <Ionicons name="menu" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={s.title}>About Us</Text>
+        <Text style={s.title}>{i18n.t("NavBar.AboutUs")}</Text>
         <View style={{ width: 38 }} />
       </View>
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>

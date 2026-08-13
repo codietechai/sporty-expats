@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React from "react";
 import { View, TextInput, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -7,7 +8,7 @@ export default function ChatInput() {
     <View style={styles.container}>
       <View style={styles.inputBox}>
         <TextInput
-          placeholder="Message"
+          placeholder={i18n.t("MessageRequests.messageLabel")}
           placeholderTextColor="#9CA3AF"
           style={styles.input}
           multiline

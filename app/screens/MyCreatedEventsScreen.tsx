@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useMemo, useState } from "react";
 import {
     Animated,
@@ -185,7 +186,7 @@ export default function MyCreatedEventsScreen() {
                     <Ionicons name="alert-circle-outline" size={52} color="#EF4444" />
                     <Text style={styles.stateText}>Failed to load your events</Text>
                     <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()}>
-                        <Text style={styles.retryBtnText}>Retry</Text>
+                        <Text style={styles.retryBtnText}>{i18n.t("Complaints.retry")}</Text>
                     </TouchableOpacity>
                 </View>
             ) : events.length === 0 ? (

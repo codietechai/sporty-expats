@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useState } from "react";
 import { Alert, View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { Control, useFormContext } from "react-hook-form";
@@ -112,7 +113,7 @@ const CreteEventTabsComponent: React.FC<Props> = ({ tabs, control, onSubmit }) =
                 <Text style={[styles.stepLabel, isActive && styles.stepLabelActive]}>
                   {tab.label}
                 </Text>
-                {isDone && <Text style={styles.stepDone}>Done</Text>}
+                {isDone && <Text style={styles.stepDone}>{i18n.t("MessageRequests.done")}</Text>}
               </TouchableOpacity>
             );
           })}

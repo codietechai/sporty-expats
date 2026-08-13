@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Platform, Modal, StyleSheet } from "react-native";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
@@ -76,7 +77,7 @@ export default function DatePickerField({ label, value, onChange, mode = "dateti
                             <View style={styles.modalHeader}>
                                 <Text style={styles.modalTitle}>{label}</Text>
                                 <TouchableOpacity onPress={() => setShow(false)}>
-                                    <Text style={styles.doneBtn}>Done</Text>
+                                    <Text style={styles.doneBtn}>{i18n.t("MessageRequests.done")}</Text>
                                 </TouchableOpacity>
                             </View>
                             <DateTimePicker

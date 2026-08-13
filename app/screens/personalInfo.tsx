@@ -1,3 +1,4 @@
+import i18n from "@/translations/i18n";
 import React, { useEffect, useState } from "react";
 import {
   Text,
@@ -46,8 +47,8 @@ const visibilityOptions = [
 ];
 
 const genderOptions = [
-  { label: "Male", value: "Male" },
-  { label: "Female", value: "Female" },
+  { label: i18n.t("SignUp.Gender.Male"), value: "Male" },
+  { label: i18n.t("SignUp.Gender.Female"), value: "Female" },
   { label: "Non-binary", value: "Non-binary" },
   { label: "Prefer not to say", value: "Prefer not to say" },
 ];
@@ -298,7 +299,7 @@ export default function PersonalInfo() {
             {/* Account */}
             <SectionHeader title="Account" />
             <View style={styles.card}>
-              <StyledInput label="Username" value={formData.username} onChangeText={set("username")} placeholder="Enter your username" />
+              <StyledInput label={i18n.t("SignUp.Username")} value={formData.username} onChangeText={set("username")} placeholder="Enter your username" />
               <View style={styles.divider} />
               <PickerField label="Visibility" value={formData.visibility} onValueChange={set("visibility")} items={visibilityOptions} placeholder="Select visibility" />
             </View>
@@ -317,15 +318,15 @@ export default function PersonalInfo() {
                 </View>
               </View>
               <View style={styles.divider} />
-              <PickerField label="Gender" value={formData.gender} onValueChange={set("gender")} items={genderOptions} placeholder="Select gender" />
+              <PickerField label={i18n.t("SignUp.Gender.Gender")} value={formData.gender} onValueChange={set("gender")} items={genderOptions} placeholder="Select gender" />
               <View style={styles.divider} />
-              <StyledInput label="Phone Number" value={formData.phone} onChangeText={set("phone")} placeholder="Enter your phone number" keyboardType="phone-pad" />
+              <StyledInput label={i18n.t("Registration.PhNumber")} value={formData.phone} onChangeText={set("phone")} placeholder="Enter your phone number" keyboardType="phone-pad" />
               <View style={styles.divider} />
               <PickerField label="Language" value={formData.language} onValueChange={set("language")} items={languageOptions} placeholder="Select your language" />
             </View>
 
             {/* Location */}
-            <SectionHeader title="Location" />
+            <SectionHeader title={i18n.t("notification.messages.events.created.email.eventLocation")} />
             <View style={styles.card}>
               <PickerField label="Country" value={formData.country} onValueChange={set("country")} items={countries} placeholder="Select your country" />
               <View style={styles.divider} />
