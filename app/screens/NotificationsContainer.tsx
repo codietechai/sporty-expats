@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNotificationsContext } from "@/contexts/NotificationsContext";
-import NotificationsScreen, { NotificationCategory } from "./NotificationsScreen";
+import NotificationsScreen, { NotificationCategory, Notification } from "./NotificationsScreen";
 import type { NotificationType } from "@sparkstrand/notifications-react";
+import { useNavigation } from "@react-navigation/native";
+import { getEventById } from "@/client/endpoints/events/getEventById";
 
 // Map UI category keys → SDK NotificationType
 const CATEGORY_TO_SDK: Partial<Record<NotificationCategory, NotificationType>> = {
@@ -27,6 +29,7 @@ function countsByCategory(
 }
 
 export default function NotificationsContainer() {
+    const navigation = useNavigation<any>();
     const {
         notifications,
         unreadCount,
@@ -78,6 +81,48 @@ export default function NotificationsContainer() {
         ? pagination.page < pagination.totalPages
         : false;
 
+    const handleNavigate = useCallback(async (notification: Notification) => {
+        const { metadata, actionUrl } = notification;
+
+        // Post notification — navigate to single post view
+        if (metadata?.postId) {
+            navigation.navigate("Post", { postId: metadata.postId });
+            return;
+        }
+
+        // Event notification — fetch event and navigate to EventInfo
+        if (metadata?.eventId) {
+            try {
+                const event = await getEventById(metadata.eventId);
+                navigation.navigate("EventInfo", { event });
+            } catch {
+                // Event fetch failed — fallback to events list
+                navigation.navigate("Events List");
+            }
+            return;
+        }
+
+        // Generic actionUrl fallback (e.g. deep link string)
+        if (actionUrl) {
+            // actionUrl may encode a screen name like "event/<id>" or "post/<id>"
+            const eventMatch = actionUrl.match(/event[s]?[\/\-]([a-zA-Z0-9_-]+)/i);
+            const postMatch = actionUrl.match(/post[s]?[\/\-]([a-zA-Z0-9_-]+)/i);
+            if (eventMatch?.[1]) {
+                try {
+                    const event = await getEventById(eventMatch[1]);
+                    navigation.navigate("EventInfo", { event });
+                } catch {
+                    navigation.navigate("Events List");
+                }
+                return;
+            }
+            if (postMatch?.[1]) {
+                navigation.navigate("Post", { postId: postMatch[1] });
+                return;
+            }
+        }
+    }, [navigation]);
+
     const categoryCounts = useMemo(
         () => countsByCategory(notifications as any),
         [notifications]
@@ -114,6 +159,7 @@ export default function NotificationsContainer() {
             categoryCounts={categoryCounts}
             activeCategory={activeCategory}
             onCategoryChange={handleCategoryChange}
+            onNavigate={handleNavigate}
         />
     );
 }

@@ -34,6 +34,7 @@ import MyCreatedEventsScreen from "./screens/MyCreatedEventsScreen";
 
 import RefundScreen from "./screens/RefundScreen";
 import NotificationsContainer from "./screens/NotificationsContainer";
+import SinglePostScreen from "./screens/SinglePostScreen";
 
 const Drawer = createDrawerNavigator<any, "MainDrawer">();
 
@@ -121,6 +122,11 @@ function DrawerNavigator() {
         name="Notifications"
         component={NotificationsContainer}
         options={{ drawerLabel: "Notifications", drawerItemStyle: { display: "none" }, headerShown: false }}
+      />
+      <Drawer.Screen
+        name="Post"
+        component={SinglePostScreen}
+        options={{ drawerLabel: "Post", drawerItemStyle: { display: "none" }, headerShown: false }}
       />
 
       <Drawer.Screen

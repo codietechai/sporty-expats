@@ -45,6 +45,9 @@ export default function EventInfoScreen({ route }: any) {
     const [isOrganizer, setIsOrganizer] = useState(false);
     const [statusLoading, setStatusLoading] = useState(true);
     const [withdrawing, setWithdrawing] = useState(false);
+    // Preserve ticket count at the moment of registration — the backend may
+    // return ticketsAssigned as 0 or null after status flips to "Withdrew"
+    const [ticketsAtRegistration, setTicketsAtRegistration] = useState<number>(1);
 
     const { userDb } = useUserDb();
     const userId: string | undefined = userDb?.data?.id ?? userDb?.id;
@@ -78,7 +81,13 @@ export default function EventInfoScreen({ route }: any) {
                 .then(setEvent)
                 .catch(() => {});
             getAttendee(userId, event.id)
-                .then(setAttendee)
+                .then((data) => {
+                    setAttendee(data);
+                    // Capture ticket count while status is active (before any withdrawal)
+                    if (data && data.attendantStatus !== "Withdrew" && (data.ticketsAssigned ?? 0) > 0) {
+                        setTicketsAtRegistration(data.ticketsAssigned);
+                    }
+                })
                 .catch(() => setAttendee(null))
                 .finally(() => setStatusLoading(false));
         }, [userId, event?.id, username])
@@ -98,10 +107,13 @@ export default function EventInfoScreen({ route }: any) {
                     text: "Withdraw",
                     style: "destructive",
                     onPress: async () => {
+                        // Snapshot ticket count NOW before status changes
+                        if (attendee && (attendee.ticketsAssigned ?? 0) > 0) {
+                            setTicketsAtRegistration(attendee.ticketsAssigned);
+                        }
                         setWithdrawing(true);
                         try {
                             await withdrawParticipation(userId, event.id);
-                            // Refresh attendee status after withdrawal
                             const updated = await getAttendee(userId, event.id);
                             setAttendee(updated);
                             Alert.alert(i18n.t("MessageRequests.done"), "You have withdrawn from this event.");
@@ -359,7 +371,7 @@ export default function EventInfoScreen({ route }: any) {
                                             style={[styles.registerBtn, styles.refundBtn]}
                                             onPress={() => navigation.navigate("Refund" as any, {
                                                 event,
-                                                ticketsAssigned: attendee?.ticketsAssigned ?? 1,
+                                                ticketsAssigned: ticketsAtRegistration,
                                             })}
                                         >
                                             <Text style={styles.registerBtnText}>Request Refund</Text>

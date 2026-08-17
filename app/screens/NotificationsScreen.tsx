@@ -72,6 +72,7 @@ type Props = {
     categoryCounts: Record<NotificationCategory, number>;
     activeCategory: NotificationCategory;
     onCategoryChange: (cat: NotificationCategory) => void;
+    onNavigate: (notification: Notification) => void;
 };
 
 // ── Notification card ─────────────────────────────────────────────────────────
@@ -80,19 +81,27 @@ function NotifCard({
     item,
     onMarkAsRead,
     onDelete,
+    onNavigate,
 }: {
     item: Notification;
     onMarkAsRead: (id: string) => void;
     onDelete: (id: string) => void;
+    onNavigate: (n: Notification) => void;
 }) {
     const sender = item.metadata?.senderName ?? item.metadata?.userName ?? "";
     const showBody = (item.type === "INFO" || item.type === "MARKETING") && !!item.pushBody;
     const isInvite = item.type === "ALERT";
+    const isNavigable = !!(item.metadata?.postId || item.metadata?.eventId || item.actionUrl);
+
+    const handlePress = () => {
+        if (!item.isRead) onMarkAsRead(item.id);
+        if (isNavigable) onNavigate(item);
+    };
 
     return (
         <TouchableOpacity
             style={[styles.card, !item.isRead && styles.cardUnread]}
-            onPress={() => { if (!item.isRead) onMarkAsRead(item.id); }}
+            onPress={handlePress}
             activeOpacity={0.85}
         >
             {/* Unread accent bar */}
@@ -146,6 +155,13 @@ function NotifCard({
                             </TouchableOpacity>
                         </View>
                     )}
+
+                    {isNavigable && (
+                        <View style={styles.tapHint}>
+                            <Text style={styles.tapHintText}>Tap to view</Text>
+                            <Ionicons name="chevron-forward" size={13} color="#2ecc71" />
+                        </View>
+                    )}
                 </View>
             </View>
         </TouchableOpacity>
@@ -184,6 +200,7 @@ export default function NotificationsScreen({
     categoryCounts,
     activeCategory,
     onCategoryChange,
+    onNavigate,
 }: Props) {
     const navigation = useNavigation<any>();
 
@@ -277,6 +294,7 @@ export default function NotificationsScreen({
                                 item={item}
                                 onMarkAsRead={onMarkAsRead}
                                 onDelete={onDelete}
+                                onNavigate={onNavigate}
                             />
                         )}
                         contentContainerStyle={styles.list}
@@ -434,4 +452,8 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     acceptText: { color: "#2ecc71", fontSize: 13, fontWeight: "700" },
+    tapHint: {
+        flexDirection: "row", alignItems: "center", gap: 3, marginTop: 2,
+    },
+    tapHintText: { color: "#2ecc71", fontSize: 11, fontWeight: "600" },
 });
