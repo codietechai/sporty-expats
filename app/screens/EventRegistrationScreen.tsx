@@ -283,13 +283,41 @@ export default function EventRegistrationScreen({ route }: any) {
             const payerName = firstTicket.name.trim() || username || "Guest";
             const payerEmail = firstTicket.email.trim() || userEmail || `${userId}@sportyexpats.app`;
 
-            const ticketsInfo: TicketInfo[] = tickets.map((t) => ({
-                name: t.name.trim() || payerName,
-                email: t.email.trim() || payerEmail,
-                phone: t.phone ?? "",
-                numTickets: 1,
-                note: t.note ?? "",
-            }));
+            // Build ticketsInfo matching web app behaviour:
+            // The payer always gets one entry with numTickets = participants (total tickets bought).
+            // Each additional guest gets their own entry with numTickets = 1.
+            // This ensures the backend writes ticketsAssigned = participants for the payer.
+            const payerEntry: TicketInfo = {
+                name: payerName,
+                email: payerEmail,
+                phone: tickets[0]?.phone ?? "",
+                numTickets: participants,
+                note: tickets[0]?.note ?? "",
+            };
+
+            // Guest entries — slots 1..N that have a different email from the payer
+            const guestEntries: TicketInfo[] = tickets
+                .slice(1)
+                .filter((t) => t.email.trim() && t.email.trim().toLowerCase() !== payerEmail.toLowerCase())
+                .map((t) => ({
+                    name: t.name.trim() || payerName,
+                    email: t.email.trim(),
+                    phone: t.phone ?? "",
+                    numTickets: 1,
+                    note: t.note ?? "",
+                }));
+
+            const dedupedTicketsInfo = [payerEntry, ...guestEntries];
+
+            // The backend counts `othersCount = tickets whose email ≠ payer.email`.
+            // On web, payer.email comes from PayPal (a PayPal account email) so ALL
+            // ticket emails differ → othersCount = all participants.
+            // On mobile we must mirror this: use a system placeholder as payer.email
+            // so all ticket entries count as "others", giving the correct total.
+            const systemPayerEmail = `mobile-payment+${userId}@sportyexpats.app`;
+
+            console.log("[Registration] participants:", participants);
+            console.log("[Registration] ticketsInfo:", JSON.stringify(dedupedTicketsInfo, null, 2));
 
             if (isFree) {
                 setPaymentStatus("Registering...");
@@ -297,9 +325,9 @@ export default function EventRegistrationScreen({ route }: any) {
                     userId,
                     eventId: event.id,
                     participants,
-                    tickets: ticketsInfo,
+                    tickets: dedupedTicketsInfo,
                     payerName,
-                    payerEmail,
+                    payerEmail: systemPayerEmail,
                 });
             } else {
                 const card: CardDetails = {
@@ -308,7 +336,6 @@ export default function EventRegistrationScreen({ route }: any) {
                     expirationDate,
                     cvv,
                 };
-                // Runs all 4 steps: createOrder → confirmPaymentSource → captureOrder → recordPayment
                 setPaymentStatus("Creating order...");
                 await processPaypalPayment({
                     userId,
@@ -316,8 +343,8 @@ export default function EventRegistrationScreen({ route }: any) {
                     participants,
                     amount: totalPrice,
                     payerName,
-                    payerEmail,
-                    tickets: ticketsInfo,
+                    payerEmail: systemPayerEmail,
+                    tickets: dedupedTicketsInfo,
                     card,
                 }, setPaymentStatus);
             }
