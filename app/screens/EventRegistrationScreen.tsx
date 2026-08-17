@@ -1,8 +1,8 @@
 import i18n from "@/translations/i18n";
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
     View, Text, ScrollView, TouchableOpacity,
-    StyleSheet, ActivityIndicator, Alert, TextInput,
+    StyleSheet, ActivityIndicator, Alert, TextInput, Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +15,7 @@ import InlineAlert from "@/components/Create-Events/InlineAlert";
 import type { Event } from "@/client/endpoints/events/types";
 import { getErrorMessage } from "@/helpers/getErrorMessage";
 import { useNotificationsContext } from "@/contexts/NotificationsContext";
+import { getUsers, SelectableUser } from "@/client/endpoints/users/getUsers";
 
 type Step = "Select Ticket" | "Assign Participants" | "Ticket And Payment";
 
@@ -88,7 +89,7 @@ export default function EventRegistrationScreen({ route }: any) {
     const event: Event = route?.params?.event;
 
     const { userDb } = useUserDb();
-    const { refreshNotifications } = useNotificationsContext();
+    const { refreshNotifications, unreadCount } = useNotificationsContext();
     const userId: string | undefined = userDb?.data?.id ?? userDb?.id;
     // /users/me returns a flat object: { id, email, firstName, lastName, username, ... }
     const userEmail: string | undefined = userDb?.data?.email ?? userDb?.email;
@@ -111,6 +112,42 @@ export default function EventRegistrationScreen({ route }: any) {
     const [expirationDate, setExpirationDate] = useState("");
     const [cvv, setCvv] = useState("");
     const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+
+    // ── User search (participant picker) ─────────────────────────────────────
+    const [allUsers, setAllUsers] = useState<SelectableUser[]>([]);
+    const [usersLoading, setUsersLoading] = useState(false);
+    const [activePickerIndex, setActivePickerIndex] = useState<number | null>(null);
+    const [pickerSearch, setPickerSearch] = useState("");
+
+    useEffect(() => {
+        let mounted = true;
+        setUsersLoading(true);
+        getUsers()
+            .then((items) => { if (mounted) setAllUsers(items); })
+            .catch(() => {})
+            .finally(() => { if (mounted) setUsersLoading(false); });
+        return () => { mounted = false; };
+    }, []);
+
+    const filteredPickerUsers = useMemo(() => {
+        const q = pickerSearch.trim().toLowerCase();
+        const usedEmails = new Set(tickets.map((t) => t.email).filter(Boolean));
+        const available = allUsers.filter((u) => !usedEmails.has(u.email));
+        if (!q) return available;
+        return available.filter((u) =>
+            [u.name, u.username, u.email]
+                .filter(Boolean)
+                .some((v) => v.toLowerCase().includes(q))
+        );
+    }, [allUsers, pickerSearch, tickets]);
+
+    const selectParticipantFromDB = (user: SelectableUser) => {
+        if (activePickerIndex === null) return;
+        updateTicket(activePickerIndex, "name", user.name);
+        updateTicket(activePickerIndex, "email", user.email);
+        setActivePickerIndex(null);
+        setPickerSearch("");
+    };
 
     const totalPrice = (event?.ticketPrice ?? 0) * participants;
     const isFree = !event?.isPaidEvent || event?.ticketPrice === 0;
@@ -457,18 +494,32 @@ export default function EventRegistrationScreen({ route }: any) {
                                         <Text style={styles.fieldLabel}>
                                             {i18n.t("Registration.FullName")} <Text style={styles.required}>*</Text>
                                         </Text>
-                                        <TextInput
-                                            style={[
-                                                styles.input,
-                                                !nameEditable && styles.inputLocked,
-                                            ]}
-                                            value={ticket.name}
-                                            onChangeText={(v) => updateTicket(index, "name", v)}
-                                            placeholder="Full name"
-                                            placeholderTextColor="#6b7280"
-                                            editable={nameEditable}
-                                            returnKeyType="next"
-                                        />
+                                        {/* Name field — tapping opens DB search for non-self slots */}
+                                        {nameEditable ? (
+                                            <TouchableOpacity
+                                                style={styles.searchTrigger}
+                                                onPress={() => { setActivePickerIndex(index); setPickerSearch(""); }}
+                                                activeOpacity={0.8}
+                                            >
+                                                <Ionicons name="search-outline" size={15} color="#6b7280" />
+                                                <Text style={[styles.searchTriggerText, !ticket.name && { color: "#6b7280" }]} numberOfLines={1}>
+                                                    {ticket.name || "Search by name or email…"}
+                                                </Text>
+                                                {ticket.name ? (
+                                                    <TouchableOpacity hitSlop={8} onPress={() => { updateTicket(index, "name", ""); updateTicket(index, "email", ""); }}>
+                                                        <Ionicons name="close-circle" size={16} color="#6b7280" />
+                                                    </TouchableOpacity>
+                                                ) : null}
+                                            </TouchableOpacity>
+                                        ) : (
+                                            <TextInput
+                                                style={[styles.input, styles.inputLocked]}
+                                                value={ticket.name}
+                                                editable={false}
+                                                placeholder="Full name"
+                                                placeholderTextColor="#6b7280"
+                                            />
+                                        )}
 
                                         <Text style={styles.fieldLabel}>
                                             {i18n.t("CreateEvent.Email")} <Text style={styles.required}>*</Text>
@@ -514,6 +565,56 @@ export default function EventRegistrationScreen({ route }: any) {
                                     </View>
                                 );
                             })}
+
+                            {/* Participant search modal */}
+                            <Modal
+                                transparent
+                                visible={activePickerIndex !== null}
+                                animationType="fade"
+                                onRequestClose={() => setActivePickerIndex(null)}
+                            >
+                                <TouchableOpacity
+                                    style={styles.modalOverlay}
+                                    activeOpacity={1}
+                                    onPress={() => setActivePickerIndex(null)}
+                                >
+                                    <View style={styles.modalSheet}>
+                                        <Text style={styles.modalTitle}>
+                                            Search Participant {activePickerIndex !== null ? activePickerIndex + 1 : ""}
+                                        </Text>
+                                        <TextInput
+                                            value={pickerSearch}
+                                            onChangeText={setPickerSearch}
+                                            placeholder="Name, username or email…"
+                                            placeholderTextColor="#6b7280"
+                                            style={styles.modalSearch}
+                                            autoCapitalize="none"
+                                            autoFocus
+                                        />
+                                        {usersLoading ? (
+                                            <ActivityIndicator color="#2ecc71" style={{ marginVertical: 20 }} />
+                                        ) : filteredPickerUsers.length === 0 ? (
+                                            <Text style={styles.modalEmpty}>No users found</Text>
+                                        ) : (
+                                            <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 320 }}>
+                                                {filteredPickerUsers.map((user) => (
+                                                    <TouchableOpacity
+                                                        key={user.id}
+                                                        style={styles.modalOption}
+                                                        onPress={() => selectParticipantFromDB(user)}
+                                                    >
+                                                        <Ionicons name="person-circle-outline" size={22} color="#2ecc71" />
+                                                        <View style={{ flex: 1 }}>
+                                                            <Text style={styles.modalOptionName}>{user.name}</Text>
+                                                            <Text style={styles.modalOptionSub}>{user.email}</Text>
+                                                        </View>
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </ScrollView>
+                                        )}
+                                    </View>
+                                </TouchableOpacity>
+                            </Modal>
 
                             <InlineAlert message={stepError} />
 
@@ -774,6 +875,38 @@ const styles = StyleSheet.create({
         opacity: 0.5,
     },
     inputMultiline: { height: 64, textAlignVertical: "top" },
+
+    // Participant search picker
+    searchTrigger: {
+        flexDirection: "row", alignItems: "center", gap: 8,
+        backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
+        borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12,
+        marginBottom: 12,
+    },
+    searchTriggerText: { flex: 1, color: "#fff", fontSize: 14 },
+    modalOverlay: {
+        flex: 1, backgroundColor: "rgba(0,0,0,0.7)",
+        justifyContent: "flex-end",
+    },
+    modalSheet: {
+        backgroundColor: "#111", borderTopLeftRadius: 20, borderTopRightRadius: 20,
+        padding: 20, paddingBottom: 36,
+        borderTopWidth: 1, borderColor: "#2a2a2a",
+    },
+    modalTitle: { color: "#fff", fontWeight: "700", fontSize: 15, marginBottom: 12 },
+    modalSearch: {
+        backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
+        borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10,
+        color: "#fff", fontSize: 14, marginBottom: 12,
+    },
+    modalEmpty: { color: "#6b7280", textAlign: "center", paddingVertical: 20, fontSize: 13 },
+    modalOption: {
+        flexDirection: "row", alignItems: "center", gap: 10,
+        paddingVertical: 10, paddingHorizontal: 4,
+        borderBottomWidth: 1, borderBottomColor: "#1e1e1e",
+    },
+    modalOptionName: { color: "#fff", fontSize: 14, fontWeight: "600" },
+    modalOptionSub: { color: "#6b7280", fontSize: 12 },
 
     summaryCard: { backgroundColor: "#1f1f1f", borderRadius: 12, padding: 16, gap: 10 },
     summaryTitle: { color: "#fff", fontSize: 16, fontWeight: "700", marginBottom: 4 },

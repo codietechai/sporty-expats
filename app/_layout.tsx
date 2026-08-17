@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from "react-query";
 import { DrawerProvider } from "@/contexts/DrawerContext";
 import { UserProvider } from "@/contexts/UserContext";
 import { NotificationsProvider } from "@/contexts/NotificationsContext";
+import { ChatAppProvider } from "@/contexts/ChatContext";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BrandWordmark } from "@/components/Header";
 import * as SplashScreen from 'expo-splash-screen';
@@ -57,11 +58,13 @@ export default function RootLayout() {
             <ClerkLoaded>
               <DrawerProvider>
                 <UserProvider>
-                  <NotificationsProvider>
-                    <PushNotificationInit />
-                    <Stack screenOptions={{ headerShown: false }} />
-                    <ToastProvider />
-                  </NotificationsProvider>
+                  <ChatAppProvider>
+                    <NotificationsProvider>
+                      <PushNotificationInit />
+                      <Stack screenOptions={{ headerShown: false }} />
+                      <ToastProvider />
+                    </NotificationsProvider>
+                  </ChatAppProvider>
                 </UserProvider>
               </DrawerProvider>
             </ClerkLoaded>

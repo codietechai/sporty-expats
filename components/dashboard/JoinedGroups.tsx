@@ -1,40 +1,21 @@
 import i18n from "@/translations/i18n";
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, FlatList } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Stack } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useGroupRooms, sortByActivity } from "@/app/chat/group/hooks/useGroupRoom";
-import { useChatClient } from "@/app/chat/core/chatProvider";
+import { useGroupRoomsContext } from "@/contexts/ChatContext";
 import { GroupRoomCard } from "@/components/groupchat/GroupRoomCard";
-import { GroupRoomView } from "@/components/groupchat/GroupRoomView";
 import type { ChatRoom } from "@sparkstrand/chat-api-client/v2/types";
 
 const JoinedGroups = () => {
   const navigation = useNavigation<any>();
-  const { user } = useChatClient();
-  const { pastRooms, upcomingRooms, isLoading, error, refetch } = useGroupRooms();
-  const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
+  const { pastRooms, upcomingRooms, isLoading, error, refetch } = useGroupRoomsContext();
 
-  const rooms = useMemo(() => {
-    return sortByActivity([...upcomingRooms, ...pastRooms]);
-  }, [pastRooms, upcomingRooms]);
+  // Most recently active rooms first — mix past and upcoming
+  const rooms = useMemo(() => [...upcomingRooms, ...pastRooms], [pastRooms, upcomingRooms]);
 
-  if (selectedRoom && user?.userId) {
-    return (
-      <>
-        <Stack.Screen options={{ headerShown: false }} />
-        <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-          <GroupRoomView
-            room={selectedRoom}
-            currentUserId={user.userId}
-            currentUserImage={user.image ?? null}
-            onClose={() => setSelectedRoom(null)}
-          />
-        </SafeAreaView>
-      </>
-    );
-  }
+  const handleRoomPress = (room: ChatRoom) => {
+    navigation.navigate("Group Chats", { initialRoomId: room.roomId });
+  };
 
   return (
     <View style={styles.container}>
@@ -42,7 +23,7 @@ const JoinedGroups = () => {
         style={styles.viewAllBtn}
         onPress={() => navigation.navigate("Group Chats")}
       >
-        <Text style={styles.viewAllText}>View Groups</Text>
+        <Text style={styles.viewAllText}>View All Groups</Text>
       </TouchableOpacity>
 
       {isLoading ? (
@@ -67,7 +48,7 @@ const JoinedGroups = () => {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <GroupRoomCard room={item} onPress={setSelectedRoom} />
+            <GroupRoomCard room={item} onPress={handleRoomPress} />
           )}
         />
       )}
@@ -76,7 +57,6 @@ const JoinedGroups = () => {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#0d0d0d" },
   container: { flex: 1, paddingTop: 16, backgroundColor: "#0d0d0d" },
   viewAllBtn: {
     backgroundColor: "#166534",

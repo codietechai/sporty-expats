@@ -289,15 +289,26 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
   // Memoize grouped stories to prevent recalculation
   const grouped = useMemo(() => {
     if (!data) return [];
-    const raw: Story[] = (data?.data?.data ?? []).map((s: any) => ({
-      authorId: s.authorId,
-      id: s.id,
-      file: s.file,
-      name: s.name,
-      creationTime: s.creationTime,
-      imageUrl: s.imageUrl,
-    }));
-    return groupByAuthor(raw);
+    // API shape: { data: [ { user: { id, name, imageUrl }, stories: Story[] } ] }
+    const items: any[] = data?.data?.data ?? data?.data ?? [];
+    const flat: Story[] = [];
+    items.forEach((item: any) => {
+      const user = item.user ?? {};
+      const authorId = user.id ?? item.authorId ?? "";
+      const name = user.name ?? item.name ?? "";
+      const imageUrl = user.imageUrl ?? item.imageUrl ?? "";
+      (item.stories ?? [item]).forEach((s: any) => {
+        flat.push({
+          authorId: s.authorId ?? authorId,
+          id: s.id,
+          file: s.file,
+          name: s.name ?? name,
+          creationTime: s.creationTime,
+          imageUrl: s.imageUrl ?? imageUrl,
+        });
+      });
+    });
+    return groupByAuthor(flat);
   }, [data]);
 
   const handleUploadSuccess = useCallback(() => {

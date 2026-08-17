@@ -91,7 +91,17 @@ function NotifCard({
     const sender = item.metadata?.senderName ?? item.metadata?.userName ?? "";
     const showBody = (item.type === "INFO" || item.type === "MARKETING") && !!item.pushBody;
     const isInvite = item.type === "ALERT";
-    const isNavigable = !!(item.metadata?.postId || item.metadata?.eventId || item.actionUrl);
+
+    // Only show "Tap to view" when there is a concrete destination to navigate to.
+    // A bare actionUrl like "#", "/", or an unrecognised path is not valid.
+    const hasValidActionUrl = !!(
+        item.actionUrl &&
+        item.actionUrl.trim() !== "" &&
+        item.actionUrl.trim() !== "#" &&
+        item.actionUrl.trim() !== "/" &&
+        /event[s]?[\/\-]([a-zA-Z0-9_-]+)|post[s]?[\/\-]([a-zA-Z0-9_-]+)/i.test(item.actionUrl)
+    );
+    const isNavigable = !!(item.metadata?.postId || item.metadata?.eventId || hasValidActionUrl);
 
     const handlePress = () => {
         if (!item.isRead) onMarkAsRead(item.id);

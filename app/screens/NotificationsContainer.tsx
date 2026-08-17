@@ -3,7 +3,6 @@ import { useNotificationsContext } from "@/contexts/NotificationsContext";
 import NotificationsScreen, { NotificationCategory, Notification } from "./NotificationsScreen";
 import type { NotificationType } from "@sparkstrand/notifications-react";
 import { useNavigation } from "@react-navigation/native";
-import { getEventById } from "@/client/endpoints/events/getEventById";
 
 // Map UI category keys → SDK NotificationType
 const CATEGORY_TO_SDK: Partial<Record<NotificationCategory, NotificationType>> = {
@@ -81,39 +80,28 @@ export default function NotificationsContainer() {
         ? pagination.page < pagination.totalPages
         : false;
 
-    const handleNavigate = useCallback(async (notification: Notification) => {
+    const handleNavigate = useCallback((notification: Notification) => {
         const { metadata, actionUrl } = notification;
 
-        // Post notification — navigate to single post view
+        // Post notification — navigate immediately
         if (metadata?.postId) {
             navigation.navigate("Post", { postId: metadata.postId });
             return;
         }
 
-        // Event notification — fetch event and navigate to EventInfo
+        // Event notification — navigate immediately with just the ID;
+        // EventInfoScreen fetches its own data so there's no blocking wait
         if (metadata?.eventId) {
-            try {
-                const event = await getEventById(metadata.eventId);
-                navigation.navigate("EventInfo", { event });
-            } catch {
-                // Event fetch failed — fallback to events list
-                navigation.navigate("Events List");
-            }
+            navigation.navigate("EventInfo", { eventId: metadata.eventId });
             return;
         }
 
-        // Generic actionUrl fallback (e.g. deep link string)
+        // actionUrl fallback — extract ID from known patterns and navigate instantly
         if (actionUrl) {
-            // actionUrl may encode a screen name like "event/<id>" or "post/<id>"
             const eventMatch = actionUrl.match(/event[s]?[\/\-]([a-zA-Z0-9_-]+)/i);
-            const postMatch = actionUrl.match(/post[s]?[\/\-]([a-zA-Z0-9_-]+)/i);
+            const postMatch  = actionUrl.match(/post[s]?[\/\-]([a-zA-Z0-9_-]+)/i);
             if (eventMatch?.[1]) {
-                try {
-                    const event = await getEventById(eventMatch[1]);
-                    navigation.navigate("EventInfo", { event });
-                } catch {
-                    navigation.navigate("Events List");
-                }
+                navigation.navigate("EventInfo", { eventId: eventMatch[1] });
                 return;
             }
             if (postMatch?.[1]) {

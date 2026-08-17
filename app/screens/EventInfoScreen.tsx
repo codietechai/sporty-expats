@@ -13,6 +13,7 @@ import { getEventById } from "@/client/endpoints/events/getEventById";
 import { getAttendee, withdrawParticipation, AttendeeData } from "@/client/endpoints/events/eventRegistration";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
+import { useNotificationsContext } from "@/contexts/NotificationsContext";
 import type { Event } from "@/client/endpoints/events/types";
 
 function formatDate(dateString: string): string {
@@ -38,9 +39,10 @@ function DeadlineBadge({ date }: { date: string }) {
 export default function EventInfoScreen({ route }: any) {
     const navigation = useNavigation<any>();
     const eventFromRoute: Event | undefined = route?.params?.event;
+    const eventIdParam: string | undefined = route?.params?.eventId;
 
     const [event, setEvent] = useState<Event | null>(eventFromRoute ?? null);
-    const [loading] = useState(!eventFromRoute);
+    const [loading, setLoading] = useState(!eventFromRoute);
     const [attendee, setAttendee] = useState<AttendeeData | null>(null);
     const [isOrganizer, setIsOrganizer] = useState(false);
     const [statusLoading, setStatusLoading] = useState(true);
@@ -50,8 +52,19 @@ export default function EventInfoScreen({ route }: any) {
     const [ticketsAtRegistration, setTicketsAtRegistration] = useState<number>(1);
 
     const { userDb } = useUserDb();
+    const { unreadCount } = useNotificationsContext();
     const userId: string | undefined = userDb?.data?.id ?? userDb?.id;
     const username: string | undefined = userDb?.data?.username ?? userDb?.username;
+
+    // If only an eventId was passed (e.g. from a notification), fetch the full event
+    useEffect(() => {
+        if (!eventFromRoute && eventIdParam) {
+            setLoading(true);
+            getEventById(eventIdParam)
+                .then((e) => { setEvent(e); setLoading(false); })
+                .catch(() => setLoading(false));
+        }
+    }, [eventIdParam]);
 
     // Refresh event data to get latest availableTickets
     useEffect(() => {
@@ -83,8 +96,11 @@ export default function EventInfoScreen({ route }: any) {
             getAttendee(userId, event.id)
                 .then((data) => {
                     setAttendee(data);
-                    // Capture ticket count while status is active (before any withdrawal)
-                    if (data && data.attendantStatus !== "Withdrew" && (data.ticketsAssigned ?? 0) > 0) {
+                    // Always capture the real ticket count from the latest attendee record.
+                    // Even "Withdrew" records keep ticketsAssigned so the refund screen shows
+                    // the correct number. Fall back to previous snapshot only if the API
+                    // returns 0 or null (shouldn't happen but defensive).
+                    if (data && (data.ticketsAssigned ?? 0) > 0) {
                         setTicketsAtRegistration(data.ticketsAssigned);
                     }
                 })
@@ -169,7 +185,14 @@ export default function EventInfoScreen({ route }: any) {
                         <Ionicons name="arrow-back" size={22} color="#fff" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>{i18n.t("NavBar.Event")}</Text>
-                    <View style={{ width: 38 }} />
+                    <TouchableOpacity style={styles.bellBtn} hitSlop={8} onPress={() => (navigation as any).navigate("Notifications")}>
+                        <Ionicons name="notifications-outline" size={22} color="#fff" />
+                        {unreadCount > 0 && (
+                            <View style={styles.bellBadge}>
+                                <Text style={styles.bellBadgeText}>{unreadCount > 99 ? "99+" : unreadCount}</Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
                 </View>
 
                 <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -338,7 +361,7 @@ export default function EventInfoScreen({ route }: any) {
                                         <View style={styles.registeredBadge}>
                                             <Ionicons name="checkmark-circle" size={16} color="#2ecc71" />
                                             <Text style={styles.registeredText}>
-                                                You're registered · {attendee?.ticketsAssigned ?? 1} ticket(s)
+                                                You're registered · {attendee?.ticketsAssigned ?? ticketsAtRegistration} ticket(s)
                                             </Text>
                                         </View>
                                         <TouchableOpacity
@@ -422,6 +445,19 @@ const styles = StyleSheet.create({
         backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
         alignItems: "center", justifyContent: "center",
     },
+    bellBtn: {
+        width: 38, height: 38, borderRadius: 10,
+        backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
+        alignItems: "center", justifyContent: "center",
+    },
+    bellBadge: {
+        position: "absolute", top: -4, right: -4,
+        backgroundColor: "#ef4444", borderRadius: 8,
+        minWidth: 16, height: 16, paddingHorizontal: 3,
+        alignItems: "center", justifyContent: "center",
+        borderWidth: 1.5, borderColor: "#0d0d0d",
+    },
+    bellBadgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
     headerTitle: { flex: 1, textAlign: "center", fontSize: 17, fontWeight: "700", color: "#fff" },
 
     scroll: { flex: 1 },

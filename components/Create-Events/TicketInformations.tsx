@@ -120,12 +120,10 @@ const TicketInformation: React.FC<Props> = ({ setActiveTab, control }) => {
 
     if (!locationName?.trim()) { setError("Event location is required."); return; }
     if (!locationLatitude || !locationLongitude) { setError("Please select a location from suggestions."); return; }
-    if (!ticketDescription?.trim()) { setError("Ticket description is required."); return; }
     if (!organizers.length) { setError("Please add at least one organizer."); return; }
     if (min < 1) { setError("Minimum attendees must be at least 1."); return; }
     if (max < min) { setError("Maximum attendees must be ≥ minimum attendees."); return; }
-    if (tickets < 1) { setError("Available tickets must be at least 1."); return; }
-    if (tickets > max) { setError("Available tickets cannot exceed maximum attendees."); return; }
+    if (tickets > 0 && tickets > max) { setError("Available tickets cannot exceed maximum attendees."); return; }
     if (isPaidEvent && price <= 0) { setError("Ticket price must be greater than 0 for paid events."); return; }
     if (deadline > start) { setError("Payment deadline must be before the start date."); return; }
 

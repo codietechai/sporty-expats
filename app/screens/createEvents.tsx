@@ -114,7 +114,6 @@ const CreateEvents = () => {
     if (!data.location.name.trim()) { showToast("Event location is required.", "warning"); return; }
     if (!data.coverImage.fileUrl) { showToast("Cover image is required.", "warning"); return; }
     if (!data.description.trim()) { showToast("Event description is required.", "warning"); return; }
-    if (!data.ticketDescription.trim()) { showToast("Ticket description is required.", "warning"); return; }
     if (!data.organizers.length) { showToast("Please add at least one organizer.", "warning"); return; }
     if (startDate < now) { showToast("Start date cannot be in the past.", "warning"); return; }
     if (endDate <= startDate) { showToast("End date must be after the start date.", "warning"); return; }
@@ -122,11 +121,12 @@ const CreateEvents = () => {
     if (refundDeadline && refundDeadline >= startDate) { showToast("Refund deadline must be before the start date.", "warning"); return; }
     if (minAttendees < 1) { showToast("Minimum attendees must be at least 1.", "warning"); return; }
     if (maxAttendees < minAttendees) { showToast("Maximum attendees must be ≥ minimum attendees.", "warning"); return; }
-    if (availableTickets < 1) { showToast("Available tickets must be at least 1.", "warning"); return; }
-    if (availableTickets > maxAttendees) { showToast("Available tickets cannot exceed maximum attendees.", "warning"); return; }
+    // availableTickets is optional — default to maxAttendees when not provided
+    const resolvedAvailableTickets = availableTickets > 0 ? availableTickets : maxAttendees;
+    if (resolvedAvailableTickets > maxAttendees) { showToast("Available tickets cannot exceed maximum attendees.", "warning"); return; }
     if (!verified && data.isPaidEvent) { showToast("Only hosts and admins can create paid events.", "warning"); return; }
     if (data.isPaidEvent && ticketPrice <= 0) { showToast("Ticket price must be > 0 for paid events.", "warning"); return; }
-    const adjustedAvailableTickets = availableTickets - data.participantOrganizers.length;
+    const adjustedAvailableTickets = resolvedAvailableTickets - data.participantOrganizers.length;
     if (adjustedAvailableTickets < 1) { showToast("Available tickets must stay at least 1 after organizer participants.", "warning"); return; }
 
     try {
@@ -150,6 +150,7 @@ const CreateEvents = () => {
         participantOrganizers: data.participantOrganizers,
         memberDetails: data.memberDetails,
         creatorId: userId,
+        ...(data.ticketDescription?.trim() ? { ticketDescription: data.ticketDescription.trim() } : {}),
       });
       console.log("Event created successfully:", createdEvent.id);
       reset(getDefaultEventValues());
