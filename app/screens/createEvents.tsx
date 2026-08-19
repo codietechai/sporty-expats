@@ -109,6 +109,11 @@ const CreateEvents = () => {
     const availableTickets = Number(data.availableTickets) || 0;
     const ticketPrice = Number(data.ticketPrice) || 0;
 
+    // Guard: user identity must be resolved before hitting the API.
+    // userId comes from userDb which loads asynchronously — if it's still
+    // empty the backend will reject the request with a 400/422.
+    if (!userId) { showToast("User session not ready. Please wait a moment and try again.", "warning"); return; }
+
     if (!data.title.trim()) { showToast("Event title is required.", "warning"); return; }
     if (!data.category.trim()) { showToast("Event category is required.", "warning"); return; }
     if (!data.location.name.trim()) { showToast("Event location is required.", "warning"); return; }
@@ -150,14 +155,19 @@ const CreateEvents = () => {
         participantOrganizers: data.participantOrganizers,
         memberDetails: data.memberDetails,
         creatorId: userId,
-        ...(data.ticketDescription?.trim() ? { ticketDescription: data.ticketDescription.trim() } : {}),
       });
-      console.log("Event created successfully:", createdEvent.id);
+      console.log("[CreateEvent] Event created successfully:", createdEvent.id);
       reset(getDefaultEventValues());
       setFormResetKey((key) => key + 1);
       setPublishedEvent(createdEvent);
     } catch (err: any) {
-      showToast(getErrorMessage(err, "Failed to create event."), "error");
+      const message = getErrorMessage(err, "Failed to create event.");
+      console.error("[CreateEvent] API error:", {
+        message,
+        status: err?.response?.status,
+        data: err?.response?.data,
+      });
+      showToast(message, "error");
     }
   });
 

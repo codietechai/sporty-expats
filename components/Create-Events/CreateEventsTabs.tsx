@@ -56,7 +56,6 @@ const CreteEventTabsComponent: React.FC<Props> = ({ tabs, control, onSubmit }) =
       const max = Number(values.maxAttendees) || 0;
       const tickets = Number(values.availableTickets) || 0;
       const price = Number(values.ticketPrice) || 0;
-      if (!values.ticketDescription.trim()) return "Complete the ticket description first.";
       if (!values.organizers.length) return "Select at least one organizer first.";
       if (!values.location.name.trim()) return "Select an event location first.";
       if (!values.location.latitude || !values.location.longitude) return "Choose a suggested location first.";

@@ -12,13 +12,21 @@ export function getErrorMessage(err: any, fallback = "Something went wrong. Plea
     // { error: "Username is already taken" }
     if (typeof data.error === "string") return data.error;
 
+    // { error: [{ message: "..." }, ...] }  or  { error: ["...", ...] }
+    if (Array.isArray(data.error)) {
+      const msgs = data.error.map((e: any) =>
+        typeof e === "string" ? e : e?.message ?? e?.msg ?? e?.path ?? JSON.stringify(e)
+      );
+      if (msgs.length) return msgs.join("\n");
+    }
+
     // { message: "..." }
     if (typeof data.message === "string") return data.message;
 
     // { errors: ["...", "..."] }  or  { errors: [{ message: "..." }] }
     if (Array.isArray(data.errors)) {
       const msgs = data.errors.map((e: any) =>
-        typeof e === "string" ? e : e?.message ?? e?.msg ?? JSON.stringify(e)
+        typeof e === "string" ? e : e?.message ?? e?.msg ?? e?.path ?? JSON.stringify(e)
       );
       if (msgs.length) return msgs.join("\n");
     }
