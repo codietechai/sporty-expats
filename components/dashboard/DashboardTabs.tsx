@@ -4,7 +4,9 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-nati
 type TabItem = {
   key: string;
   label: string;
-  component: React.FC;
+  component: React.FC<any>;
+  /** Optional props forwarded to the component when it is the active tab */
+  componentProps?: Record<string, any>;
 };
 
 type Props = {
@@ -14,7 +16,9 @@ type Props = {
 
 const TabsComponent: React.FC<Props> = ({ tabs, setCurrentTab }) => {
   const [activeTab, setActiveTab] = useState(tabs[0].key);
-  const ActiveComponent = tabs.find((tab) => tab.key === activeTab)?.component;
+  const activeTabItem = tabs.find((tab) => tab.key === activeTab);
+  const ActiveComponent = activeTabItem?.component;
+  const activeComponentProps = activeTabItem?.componentProps ?? {};
 
   useEffect(() => {
     setCurrentTab?.(activeTab);
@@ -42,7 +46,9 @@ const TabsComponent: React.FC<Props> = ({ tabs, setCurrentTab }) => {
       </ScrollView>
 
       <View style={styles.content}>
-        {ActiveComponent ? <ActiveComponent /> : <Text style={{ color: "#fff" }}>No component</Text>}
+        {ActiveComponent
+          ? <ActiveComponent {...activeComponentProps} />
+          : <Text style={{ color: "#fff" }}>No component</Text>}
       </View>
     </View>
   );

@@ -1,30 +1,22 @@
 import { backendClient } from "../../backendClient";
 
-export const GET_ALL_POSTS= "get-all-posts"
+export const GET_ALL_POSTS = "get-all-posts";
 
-interface PaginationParams {
-  page?: number;
+export interface PostsParams {
   limit?: number;
+  /** Cursor returned by the previous page — pass to fetch the next page */
+  startingAfter?: string;
 }
 
-export const getAllPosts = async (userId?: string, pagination?: PaginationParams) => {
-  try {
-    const params: any = {};
-    
-    if (userId) {
-      params.userId = userId;
-    }
-    
-    if (pagination) {
-      if (pagination.page) params.page = pagination.page;
-      if (pagination.limit) params.limit = pagination.limit;
-    }
-    
-    const response = await backendClient.get(`/posts`, {
-      params: Object.keys(params).length > 0 ? params : undefined,
-    });
-    return response;
-  } catch (error) {
-    throw error;
-  }
+export const getAllPosts = async (userId?: string, params?: PostsParams) => {
+  const query: Record<string, any> = {};
+
+  if (userId) query.userId = userId;
+  if (params?.limit) query.limit = params.limit;
+  if (params?.startingAfter) query.startingAfter = params.startingAfter;
+
+  const response = await backendClient.get(`/posts`, {
+    params: Object.keys(query).length > 0 ? query : undefined,
+  });
+  return response;
 };

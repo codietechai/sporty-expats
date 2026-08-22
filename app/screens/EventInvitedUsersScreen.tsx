@@ -18,6 +18,7 @@ import {
     InvitedUser,
     InvitationStatus,
 } from "@/client/endpoints/events/eventInvitations";
+import { searchUsers } from "@/client/endpoints/users/searchUsers";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import type { Event } from "@/client/endpoints/events/types";
 
@@ -221,24 +222,37 @@ export default function EventInvitedUsersScreen({ route }: any) {
 
     const handleResend = useCallback(async (inv: InvitedUser) => {
         if (!userId) return;
-        const inviteeUserId = inv.invitee.user?.id;
-        if (!inviteeUserId) {
-            Alert.alert("Failed", "Cannot resend — user ID not found.");
-            return;
-        }
+
         setResendingId(inv.id);
         try {
+            // The backend POST /events/:id/invitations expects User.id as personId.
+            // The GET response includes invitee.user.id when available — use it.
+            // If it's missing (PersonalDetails not linked to a User account in the
+            // response), search by email to resolve the User.id.
+            let personId: string | undefined = inv.invitee.user?.id;
+
+            if (!personId) {
+                const results = await searchUsers(inv.invitee.email, 1);
+                const match = results.find(
+                    (u) => u.email?.toLowerCase() === inv.invitee.email.toLowerCase()
+                );
+                personId = match?.id;
+            }
+
+            if (!personId) {
+                Alert.alert("Failed", "Cannot resend — user account not found for this invitee.");
+                return;
+            }
+
             await sendEventInvitation(eventId, {
-                personId: inviteeUserId,   // User.id — backend resolves to personalDetailsId
+                personId,
                 requestingUserId: userId,
             });
             Alert.alert("Invite Sent", `Invitation resent to ${getDisplayName(inv.invitee)}.`);
             await fetchInvitations(true);
         } catch (err: any) {
-            Alert.alert(
-                "Failed",
-                err?.response?.data?.error ?? err?.message ?? "Could not resend invitation.",
-            );
+            const errMsg = err?.response?.data?.error ?? err?.message ?? "Could not resend invitation.";
+            Alert.alert("Failed", errMsg);
         } finally {
             setResendingId(null);
         }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View, Text, TouchableOpacity, Modal,
   Image, StyleSheet, ScrollView,
@@ -8,7 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import AuthModal from "@/components/AuthModal";
 import { useUser } from "@clerk/clerk-expo";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@clerk/clerk-expo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getProfilePhoto } from "@/client/endpoints/users/addProfilePhoto";
 import { useUserDb } from "@/app/hooks/useUserDb";
@@ -92,15 +92,16 @@ export default function Sidebar(props: DrawerContentComponentProps) {
     setLanguageModalVisible(false);
   };
 
+  // Track previous isSignedIn to detect the sign-out transition
+  const prevSignedIn = useRef<boolean | undefined>(undefined);
+
   useEffect(() => {
-    if (user) {
-      setLoggedIn(true);
-    } else {
-      setLoggedIn(false);
+    // Sync loggedIn with Clerk user
+    setLoggedIn(!!user);
+    if (!user) {
       setModalVisible(false);
       setShowDropdown(false);
-      // Redirect to Home whenever auth session is lost
-      props.navigation.navigate("Home");
+      setImage(null);
     }
   }, [user]);
 
@@ -116,13 +117,13 @@ export default function Sidebar(props: DrawerContentComponentProps) {
   const logOut = async () => {
     try {
       setShowDropdown(false);
+      console.log('[Sidebar] calling signOut...');
       await signOut();
-      await AsyncStorage.clear();
-      setLoggedIn(false);
-      setImage(null);
       props.navigation.navigate("Home" as any);
+      console.log('[Sidebar] signOut done');
+      await AsyncStorage.clear();
     } catch (error) {
-      console.error('Error during logout:', error);
+      console.error('[Sidebar] Error during logout:', error);
     }
   };
 

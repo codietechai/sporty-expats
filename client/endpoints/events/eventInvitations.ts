@@ -21,12 +21,12 @@ export interface InvitedUser {
     email: string;
     firstName: string | null;
     lastName: string | null;
-    user: { id: string } | null;  // User.id — needed for resend
+    user?: { id: string } | null;  // User.id — present when backend populates the join
   };
 }
 
 export interface SendInvitePayload {
-  personId: string;          // User.id (API resolves to PersonalDetails.id internally)
+  personId: string;          // PersonalDetails.id (backend stores this directly)
   requestingUserId: string;  // must be event creator
 }
 

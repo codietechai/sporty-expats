@@ -10,6 +10,7 @@ import {
     StyleSheet,
     StatusBar,
     Animated,
+    RefreshControl,
     ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -95,6 +96,7 @@ const sk = StyleSheet.create({
 export default function EventsListScreen() {
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [timeFilter, setTimeFilter] = useState<TimeFilter>("upcoming");
+    const [refreshing, setRefreshing] = useState(false);
     const [categoryOpen, setCategoryOpen] = useState(false);
     const [timeOpen, setTimeOpen] = useState(false);
     const navigation = useNavigation<any>();
@@ -107,10 +109,7 @@ export default function EventsListScreen() {
         currentPage, pageSize, refetch,
     } = useEvents({ timeFilter: "upcoming" });
 
-    // Refetch whenever this screen comes back into focus
-    useFocusEffect(
-        useCallback(() => { refetch(); }, [refetch])
-    );
+    // Refetch is available via pull-to-refresh (RefreshControl on the FlatList)
 
     const handleTimeFilterChange = (f: TimeFilter) => {
         setTimeFilter(f);
@@ -128,6 +127,11 @@ export default function EventsListScreen() {
         resetFilters();
         updateFilters({ timeFilter: "upcoming" });
     };
+
+    const handleRefresh = useCallback(async () => {
+        setRefreshing(true);
+        try { await refetch(); } finally { setRefreshing(false); }
+    }, [refetch]);
 
     // Counts for the info bar
     const countFrom = events.length > 0 ? (currentPage - 1) * pageSize + 1 : 0;
@@ -268,19 +272,31 @@ export default function EventsListScreen() {
             {isLoading ? (
                 <EventListSkeleton />
             ) : isError ? (
-                <View style={styles.centered}>
+                <ScrollView
+                    contentContainerStyle={styles.centered}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh}
+                            tintColor="#2ecc71" colors={["#2ecc71"]} progressBackgroundColor="#0d0d0d" />
+                    }
+                >
                     <Ionicons name="alert-circle-outline" size={52} color="#EF4444" />
                     <Text style={styles.stateText}>Failed to load events</Text>
                     <TouchableOpacity style={styles.retryBtn} onPress={handleReset}>
                         <Text style={styles.retryBtnText}>{i18n.t("Complaints.retry")}</Text>
                     </TouchableOpacity>
-                </View>
+                </ScrollView>
             ) : events.length === 0 ? (
-                <View style={styles.centered}>
+                <ScrollView
+                    contentContainerStyle={styles.centered}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh}
+                            tintColor="#2ecc71" colors={["#2ecc71"]} progressBackgroundColor="#0d0d0d" />
+                    }
+                >
                     <Ionicons name="calendar-outline" size={52} color="#374151" />
                     <Text style={styles.stateText}>No events found</Text>
                     <Text style={styles.stateSubText}>Try adjusting your filters</Text>
-                </View>
+                </ScrollView>
             ) : (
                 <FlatList
                     data={events}
@@ -289,6 +305,15 @@ export default function EventsListScreen() {
                     showsVerticalScrollIndicator={false}
                     renderItem={({ item }) => <EventCard event={item} />}
                     ListFooterComponent={<PaginationFooter />}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={handleRefresh}
+                            tintColor="#2ecc71"
+                            colors={["#2ecc71"]}
+                            progressBackgroundColor="#0d0d0d"
+                        />
+                    }
                 />
             )}
         </SafeAreaView>

@@ -26,10 +26,17 @@ export default function Home() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const { isSignedIn } = useAuth();
 
-  // When user signs in while Home is active (OAuth redirects to '/' which shows Home first),
-  // push them to Dashboard. This navigation is on the Drawer so openDrawer() works correctly.
+  // Only redirect to Dashboard when the user actively signs IN.
+  // We track the previous value so we only act on false → true transitions,
+  // preventing a redirect when we land here after logout (isSignedIn still
+  // momentarily true while Clerk clears the session asynchronously).
+  const prevSignedIn = React.useRef<boolean | undefined>(undefined);
+
   React.useEffect(() => {
-    if (isSignedIn) {
+    const was = prevSignedIn.current;
+    prevSignedIn.current = isSignedIn;
+    // Only navigate on a real sign-in transition
+    if (was === false && isSignedIn === true) {
       navigation.navigate('Dashboard' as any);
     }
   }, [isSignedIn]);

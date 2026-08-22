@@ -3,9 +3,9 @@ import { GET_SELECTED_EVENTS_BY_ID, getSelectedEvents } from "@/client/endpoints
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Animated, Dimensions, ScrollView, StyleSheet,
+  Animated, Dimensions, FlatList, RefreshControl, StyleSheet,
   Text, TouchableOpacity, View,
 } from "react-native";
 import { useQuery } from "react-query";
@@ -245,11 +245,12 @@ const ec = StyleSheet.create({
 
 const SelectedEvents = () => {
   const [eventOptions, setEventOptions] = useState<Event[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation<any>();
   const { userDb, loading: userLoading } = useUserDb();
   const userId: string | undefined = userDb?.data?.id ?? userDb?.id;
 
-  const { data, isLoading } = useQuery(
+  const { data, isLoading, refetch } = useQuery(
     [GET_SELECTED_EVENTS_BY_ID, userId],
     () => getSelectedEvents(userId!),
     { enabled: !!userId, keepPreviousData: false, refetchOnWindowFocus: true, retry: 0 }
@@ -277,11 +278,25 @@ const SelectedEvents = () => {
     })));
   }, [data]);
 
-  if (userLoading || isLoading) {
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try { await refetch(); } finally { setRefreshing(false); }
+  }, [refetch]);
+
+  const keyExtractor = useCallback((item: Event) => item.id, []);
+  const renderItem = useCallback(({ item }: { item: Event }) => (
+    <EventCard event={item} onPress={() => navigation.navigate("EventInfo", { event: item })} />
+  ), [navigation]);
+
+  if (userLoading || (isLoading && eventOptions.length === 0)) {
     return (
-      <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: 24 }}>
-        {[1, 2, 3].map((i) => <EventCardSkeleton key={i} />)}
-      </ScrollView>
+      <FlatList
+        data={[1, 2, 3]}
+        keyExtractor={(i) => String(i)}
+        renderItem={() => <EventCardSkeleton />}
+        contentContainerStyle={{ paddingTop: 12, paddingBottom: 24 }}
+        scrollEnabled={false}
+      />
     );
   }
 
@@ -298,15 +313,22 @@ const SelectedEvents = () => {
   }
 
   return (
-    <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
-      {eventOptions.map((event) => (
-        <EventCard
-          key={event.id}
-          event={event}
-          onPress={() => navigation.navigate("EventInfo", { event })}
+    <FlatList
+      data={eventOptions}
+      keyExtractor={keyExtractor}
+      renderItem={renderItem}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingTop: 12, paddingBottom: 80 }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor="#2ecc71"
+          colors={["#2ecc71"]}
+          progressBackgroundColor="#0d0d0d"
         />
-      ))}
-    </ScrollView>
+      }
+    />
   );
 };
 

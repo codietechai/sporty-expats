@@ -1,5 +1,5 @@
 import i18n from "@/translations/i18n";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import {
     View, Text, FlatList, TouchableOpacity, TextInput,
     StyleSheet, Dimensions,
@@ -7,7 +7,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
-import { useNavigation, DrawerActions } from "@react-navigation/native";
+import { useNavigation, DrawerActions, useFocusEffect } from "@react-navigation/native";
 import { useGroupRoomsContext, useChatAppClient } from "@/contexts/ChatContext";
 import { GroupRoomCard } from "@/components/groupchat/GroupRoomCard";
 import { GroupRoomView } from "@/components/groupchat/GroupRoomView";
@@ -36,7 +36,19 @@ export default function GroupChatsContent({ initialRoomId }: Props) {
     const [searchQuery, setSearchQuery] = useState("");
     const [page, setPage] = useState(1);
 
-    // Auto-open room when navigated from JoinedGroups
+    // When the screen comes into focus WITHOUT an initialRoomId (e.g. user taps
+    // "Group Chats" in the sidebar after previously viewing a chat), always reset
+    // to the list view. The drawer keeps the component alive between navigations
+    // so selectedRoom state would otherwise persist and re-open the last chat.
+    useFocusEffect(
+        useCallback(() => {
+            if (!initialRoomId) {
+                setSelectedRoom(null);
+            }
+        }, [initialRoomId])
+    );
+
+    // Auto-open room when navigated with a specific initialRoomId (e.g. from JoinedGroups)
     useEffect(() => {
         if (!initialRoomId || isLoading) return;
         const match = [...pastRooms, ...upcomingRooms].find((r) => r.roomId === initialRoomId);

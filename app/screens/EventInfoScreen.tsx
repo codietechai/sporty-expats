@@ -1,8 +1,8 @@
 import i18n from "@/translations/i18n";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
     View, Text, Image, ScrollView, TouchableOpacity,
-    StyleSheet, ActivityIndicator, Alert, Linking,
+    StyleSheet, ActivityIndicator, Alert, Linking, Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,6 +16,107 @@ import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 import { useNotificationsContext } from "@/contexts/NotificationsContext";
 import { useAuth } from "@clerk/clerk-expo";
 import type { Event } from "@/client/endpoints/events/types";
+import LinkableText from "@/components/common/LinkableText";
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function Shimmer({ style }: { style?: any }) {
+    const opacity = useRef(new Animated.Value(0.3)).current;
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(opacity, { toValue: 0.7, duration: 750, useNativeDriver: true }),
+                Animated.timing(opacity, { toValue: 0.3, duration: 750, useNativeDriver: true }),
+            ])
+        ).start();
+    }, []);
+    return <Animated.View style={[{ backgroundColor: "#1e1e1e", borderRadius: 8 }, style, { opacity }]} />;
+}
+
+function EventInfoSkeleton({ onBack }: { onBack: () => void }) {
+    return (
+        <SafeAreaView style={s.safe} edges={["top"]}>
+            {/* Header — real chrome so user can still go back */}
+            <View style={s.header}>
+                <TouchableOpacity onPress={onBack} style={s.backBtn} hitSlop={8}>
+                    <Ionicons name="arrow-back" size={22} color="#fff" />
+                </TouchableOpacity>
+                <Text style={s.headerTitle}>{i18n.t("NavBar.Event")}</Text>
+                <View style={s.bellBtn} />
+            </View>
+
+            <ScrollView style={s.scroll} showsVerticalScrollIndicator={false} scrollEnabled={false}>
+                {/* Cover image */}
+                <Shimmer style={sk.cover} />
+
+                <View style={s.body}>
+                    {/* Title + price badge */}
+                    <View style={sk.titleRow}>
+                        <Shimmer style={sk.title} />
+                        <Shimmer style={sk.priceBadge} />
+                    </View>
+
+                    {/* Spots row */}
+                    <Shimmer style={sk.lineMed} />
+
+                    {/* Status row */}
+                    <Shimmer style={sk.lineShort} />
+
+                    <Shimmer style={sk.divider} />
+
+                    {/* Attendees section */}
+                    <Shimmer style={sk.lineMed} />
+                    <Shimmer style={sk.lineShort} />
+
+                    <Shimmer style={sk.divider} />
+
+                    {/* Date & Time */}
+                    <Shimmer style={sk.sectionTitle} />
+                    <Shimmer style={sk.lineMed} />
+                    <Shimmer style={sk.lineShort} />
+
+                    <Shimmer style={sk.divider} />
+
+                    {/* Location */}
+                    <Shimmer style={sk.sectionTitle} />
+                    <Shimmer style={sk.lineLong} />
+                    <Shimmer style={sk.map} />
+
+                    <Shimmer style={sk.divider} />
+
+                    {/* Organizers */}
+                    <Shimmer style={sk.sectionTitle} />
+                    <Shimmer style={sk.lineShort} />
+
+                    <Shimmer style={sk.divider} />
+
+                    {/* Description */}
+                    <Shimmer style={sk.sectionTitle} />
+                    <Shimmer style={sk.lineLong} />
+                    <Shimmer style={sk.lineLong} />
+                    <Shimmer style={sk.lineMed} />
+
+                    {/* CTA button */}
+                    <Shimmer style={sk.ctaBtn} />
+                </View>
+            </ScrollView>
+        </SafeAreaView>
+    );
+}
+
+const sk = StyleSheet.create({
+    cover:       { marginHorizontal: 16, marginTop: 16, height: 220, borderRadius: 14 },
+    titleRow:    { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12, marginTop: 16 },
+    title:       { flex: 1, height: 28, borderRadius: 8 },
+    priceBadge:  { width: 64, height: 32, borderRadius: 8 },
+    lineLong:    { height: 14, width: "90%", borderRadius: 6, marginBottom: 10 },
+    lineMed:     { height: 13, width: "60%", borderRadius: 6, marginBottom: 8 },
+    lineShort:   { height: 12, width: "35%", borderRadius: 6, marginBottom: 8 },
+    sectionTitle:{ height: 16, width: "45%", borderRadius: 6, marginBottom: 14 },
+    divider:     { height: 1, marginVertical: 16, width: "100%" },
+    map:         { height: 180, borderRadius: 12, marginTop: 8, marginBottom: 8 },
+    ctaBtn:      { height: 52, borderRadius: 12, marginTop: 16, marginBottom: 40 },
+});
 
 const s = StyleSheet.create({
     safe: { flex: 1, backgroundColor: "#0d0d0d" },
@@ -194,8 +295,10 @@ export default function EventInfoScreen({ route }: any) {
     const eventFromRoute: Event | undefined = route?.params?.event;
     const eventIdParam: string | undefined = route?.params?.eventId;
 
-    const [event, setEvent] = useState<Event | null>(eventFromRoute ?? null);
-    const [loading, setLoading] = useState(!eventFromRoute);
+    // Always start null+loading — never seed from stale route params.
+    // Fresh data is fetched from the API on every screen focus.
+    const [event, setEvent] = useState<Event | null>(null);
+    const [loading, setLoading] = useState(true);
     const [attendee, setAttendee] = useState<AttendeeData | null>(null);
     const [isOrganizer, setIsOrganizer] = useState(false);
     const [statusLoading, setStatusLoading] = useState(true);
@@ -206,94 +309,80 @@ export default function EventInfoScreen({ route }: any) {
 
     const { userDb } = useUserDb();
     const { unreadCount } = useNotificationsContext();
-    const userId: string | undefined = userDb?.data?.id ?? userDb?.id;
-    const username: string | undefined = userDb?.data?.username ?? userDb?.username;
+    const userId: string | undefined = userDb?.id;
+    const username: string | undefined = userDb?.username;
 
-    // If only an eventId was passed (e.g. from a notification), fetch the full event
-    useEffect(() => {
-        let cancelled = false;
+    // Resolve event id from whichever source we have
+    const eventId = eventFromRoute?.id ?? eventIdParam;
 
-        if (!eventFromRoute && eventIdParam) {
-            setLoading(true);
-
-            getEventById(eventIdParam)
-                .then((e) => {
-                    if (!cancelled) {
-                        setEvent(e);
-                    }
-                })
-                .catch(() => {
-                    if (!cancelled) {
-                        setEvent(null);
-                    }
-                })
-                .finally(() => {
-                    if (!cancelled) {
-                        setLoading(false);
-                    }
-                });
-        }
-
-        return () => {
-            cancelled = true;
-        };
-    }, [eventFromRoute, eventIdParam]);
-
-    // Refresh event data to get latest availableTickets
-    useEffect(() => {
-        let cancelled = false;
-
-        if (eventFromRoute) {
-            getEventById(eventFromRoute.id)
-                .then((latestEvent) => {
-                    if (!cancelled) {
-                        setEvent(latestEvent);
-                    }
-                })
-                .catch(() => {
-                    if (!cancelled) {
-                        setEvent(eventFromRoute);
-                    }
-                });
-        }
-
-        return () => {
-            cancelled = true;
-        };
-    }, [eventFromRoute?.id]);
-
-    // Fetch attendee record every time this screen is focused
-    // This ensures buttons update after registration or refund flows
+    // Single merged focus effect — fetch fresh event, then immediately run
+    // organiser/attendee check against that fresh data in the same async chain.
+    // Having two separate useFocusEffect calls caused the organiser check to
+    // fire against stale state from a previously opened event, showing the
+    // Notify/Participants buttons on events where the user is not organiser.
     useFocusEffect(
         useCallback(() => {
-            if (!userId || !event?.id) {
+            if (!eventId) {
+                setLoading(false);
                 setStatusLoading(false);
                 return;
             }
-            if (username && event.organizers?.includes(username)) {
-                setIsOrganizer(true);
-                setStatusLoading(false);
-                return;
-            }
+            let cancelled = false;
+
+            // Reset all derived state before fetching — no stale data leaks through
+            setLoading(true);
             setStatusLoading(true);
-            // Also refresh event to get latest availableTickets
-            getEventById(event.id)
-                .then(setEvent)
-                .catch(() => {});
-            getAttendee(userId, event.id)
-                .then((data) => {
-                    setAttendee(data);
-                    // Always capture the real ticket count from the latest attendee record.
-                    // Even "Withdrew" records keep ticketsAssigned so the refund screen shows
-                    // the correct number. Fall back to previous snapshot only if the API
-                    // returns 0 or null (shouldn't happen but defensive).
-                    if (data && (data.ticketsAssigned ?? 0) > 0) {
-                        setTicketsAtRegistration(data.ticketsAssigned);
+            setEvent(null);
+            setIsOrganizer(false);
+            setAttendee(null);
+
+            getEventById(eventId)
+                .then(async (fresh) => {
+                    if (cancelled) return;
+                    setEvent(fresh);
+                    setLoading(false);
+
+                    if (!fresh || !userId) {
+                        setStatusLoading(false);
+                        return;
+                    }
+
+                    // Organiser check runs against the freshly fetched event,
+                    // never against stale state from a previous screen visit
+                    const byCreatorId = fresh.creatorId === userId;
+                    const byUsername  = !!username && (fresh.organizers ?? []).includes(username);
+
+                    if (byCreatorId || byUsername) {
+                        if (!cancelled) {
+                            setIsOrganizer(true);
+                            setStatusLoading(false);
+                        }
+                        return;
+                    }
+
+                    // Not an organiser — fetch attendee record
+                    try {
+                        const data = await getAttendee(userId, fresh.id);
+                        if (cancelled) return;
+                        setAttendee(data);
+                        if (data && (data.ticketsAssigned ?? 0) > 0) {
+                            setTicketsAtRegistration(data.ticketsAssigned);
+                        }
+                    } catch {
+                        if (!cancelled) setAttendee(null);
+                    } finally {
+                        if (!cancelled) setStatusLoading(false);
                     }
                 })
-                .catch(() => setAttendee(null))
-                .finally(() => setStatusLoading(false));
-        }, [userId, event?.id, username])
+                .catch(() => {
+                    if (cancelled) return;
+                    setEvent(eventFromRoute ?? null);
+                    setLoading(false);
+                    setStatusLoading(false);
+                });
+
+            return () => { cancelled = true; };
+        }, [eventId, userId, username])
     );
 
     const isRegistered = !!attendee && attendee.attendantStatus !== "Withdrew";
@@ -346,11 +435,10 @@ export default function EventInfoScreen({ route }: any) {
 
     if (loading) {
         return (
-            <SafeAreaView style={s.safe}>
-                <View style={s.centered}>
-                    <ActivityIndicator size="large" color="#2ecc71" />
-                </View>
-            </SafeAreaView>
+            <>
+                <Stack.Screen options={{ headerShown: false }} />
+                <EventInfoSkeleton onBack={() => navigation.navigate("Events List" as any)} />
+            </>
         );
     }
 
@@ -530,13 +618,18 @@ export default function EventInfoScreen({ route }: any) {
                         <View style={s.divider} />
 
                         {/* Description */}
-                        <View style={s.section}>
-                            <Text style={s.sectionTitle}>{i18n.t("CreateEvent.EventDescription")}</Text>
-                            <Text style={s.description}>{event.description}</Text>
-                        </View>
+                        {event.description ? (
+                            <View style={s.section}>
+                                <Text style={s.sectionTitle}>{i18n.t("CreateEvent.EventDescription")}</Text>
+                                <LinkableText
+                                    text={event.description}
+                                    textStyle={s.description}
+                                />
+                            </View>
+                        ) : null}
 
-                        {/* Organizer-only actions — Approved events */}
-                        {isOrganizer && event.status === "Approved" && (
+                        {/* Organizer-only actions — hidden until status has resolved */}
+                        {!statusLoading && isOrganizer && (
                             <View style={s.organizerActions}>
                                 <TouchableOpacity
                                     style={s.notifyBtn}

@@ -1,5 +1,7 @@
 import i18n from "@/translations/i18n";
 import * as React from "react";
+import { useRef, useEffect } from "react";
+import { useNavigation, CommonActions } from "@react-navigation/native";
 import "../global.css";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { useTranslation } from "react-i18next";
@@ -44,6 +46,22 @@ const Drawer = createDrawerNavigator<any, "MainDrawer">();
 function DrawerNavigator() {
   const { t } = useTranslation("sidebar");
   const { isSignedIn } = useAuth();
+  const navigation = useNavigation<any>();
+  const prevSignedIn = useRef<boolean | undefined>(isSignedIn);
+
+  // Single source of truth for post-logout redirect.
+  // Only fires on true → false transition, not on initial load.
+  useEffect(() => {
+    const was = prevSignedIn.current;
+    prevSignedIn.current = isSignedIn;
+    console.log('[DrawerNavigator] isSignedIn:', was, '→', isSignedIn);
+    if (was === true && isSignedIn === false) {
+      console.log('[DrawerNavigator] Logout detected — resetting to Home');
+      navigation.dispatch(
+        CommonActions.reset({ index: 0, routes: [{ name: 'Home' }] })
+      );
+    }
+  }, [isSignedIn]);
 
   return (
     <Drawer.Navigator
@@ -64,7 +82,7 @@ function DrawerNavigator() {
         swipeEdgeWidth: 50,
         swipeMinDistance: 5,
       }}
-      drawerContent={(props) => <Sidebar {...props} />}
+      drawerContent={(drawerProps) => <Sidebar {...drawerProps} />}
     >
       <Drawer.Screen
         name="Home"

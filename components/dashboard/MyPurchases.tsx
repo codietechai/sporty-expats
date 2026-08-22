@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useCallback, useState } from "react";
 import {
     Image,
+    RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
@@ -99,8 +100,27 @@ const PurchaseCard = ({ item }: { item: PurchaseItem }) => (
 );
 
 const MyPurchases = () => {
+    const [refreshing, setRefreshing] = useState(false);
+
+    const handleRefresh = useCallback(async () => {
+        setRefreshing(true);
+        // No real API yet — spinner clears after a brief moment
+        setTimeout(() => setRefreshing(false), 600);
+    }, []);
+
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView
+            contentContainerStyle={styles.container}
+            refreshControl={
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={handleRefresh}
+                    tintColor="#2ecc71"
+                    colors={["#2ecc71"]}
+                    progressBackgroundColor="#0d0d0d"
+                />
+            }
+        >
             {PURCHASE_DATA.map((item, index) => (
                 <PurchaseCard key={index} item={item} />
             ))}

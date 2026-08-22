@@ -1,6 +1,6 @@
 import i18n from "@/translations/i18n";
-import React, { useMemo } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, FlatList } from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, RefreshControl } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useGroupRoomsContext } from "@/contexts/ChatContext";
 import { GroupRoomCard } from "@/components/groupchat/GroupRoomCard";
@@ -9,13 +9,23 @@ import type { ChatRoom } from "@sparkstrand/chat-api-client/v2/types";
 const JoinedGroups = () => {
   const navigation = useNavigation<any>();
   const { pastRooms, upcomingRooms, isLoading, error, refetch } = useGroupRoomsContext();
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Most recently active rooms first — mix past and upcoming
   const rooms = useMemo(() => [...upcomingRooms, ...pastRooms], [pastRooms, upcomingRooms]);
 
-  const handleRoomPress = (room: ChatRoom) => {
+  const handleRoomPress = useCallback((room: ChatRoom) => {
     navigation.navigate("Group Chats", { initialRoomId: room.roomId });
-  };
+  }, [navigation]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try { await refetch(); } finally { setRefreshing(false); }
+  }, [refetch]);
+
+  const keyExtractor = useCallback((item: ChatRoom) => item.roomId, []);
+  const renderItem = useCallback(({ item }: { item: ChatRoom }) => (
+    <GroupRoomCard room={item} onPress={handleRoomPress} />
+  ), [handleRoomPress]);
 
   return (
     <View style={styles.container}>
@@ -26,30 +36,33 @@ const JoinedGroups = () => {
         <Text style={styles.viewAllText}>View All Groups</Text>
       </TouchableOpacity>
 
-      {isLoading ? (
-        <View style={styles.stateBox}>
-          <Text style={styles.stateText}>Loading your groups…</Text>
-        </View>
-      ) : error ? (
+      {error ? (
         <View style={styles.stateBox}>
           <Text style={styles.stateText}>{error}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={refetch}>
             <Text style={styles.retryText}>{i18n.t("Complaints.retry")}</Text>
           </TouchableOpacity>
         </View>
-      ) : rooms.length === 0 ? (
+      ) : rooms.length === 0 && !isLoading ? (
         <View style={styles.stateBox}>
           <Text style={styles.stateText}>No joined groups yet.</Text>
         </View>
       ) : (
         <FlatList
           data={rooms}
-          keyExtractor={(item) => item.roomId}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <GroupRoomCard room={item} onPress={handleRoomPress} />
-          )}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing || isLoading}
+              onRefresh={handleRefresh}
+              tintColor="#2ecc71"
+              colors={["#2ecc71"]}
+              progressBackgroundColor="#0d0d0d"
+            />
+          }
         />
       )}
     </View>

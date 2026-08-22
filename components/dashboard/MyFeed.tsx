@@ -5,17 +5,21 @@ import { reactToPost, bookmarkPost, addComment, getPostComments } from "@/client
 import { useUserDb } from "@/app/hooks/useUserDb";
 import PostStatusBar from "@/components/dashboard/PostStatusBar";
 import FeedSkeleton from "@/components/dashboard/PostCardSkeleton";
+import LinkableText from "@/components/common/LinkableText";
 import { timeAgo } from "@/helpers/date";
 import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator, Alert, Animated, FlatList, KeyboardAvoidingView,
-  Modal, Platform, ScrollView, Share, StyleSheet, Text,
+  ActivityIndicator, Alert, Animated, Dimensions, FlatList, KeyboardAvoidingView,
+  Modal, Platform, RefreshControl, ScrollView, Share, StyleSheet, Text,
   TextInput, TouchableOpacity, TouchableWithoutFeedback, View,
 } from "react-native";
 import { useQuery, useQueryClient } from "react-query";
+
+// Screen width measured once — avoids per-card onLayout setState thrash
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface CommentAuthor {
@@ -487,7 +491,12 @@ const PostCard = React.memo(({ post, userId, onUpdate }: {
       {(post.title || post.desc) && (
         <View style={pc.captionWrap}>
           {post.title ? <Text style={pc.postTitle}>{post.title}</Text> : null}
-          {post.desc ? <Text style={pc.postDesc}>{post.desc}</Text> : null}
+          {post.desc ? (
+            <LinkableText
+              text={post.desc}
+              textStyle={pc.postDesc}
+            />
+          ) : null}
         </View>
       )}
 
@@ -522,7 +531,7 @@ const PostCard = React.memo(({ post, userId, onUpdate }: {
           </TouchableOpacity>
           {showEmoji && <EmojiPicker onSelect={handleReact} onClose={() => setShowEmoji(false)} />}
         </View>
-        <TouchableOpacity onPress={() => Share.share({ message: post.title ?? post.desc })} hitSlop={8} style={pc.btn}>
+        <TouchableOpacity onPress={() => Share.share({ message: `https://staging.sportyexpats.fr/posts/${post._id}` })} hitSlop={8} style={pc.btn}>
           <Ionicons name="share-social-outline" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -602,28 +611,75 @@ function mapPost(p: any): Post {
   };
 }
 
-const MyFeed = () => {
+interface MyFeedProps {
+  /** Called by parent when it wants this feed to refresh (e.g. shared pull-to-refresh from dashboard) */
+  onRefreshRequest?: (done: () => void) => void;
+  /** Controlled refreshing state driven by the parent */
+  refreshing?: boolean;
+  /** Parent-level onRefresh so both stories + feed spin together */
+  onRefresh?: () => void;
+}
+
+// Stable empty component for ListHeaderComponent — avoids creating a new
+// element reference on every render which forces VirtualizedList to re-layout.
+const FeedHeader = React.memo(() => <PostStatusBar />);
+
+const MyFeed = ({ refreshing: externalRefreshing, onRefresh: externalOnRefresh }: MyFeedProps = {}) => {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [page, setPage] = useState(1);
+  // cursorRef holds the nextCursor from the last successful fetch.
+  // A ref (not state) so loadMorePosts always reads the latest value without
+  // being listed in its dependency array — prevents stale-closure re-fires.
+  const cursorRef = useRef<string | undefined>(undefined);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [internalRefreshing, setInternalRefreshing] = useState(false);
   const queryClient = useQueryClient();
   const { userDb, loading: userLoading } = useUserDb();
   const userId: string | undefined = userDb?.id;
+  // initializedRef: true once the first page has been written to posts[].
+  // refreshingRef:  true while pull-to-refresh is in progress — prevents the
+  //   data effect from overwriting accumulated pages mid-refresh.
   const initializedRef = useRef(false);
+  const refreshingRef  = useRef(false);
 
-  const { data, isLoading } = useQuery(
-    [GET_ALL_POSTS, userId, page],
-    () => getAllPosts(userId, { page, limit: 10 }),
-    { enabled: !!userId && !userLoading, keepPreviousData: true, refetchOnWindowFocus: false, refetchOnMount: true, retry: 1, staleTime: 2 * 60 * 1000 }
+  // First page query (no cursor). Pages 2+ are fetched manually in loadMorePosts.
+  const { data, isLoading, refetch } = useQuery(
+    [GET_ALL_POSTS, userId],
+    () => getAllPosts(userId, { limit: 10 }),
+    { enabled: !!userId && !userLoading, keepPreviousData: false,
+      refetchOnWindowFocus: false, refetchOnMount: true, retry: 1, staleTime: 2 * 60 * 1000 }
   );
 
+  // ── First-page data effect ──────────────────────────────────────────────────
+  // Writes to posts[] only on the very first load. Must NOT run after
+  // load-more — that would overwrite accumulated pages.
+  useEffect(() => {
+    if (!data || refreshingRef.current) return;
+    const payload = data?.data ?? {};
+    const incoming: Post[] = (payload.data ?? []).map(mapPost);
+    const nextCursor: string | undefined = payload.nextCursor || undefined;
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      cursorRef.current = nextCursor;
+      setPosts(incoming);
+      setHasMore(!!nextCursor);
+    }
+  }, [data]);
+
+  // ── Load more (scroll-to-bottom) ────────────────────────────────────────────
+  // loadingMoreRef is a synchronous in-flight guard — setState is async/batched
+  // so checking the state value at the top of this callback would race.
+  const loadingMoreRef = useRef(false);
+
   const loadMorePosts = useCallback(async () => {
-    if (loadingMore || !hasMore || isLoading) return;
+    if (loadingMoreRef.current || !hasMore || !cursorRef.current) return;
+    loadingMoreRef.current = true;
     setLoadingMore(true);
     try {
-      const nextPage = page + 1;
-      const newPosts = (await getAllPosts(userId, { page: nextPage, limit: 10 }))?.data?.data ?? [];
+      const res = await getAllPosts(userId, { limit: 10, startingAfter: cursorRef.current });
+      const payload = res?.data ?? {};
+      const newPosts: any[] = payload.data ?? [];
+      const nextCursor: string | undefined = payload.nextCursor || undefined;
       if (newPosts.length === 0) { setHasMore(false); return; }
       const formatted: Post[] = newPosts.map(mapPost);
       setPosts((prev) => {
@@ -631,37 +687,71 @@ const MyFeed = () => {
         const unique = formatted.filter((p: Post) => !ids.has(p._id));
         return unique.length === 0 ? prev : [...prev, ...unique];
       });
-      setPage(nextPage);
-      if (newPosts.length < 10) setHasMore(false);
-    } catch { /* ignore */ } finally { setLoadingMore(false); }
-  }, [loadingMore, hasMore, isLoading, page, userId]);
-
-  useEffect(() => {
-    if (!data || page !== 1) return;
-    const incoming: Post[] = (data?.data?.data ?? []).map(mapPost);
-
-    // Log all image URLs from the feed
-    console.log('[MyFeed] Image URLs:');
-    incoming.forEach((post, i) => {
-      const urls = post.files.map(f => f.fileUrl).filter(Boolean);
-      if (urls.length) console.log(`  post[${i}] "${post.title || post._id}":`, urls);
-    });
-
-    if (!initializedRef.current) {
-      initializedRef.current = true;
-      setPosts(incoming);
-      setHasMore(incoming.length === 10);
-    } else {
-      setPosts((prev) => incoming.map((s) => {
-        const l = prev.find((p) => p._id === s._id);
-        return l ? { ...s, isLikedByUser: l.isLikedByUser, vote: l.vote, isBookmarkedByUser: l.isBookmarkedByUser, userReaction: l.userReaction, total_reactions: l.total_reactions, total_comments: l.total_comments, comments: l.comments } : s;
-      }));
+      cursorRef.current = nextCursor;
+      setHasMore(!!nextCursor);
+    } catch { /* ignore */ } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
     }
-  }, [data]);
+  }, [hasMore, userId]);
 
+  // ── Shared reset helper ─────────────────────────────────────────────────────
+  const resetPagination = useCallback(() => {
+    cursorRef.current = undefined;
+    loadingMoreRef.current = false;
+    initializedRef.current = false;
+    setHasMore(true);
+    setLoadingMore(false);
+    setPosts([]);
+    queryClient.removeQueries([GET_ALL_POSTS, userId]);
+  }, [queryClient, userId]);
+
+  const applyFirstPage = (result: any) => {
+    const payload = (result?.data as any)?.data ?? {};
+    const incoming: Post[] = (payload.data ?? []).map(mapPost);
+    const nextCursor: string | undefined = payload.nextCursor || undefined;
+    if (incoming.length > 0) {
+      initializedRef.current = true;
+      cursorRef.current = nextCursor;
+      setPosts(incoming);
+      setHasMore(!!nextCursor);
+    }
+  };
+
+  // ── Pull-to-refresh ─────────────────────────────────────────────────────────
+  const handleRefresh = useCallback(async () => {
+    if (externalOnRefresh) { externalOnRefresh(); return; }
+    refreshingRef.current = true;
+    setInternalRefreshing(true);
+    try {
+      resetPagination();
+      const result = await refetch();
+      applyFirstPage(result);
+    } finally {
+      refreshingRef.current = false;
+      setInternalRefreshing(false);
+    }
+  }, [externalOnRefresh, resetPagination, refetch]);
+
+  // Parent-driven refresh (shared pull-to-refresh from dashboard)
+  const prevExternalRefreshing = useRef(false);
+  useEffect(() => {
+    if (!prevExternalRefreshing.current && externalRefreshing === true) {
+      refreshingRef.current = true;
+      resetPagination();
+      refetch()
+        .then(applyFirstPage)
+        .finally(() => { refreshingRef.current = false; });
+    }
+    prevExternalRefreshing.current = externalRefreshing ?? false;
+  }, [externalRefreshing, resetPagination, refetch]);
+
+  const isRefreshing = externalRefreshing ?? internalRefreshing;
+
+  // ── Optimistic update helpers ───────────────────────────────────────────────
   const handleUpdate = useCallback((id: string, patch: Partial<Post>) => {
     setPosts((prev) => prev.map((p) => p._id === id ? { ...p, ...patch } : p));
-    queryClient.setQueriesData(GET_ALL_POSTS, (old: any) => {
+    queryClient.setQueriesData([GET_ALL_POSTS, userId], (old: any) => {
       const arr = old?.data?.data;
       if (!Array.isArray(arr)) return old;
       return { ...old, data: { ...old.data, data: arr.map((p: any) => p.id !== id ? p : {
@@ -672,24 +762,27 @@ const MyFeed = () => {
         reactions: { ...(p.reactions ?? {}), userReaction: patch.userReaction !== undefined ? patch.userReaction : p.reactions?.userReaction },
       })}};
     });
-  }, [queryClient]);
+  }, [queryClient, userId]);
 
   const keyExtractor = useCallback((item: Post) => item._id, []);
   const renderItem = useCallback(({ item }: { item: Post }) => (
     <PostCard post={item} userId={userId} onUpdate={handleUpdate} />
   ), [userId, handleUpdate]);
 
-  const renderFooter = () => {
+  // Stable footer — useCallback keeps the reference stable between renders
+  const renderFooter = useCallback(() => {
     if (loadingMore) return <FeedSkeleton count={2} />;
     if (!hasMore && posts.length > 0) return (
       <View style={s.eof}>
-        <View style={s.eofLine} /><Text style={s.eofTxt}>You're all caught up</Text><View style={s.eofLine} />
+        <View style={s.eofLine} />
+        <Text style={s.eofTxt}>You're all caught up</Text>
+        <View style={s.eofLine} />
       </View>
     );
     return null;
-  };
+  }, [loadingMore, hasMore, posts.length]);
 
-  if (userLoading || (isLoading && page === 1) || (!initializedRef.current && !isLoading))
+  if (userLoading || (isLoading && !initializedRef.current))
     return <FeedSkeleton count={3} />;
 
   if (posts.length === 0 && initializedRef.current && !isLoading)
@@ -702,12 +795,29 @@ const MyFeed = () => {
 
   return (
     <FlatList
-      data={posts} keyExtractor={keyExtractor} renderItem={renderItem}
-      showsVerticalScrollIndicator={false} contentContainerStyle={s.list}
-      keyboardShouldPersistTaps="handled" ListHeaderComponent={<PostStatusBar />}
-      ListFooterComponent={renderFooter} onEndReached={loadMorePosts}
-      onEndReachedThreshold={0.3} removeClippedSubviews maxToRenderPerBatch={5}
-      windowSize={10} initialNumToRender={5}
+      data={posts}
+      keyExtractor={keyExtractor}
+      renderItem={renderItem}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={s.list}
+      keyboardShouldPersistTaps="handled"
+      ListHeaderComponent={FeedHeader}
+      ListFooterComponent={renderFooter}
+      onEndReached={loadMorePosts}
+      onEndReachedThreshold={0.6}
+      removeClippedSubviews
+      maxToRenderPerBatch={5}
+      windowSize={10}
+      initialNumToRender={5}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={handleRefresh}
+          tintColor="#2ecc71"
+          colors={["#2ecc71"]}
+          progressBackgroundColor="#0d0d0d"
+        />
+      }
     />
   );
 };

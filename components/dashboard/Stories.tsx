@@ -11,6 +11,8 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from "react"
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  BackHandler,
   FlatList,
   Modal,
   ScrollView,
@@ -23,9 +25,11 @@ import {
 import { useQuery } from "react-query";
 import { useUser } from "@clerk/clerk-expo";
 import StoriesSkeleton from "@/components/dashboard/StoriesSkeleton";
+import ViewerBottomSheet from "@/components/common/ViewerBottomSheet";
 import { timeAgo } from "@/helpers/date";
 
 const DEFAULT_AVATAR = "https://storage.strandcdn.com/avatar.svg";
+const STORY_DURATION_MS = 5000; // 5 seconds per story
 
 export type Story = {
   authorId: string;
@@ -61,6 +65,78 @@ const groupByAuthor = (stories: Story[]): GroupedStory[] => {
   });
   return Array.from(map.values());
 };
+
+// ── Story Progress Bar ────────────────────────────────────────────────────────
+// One thin animated bar per story in the group. The active bar fills from
+// left to right over STORY_DURATION_MS. Completed bars are fully filled,
+// upcoming bars are empty.
+function StoryProgressBar({
+  count,
+  activeIndex,
+  isActive,
+  onComplete,
+}: {
+  count: number;
+  activeIndex: number;
+  isActive: boolean;
+  onComplete: () => void;
+}) {
+  const progress = useRef(new Animated.Value(0)).current;
+  const animRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    // Reset and restart animation whenever the active index changes
+    progress.setValue(0);
+    animRef.current?.stop();
+
+    if (!isActive) return;
+
+    animRef.current = Animated.timing(progress, {
+      toValue: 1,
+      duration: STORY_DURATION_MS,
+      useNativeDriver: false,
+    });
+    animRef.current.start(({ finished }) => {
+      if (finished) onComplete();
+    });
+
+    return () => { animRef.current?.stop(); };
+  }, [activeIndex, isActive]);
+
+  return (
+    <View style={pb.row}>
+      {Array.from({ length: count }).map((_, i) => (
+        <View key={i} style={pb.track}>
+          <Animated.View
+            style={[
+              pb.fill,
+              {
+                width: i < activeIndex
+                  ? "100%"          // completed
+                  : i === activeIndex
+                    ? progress.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] })
+                    : "0%",         // upcoming
+              },
+            ]}
+          />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const pb = StyleSheet.create({
+  row: {
+    position: "absolute", top: 50, left: 12, right: 12,
+    flexDirection: "row", gap: 4, zIndex: 10,
+  },
+  track: {
+    flex: 1, height: 2, borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    overflow: "hidden",
+  },
+  fill: { height: "100%", backgroundColor: "#2ecc71", borderRadius: 2 },
+});
 
 // ── Story Upload Modal ────────────────────────────────────────────────────────
 function StoryUploadModal({
@@ -211,7 +287,15 @@ const um = StyleSheet.create({
 });
 
 // ── Main Stories component ────────────────────────────────────────────────────
-export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
+interface StoriesProps {
+  onAddPost?: () => void;
+  /** Controlled refreshing flag from a parent-level pull-to-refresh */
+  refreshing?: boolean;
+  /** Called when the parent wants stories to refresh (e.g. shared pull-to-refresh) */
+  onRefreshDone?: () => void;
+}
+
+export default function Stories({ onAddPost, refreshing: externalRefreshing, onRefreshDone }: StoriesProps) {
   const { userDb, loading } = useUserDb();
   const { user } = useUser(); // Add Clerk user as fallback
   
@@ -234,6 +318,7 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
   const [previewStories, setPreviewStories] = useState<Story[] | null>(null);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [previewIsRejected, setPreviewIsRejected] = useState(false);
+  const [showViewerSheet, setShowViewerSheet] = useState(false);
 
   const openStatusPreview = useCallback((stories: Story[], isRejected: boolean) => {
     setPreviewStories(stories);
@@ -289,6 +374,19 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
   }, [userId]);
 
   useEffect(() => { fetchStatus(); }, [fetchStatus]);
+
+  // When the parent pull-to-refresh fires, refresh stories + status and
+  // notify the parent when both have settled.
+  const prevExternalRefreshing = useRef(false);
+  useEffect(() => {
+    if (!prevExternalRefreshing.current && externalRefreshing === true) {
+      // Parent refresh started — refetch stories and status
+      Promise.all([refetch(), fetchStatus()]).finally(() => {
+        onRefreshDone?.();
+      });
+    }
+    prevExternalRefreshing.current = externalRefreshing ?? false;
+  }, [externalRefreshing, refetch, fetchStatus, onRefreshDone]);
 
   // Memoize grouped stories to prevent recalculation
   const grouped = useMemo(() => {
@@ -485,19 +583,25 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
       )}
 
       {/* ── Story viewer modal ── */}
-      <Modal visible={!!selectedGroup} transparent animationType="fade">
+      <Modal
+        visible={!!selectedGroup}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedGroup(null)}
+      >
         {selectedGroup && (() => {
           const currentStory = selectedGroup.stories[storyIndex];
           const isAuthor = currentStory?.authorId === userId;
-          const viewers = currentStory?.viewers ?? [];
           const viewCount = currentStory?.viewCount ?? 0;
           return (
             <View style={styles.viewerBg}>
-              <View style={styles.progressRow}>
-                {selectedGroup.stories.map((_, i) => (
-                  <View key={i} style={[styles.progressDot, i === storyIndex && styles.progressDotActive]} />
-                ))}
-              </View>
+              {/* Animated progress bars — one per story in the group */}
+              <StoryProgressBar
+                count={selectedGroup.stories.length}
+                activeIndex={storyIndex}
+                isActive={true}
+                onComplete={nextStory}
+              />
               <View style={styles.viewerHeader}>
                 <Image source={{ uri: selectedGroup.imageUrl || DEFAULT_AVATAR }} style={styles.viewerAvatar} />
                 <Text style={styles.viewerName}>{selectedGroup.name}</Text>
@@ -519,32 +623,21 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
                 </TouchableWithoutFeedback>
               </View>
 
-              {/* ── Viewer list — only shown to story author ── */}
+              {/* ── Viewer list button — only shown to story author ── */}
               {isAuthor && (
-                <View style={styles.viewersPanel}>
-                  <Text style={styles.viewersPanelTitle}>
-                    {viewCount === 1
-                      ? i18n.t("Stories.viewedBy", { count: viewCount })
-                      : i18n.t("Stories.viewedByPlural", { count: viewCount })}
-                  </Text>
-                  {viewers.length === 0 ? (
-                    <Text style={styles.noViewersText}>{i18n.t("Stories.noViewers")}</Text>
-                  ) : (
-                    <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 120 }}>
-                      {viewers.map((v) => (
-                        <View key={v.id} style={styles.viewerRow}>
-                          <Image
-                            source={{ uri: v.imageUrl || DEFAULT_AVATAR }}
-                            style={styles.viewerRowAvatar}
-                          />
-                          <View style={{ flex: 1 }}>
-                            <Text style={styles.viewerRowName}>{v.name}</Text>
-                            <Text style={styles.viewerRowTime}>{timeAgo(v.viewedAt)}</Text>
-                          </View>
-                        </View>
-                      ))}
-                    </ScrollView>
-                  )}
+                <View style={styles.viewersButtonContainer}>
+                  <TouchableOpacity
+                    style={styles.viewersButton}
+                    onPress={() => setShowViewerSheet(true)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="eye-outline" size={18} color="#fff" />
+                    <Text style={styles.viewersButtonText}>
+                      {viewCount === 1
+                        ? i18n.t("Stories.viewedBy", { count: viewCount })
+                        : i18n.t("Stories.viewedByPlural", { count: viewCount })}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -553,15 +646,27 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
       </Modal>
 
       {/* ── Status preview modal (pending / rejected) ── */}
-      <Modal visible={!!previewStories} transparent animationType="fade">
+      <Modal
+        visible={!!previewStories}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPreviewStories(null)}
+      >
         {previewStories && (
           <View style={styles.viewerBg}>
-            {/* Progress dots */}
-            <View style={styles.progressRow}>
-              {previewStories.map((_, i) => (
-                <View key={i} style={[styles.progressDot, i === previewIndex && styles.progressDotActive]} />
-              ))}
-            </View>
+            {/* Animated progress bars for pending/rejected preview */}
+            <StoryProgressBar
+              count={previewStories.length}
+              activeIndex={previewIndex}
+              isActive={true}
+              onComplete={() => {
+                if (previewIndex < previewStories.length - 1) {
+                  setPreviewIndex(i => i + 1);
+                } else {
+                  setPreviewStories(null);
+                }
+              }}
+            />
 
             {/* Header */}
             <View style={styles.viewerHeader}>
@@ -607,6 +712,16 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
           </View>
         )}
       </Modal>
+
+      {/* ── Viewer bottom sheet (modern Instagram-style) ── */}
+      {selectedGroup && (
+        <ViewerBottomSheet
+          visible={showViewerSheet}
+          onClose={() => setShowViewerSheet(false)}
+          viewers={selectedGroup.stories[storyIndex]?.viewers || []}
+          viewCount={selectedGroup.stories[storyIndex]?.viewCount || 0}
+        />
+      )}
     </View>
   );
 }
@@ -710,12 +825,6 @@ const styles = StyleSheet.create({
   },
 
   viewerBg: { flex: 1, backgroundColor: "#000" },
-  progressRow: {
-    flexDirection: "row", gap: 4,
-    position: "absolute", top: 50, left: 12, right: 12, zIndex: 10,
-  },
-  progressDot: { flex: 1, height: 3, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.35)" },
-  progressDotActive: { backgroundColor: "#fff" },
   viewerHeader: {
     position: "absolute", top: 62, left: 12, right: 12,
     flexDirection: "row", alignItems: "center", gap: 10, zIndex: 10,
@@ -727,27 +836,30 @@ const styles = StyleSheet.create({
   tapLeft: { flex: 1 },
   tapRight: { flex: 1 },
 
-  // Viewer panel (author only)
-  viewersPanel: {
-    position: "absolute", bottom: 0, left: 0, right: 0,
-    backgroundColor: "rgba(15,15,15,0.92)",
-    borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)",
-    paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24,
+  // Viewers button container (author only)
+  viewersButtonContainer: {
+    position: "absolute", 
+    bottom: 24, 
+    left: 0, 
+    right: 0,
+    alignItems: "center",
   },
-  viewersPanelTitle: {
-    color: "#fff", fontWeight: "700", fontSize: 14, marginBottom: 10,
+  viewersButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
   },
-  noViewersText: { color: "#6B7280", fontSize: 13 },
-  viewerRow: {
-    flexDirection: "row", alignItems: "center", gap: 10,
-    paddingVertical: 6,
+  viewersButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
   },
-  viewerRowAvatar: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: "#1a1a1a",
-  },
-  viewerRowName: { color: "#fff", fontSize: 13, fontWeight: "600" },
-  viewerRowTime: { color: "#6B7280", fontSize: 11, marginTop: 1 },
 
   // Status preview modal badge
   statusBadge: {
