@@ -25,6 +25,25 @@ export interface PushNotificationState {
  */
 export type PushTapHandler = (screen: string, params: Record<string, unknown>) => void;
 
+function handleNotificationResponse(
+  response: Notifications.NotificationResponse,
+  onTap?: PushTapHandler,
+): void {
+  const data = response.notification.request.content.data as
+    | Record<string, unknown>
+    | null
+    | undefined;
+  const actionUrl =
+    (typeof data?.actionUrl === "string" ? data.actionUrl : undefined) ??
+    (typeof data?.action_url === "string" ? data.action_url : undefined) ??
+    null;
+  const destination = resolveNotificationDestination(data ?? null, actionUrl);
+
+  if (destination && onTap) {
+    onTap(destination.screen, destination.params);
+  }
+}
+
 export function usePushNotifications(onTap?: PushTapHandler): PushNotificationState {
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [notification, setNotification] = useState<Notifications.Notification | null>(null);
@@ -51,25 +70,16 @@ export function usePushNotifications(onTap?: PushTapHandler): PushNotificationSt
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener(
       (response: Notifications.NotificationResponse) => {
-        // Extract the data payload that was embedded in the notification.
-        // Expo push notifications carry custom data in `notification.request.content.data`.
-        const data = response.notification.request.content.data as
-          | Record<string, string>
-          | null
-          | undefined;
-
-        const actionUrl =
-          (data?.actionUrl as string | undefined) ??
-          (data?.action_url as string | undefined) ??
-          null;
-
-        const destination = resolveNotificationDestination(data ?? null, actionUrl);
-
-        if (destination && onTapRef.current) {
-          onTapRef.current(destination.screen, destination.params);
-        }
+        handleNotificationResponse(response, onTapRef.current);
       }
     );
+
+    // A listener only covers taps while the app is already running. Resolve
+    // the initial response too, so a notification tap that cold-starts the
+    // app reaches its destination once the root navigator has mounted.
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) handleNotificationResponse(response, onTapRef.current);
+    });
 
     return () => {
       notificationListener.current?.remove();
@@ -88,6 +98,7 @@ export function usePushNotifications(onTap?: PushTapHandler): PushNotificationSt
 export async function scheduleLocalNotification(
   title: string,
   body: string,
+  data?: Record<string, unknown>,
 ): Promise<void> {
   try {
     const { status } = await Notifications.getPermissionsAsync();
@@ -99,6 +110,7 @@ export async function scheduleLocalNotification(
         body,
         sound: true,
         badge: 1,
+        data,
       },
       trigger: null, // fire immediately
     });

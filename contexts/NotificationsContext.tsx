@@ -199,9 +199,14 @@ function ActiveNotificationsProvider({ children }: { children: ReactNode }) {
       .filter((notification) => !notification.isRead && !seenIdsRef.current.has(notification.id))
       .forEach((notification) => {
         seenIdsRef.current.add(notification.id);
+        const metadata = notification.metadata as Record<string, unknown> | null;
         void scheduleLocalNotification(
           notification.pushTitle ?? "New notification",
           notification.pushBody ?? "",
+          {
+            ...(metadata ?? {}),
+            actionUrl: notification.actionUrl ?? undefined,
+          },
         );
       });
   }, [notifications]);

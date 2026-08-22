@@ -99,7 +99,7 @@ function NotifCard({
         item.actionUrl.trim() !== "" &&
         item.actionUrl.trim() !== "#" &&
         item.actionUrl.trim() !== "/" &&
-        /event[s]?[/\-]([a-zA-Z0-9_-]+)|posts?[/\-]([a-zA-Z0-9_-]+)|stor(?:y|ies)[/\-]([a-zA-Z0-9_-]+)/i.test(item.actionUrl)
+        /(?:sporty)?events?[/\-]([a-zA-Z0-9_-]+)|posts?[/\-]([a-zA-Z0-9_-]+)|stor(?:y|ies)[/\-]([a-zA-Z0-9_-]+)/i.test(item.actionUrl)
     );
     const hasCategoryFallback = !!(
         item.metadata?.category === "posts" || item.metadata?.category === "stories"
