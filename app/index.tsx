@@ -12,7 +12,6 @@ import ContactUs from "./screens/contactus";
 import AboutUs from "./screens/aboutus";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "@clerk/clerk-expo";
-import { useNavigation } from "@react-navigation/native";
 import { setUpAuthInterceptor } from "@/client/backendClient";
 import CreateEvents from "./screens/createEvents";
 import AddFeed from "./screens/AddFeed";
@@ -35,6 +34,10 @@ import MyCreatedEventsScreen from "./screens/MyCreatedEventsScreen";
 import RefundScreen from "./screens/RefundScreen";
 import NotificationsContainer from "./screens/NotificationsContainer";
 import SinglePostScreen from "./screens/SinglePostScreen";
+import EventInvitedUsersScreen from "./screens/EventInvitedUsersScreen";
+import InviteParticipantsScreen from "./screens/InviteParticipantsScreen";
+import NotifyUsersScreen from "./screens/NotifyUsersScreen";
+import EventParticipantsScreen from "./screens/EventParticipantsScreen";
 
 const Drawer = createDrawerNavigator<any, "MainDrawer">();
 
@@ -128,7 +131,26 @@ function DrawerNavigator() {
         component={SinglePostScreen}
         options={{ drawerLabel: "Post", drawerItemStyle: { display: "none" }, headerShown: false }}
       />
-
+      <Drawer.Screen
+        name="EventInvitedUsers"
+        component={EventInvitedUsersScreen}
+        options={{ drawerLabel: "Invited Users", drawerItemStyle: { display: "none" }, headerShown: false }}
+      />
+      <Drawer.Screen
+        name="InviteParticipants"
+        component={InviteParticipantsScreen}
+        options={{ drawerLabel: "Invite Participants", drawerItemStyle: { display: "none" }, headerShown: false }}
+      />
+      <Drawer.Screen
+        name="NotifyUsers"
+        component={NotifyUsersScreen}
+        options={{ drawerLabel: t("Notify Users"), headerShown: false }}
+      />
+      <Drawer.Screen
+        name="EventParticipants"
+        component={EventParticipantsScreen}
+        options={{ drawerLabel: "Participants", drawerItemStyle: { display: "none" }, headerShown: false }}
+      />
       <Drawer.Screen
         name="Dashboard"
         component={Dashboard}
@@ -142,7 +164,7 @@ function DrawerNavigator() {
       <Drawer.Screen
         name="Contact Us"
         component={ContactUs}
-        options={{ drawerLabel: t("Contact Us") }}
+        options={{ drawerLabel: t("Contact Us"), headerShown: false }}
       />
       <Drawer.Screen
         name="About Us"

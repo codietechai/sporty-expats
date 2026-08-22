@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   ActivityIndicator, Share,
@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { getPostsById } from "@/client/endpoints/posts/getPostById";
 import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
@@ -67,8 +67,10 @@ export default function SinglePostScreen({ route }: any) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const fetchPost = useCallback(() => {
     if (!postId) { setError(true); setLoading(false); return; }
+    setLoading(true);
+    setError(false);
     getPostsById(postId)
       .then((res) => {
         const raw = res?.data?.data ?? res?.data ?? res;
@@ -77,6 +79,12 @@ export default function SinglePostScreen({ route }: any) {
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [postId]);
+
+  useEffect(() => { fetchPost(); }, [fetchPost]);
+
+  useFocusEffect(
+    useCallback(() => { fetchPost(); }, [fetchPost])
+  );
 
   return (
     <>

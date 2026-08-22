@@ -99,13 +99,26 @@ function NotifCard({
         item.actionUrl.trim() !== "" &&
         item.actionUrl.trim() !== "#" &&
         item.actionUrl.trim() !== "/" &&
-        /event[s]?[\/\-]([a-zA-Z0-9_-]+)|post[s]?[\/\-]([a-zA-Z0-9_-]+)/i.test(item.actionUrl)
+        /event[s]?[/\-]([a-zA-Z0-9_-]+)|posts?[/\-]([a-zA-Z0-9_-]+)|stor(?:y|ies)[/\-]([a-zA-Z0-9_-]+)/i.test(item.actionUrl)
     );
-    const isNavigable = !!(item.metadata?.postId || item.metadata?.eventId || hasValidActionUrl);
+    const hasCategoryFallback = !!(
+        item.metadata?.category === "posts" || item.metadata?.category === "stories"
+    );
+    const isNavigable = !!(
+        item.metadata?.postId  ||
+        item.metadata?.storyId ||
+        item.metadata?.eventId ||
+        hasValidActionUrl      ||
+        hasCategoryFallback
+    );
 
     const handlePress = () => {
-        if (!item.isRead) onMarkAsRead(item.id);
+        // Navigate first — synchronously before any state update.
+        // Marking as read triggers a refresh which re-renders the list;
+        // doing it after a small delay prevents that re-render from
+        // racing with / cancelling the navigation.
         if (isNavigable) onNavigate(item);
+        if (!item.isRead) setTimeout(() => onMarkAsRead(item.id), 300);
     };
 
     return (

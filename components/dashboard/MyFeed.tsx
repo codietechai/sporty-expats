@@ -279,7 +279,7 @@ function CommentsModal({ visible, postId, total, userId, onClose, onPosted, init
   };
 
   const handleSubmit = async () => {
-    if (!userId) { Alert.alert("Sign in required", "Please sign in to comment."); return; }
+    if (!userId) { Alert.alert(i18n.t("SignIn.SignIn"), i18n.t("Dashboard.signInToComment")); return; }
     const t = text.trim();
     if (!t || submitting) return;
     setSubmitting(true);
@@ -305,13 +305,13 @@ function CommentsModal({ visible, postId, total, userId, onClose, onPosted, init
       setHasMore(!!nextCursor);
     } catch {
       setComments((prev) => prev.filter((c) => c.id !== optimistic.id));
-      Alert.alert("Error", "Could not post comment.");
+      Alert.alert(i18n.t("Dashboard.error"), i18n.t("Dashboard.commentFailed"));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const count = total > 0 ? `${total} ${total === 1 ? "comment" : "comments"}` : "Comments";
+  const count = total > 0 ? `${total} ${total === 1 ? i18n.t("Dashboard.comment") : i18n.t("Dashboard.commentsLabel")}` : i18n.t("Dashboard.comments");
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
@@ -340,7 +340,7 @@ function CommentsModal({ visible, postId, total, userId, onClose, onPosted, init
             {loading ? (
               <><CommentSkeleton /><CommentSkeleton /><CommentSkeleton /><CommentSkeleton /></>
             ) : comments.length === 0 ? (
-              <View style={cm.empty}><Text style={cm.emptyTxt}>No comments yet. Be the first!</Text></View>
+              <View style={cm.empty}><Text style={cm.emptyTxt}>{i18n.t("Dashboard.noCommentsYet")}</Text></View>
             ) : (
               comments.map((c) => <CommentNode key={c.id} comment={c} isReply={false} onReply={handleReply} />)
             )}
@@ -353,7 +353,7 @@ function CommentsModal({ visible, postId, total, userId, onClose, onPosted, init
           </ScrollView>
           {replyTo && (
             <View style={cm.replyBanner}>
-              <Text style={cm.replyTxt}>Replying to <Text style={{ color: "#4ade80" }}>@{replyTo.username || replyTo.displayName}</Text></Text>
+              <Text style={cm.replyTxt}>{i18n.t("Dashboard.replyingTo")} <Text style={{ color: "#4ade80" }}>@{replyTo.username || replyTo.displayName}</Text></Text>
               <TouchableOpacity onPress={() => setReplyTo(null)} hitSlop={8}><Ionicons name="close-circle" size={16} color="#6B7280" /></TouchableOpacity>
             </View>
           )}
@@ -361,7 +361,7 @@ function CommentsModal({ visible, postId, total, userId, onClose, onPosted, init
             <TextInput
               ref={inputRef}
               style={cm.input}
-              placeholder={replyTo ? `Reply to @${replyTo.username || replyTo.displayName}…` : "Add a comment…"}
+              placeholder={replyTo ? `${i18n.t("Dashboard.replyTo")} @${replyTo.username || replyTo.displayName}...` : i18n.t("Dashboard.addComment")}
               placeholderTextColor="#555"
               value={text}
               onChangeText={setText}
@@ -536,11 +536,11 @@ const PostCard = React.memo(({ post, userId, onUpdate }: {
       {/* View comments + quick reply bar (Instagram style) */}
       {post.total_comments > 0 && (
         <TouchableOpacity onPress={openComments} style={pc.viewComments}>
-          <Text style={pc.viewCommentsTxt}>View all {post.total_comments} {post.total_comments === 1 ? "comment" : i18n.t("Dashboard.commentsLabel")}</Text>
+          <Text style={pc.viewCommentsTxt}>{i18n.t("Dashboard.viewAllComments", { count: post.total_comments, label: post.total_comments === 1 ? i18n.t("Dashboard.comment") : i18n.t("Dashboard.commentsLabel") })}</Text>
         </TouchableOpacity>
       )}
       <TouchableOpacity style={pc.quickBar} onPress={openComments} activeOpacity={0.7}>
-        <Text style={pc.quickPlaceholder}>Add a comment…</Text>
+        <Text style={pc.quickPlaceholder}>{i18n.t("Dashboard.addComment")}</Text>
       </TouchableOpacity>
 
       <CommentsModal

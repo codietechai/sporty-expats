@@ -108,7 +108,35 @@
     "SignIn": "SignIn",
     "NoAccount": "Don't have an account yet? ",
     "Create": "Join SportyExpats",
-    "ForgotPassword": "Forgot Password? "
+    "ForgotPassword": "Forgot Password? ",
+    "terms": "By continuing, you agree to our Terms and Privacy Policy.",
+    "resetTitle": "Reset Password",
+    "resetInstructions": "Enter your email address to receive a reset code.",
+    "sendResetCode": "Send Reset Code",
+    "backTo": "Back to",
+    "resetCodeTitle": "Enter Reset Code",
+    "resetCodeInstructions": "Check your email for the 6-digit code.",
+    "resetCode": "Reset Code",
+    "newPassword": "New Password",
+    "messages": {
+      "loggedIn": "Logged in successfully",
+      "loginFailed": "Login failed",
+      "resetCodeSent": "Reset code sent to your email",
+      "resetEmailFailed": "Failed to send reset email",
+      "passwordReset": "Password reset successfully",
+      "passwordResetFailed": "Password reset failed"
+    }
+  },
+  "Auth": {
+    "continueWithGoogle": "Continue with Google",
+    "continueWithFacebook": "Continue with Facebook",
+    "continueWithApple": "Continue with Apple",
+    "loading": "Loading..."
+  },
+  "Market": {
+    "fairPrice": "Agree on a fair price",
+    "buyAndSell": "Buy and sell in the market",
+    "networkCommunity": "Network and true community"
   },
   "SignUp": {
     "Username": "Username",
@@ -123,6 +151,14 @@
     "Continues": "Continue",
     "VerifyEC": "Verify Email Code",
     "EmailC": "Email code",
+    "verifyTitle": "Verify Your Email",
+    "verifyInstructions": "Please enter the 6-digit code sent to your email.",
+    "verificationCode": "Verification Code",
+    "messages": {
+      "verificationSent": "Verification code sent to your email.",
+      "signedUp": "Signed up successfully",
+      "invalidCode": "Invalid or expired code."
+    },
     "Verify": "Verify",
     "Dob": "Date of Birth",
     "Gender": {
@@ -930,6 +966,39 @@
     "statusRejected": "Rejected",
     "statusClosed": "Closed"
   },
+  "Stories": {
+    "viewedBy": "Viewed by {{count}} person",
+    "viewedByPlural": "Viewed by {{count}} people",
+    "noViewers": "No viewers yet",
+    "uploadTitle": "Upload New Story",
+    "selectImage": "Tap to select image",
+    "uploadSuccess": "Your story has been uploaded successfully!"
+  },
+  "EventInfo": {
+    "free": "Free",
+    "spotsRemaining": "{{count}} Spot(s) Remaining",
+    "maxAttendees": "Max {{count}} Attendee(s)",
+    "minAttendees": "Min {{count}} Attendee(s)",
+    "refundDeadline": "Refund Deadline",
+    "openInMaps": "Open in Maps",
+    "withdrawParticipation": "Withdraw Participation",
+    "withdrawTitle": "Withdraw Participation",
+    "withdrawConfirm": "Are you sure you want to withdraw from this event?",
+    "withdrawBtn": "Withdraw",
+    "withdrawSuccess": "You have withdrawn from this event.",
+    "withdrawError": "Could not withdraw. Please try again.",
+    "youAreRegistered": "You're registered · {{count}} ticket(s)",
+    "participateAgain": "Participate Again",
+    "requestRefund": "Request Refund",
+    "endsLabel": "Ends",
+    "eventSoldOut": "Event Sold Out",
+    "notifyUsers": "Notify Users",
+    "participants": "Participants",
+    "invited": "Invited",
+    "rejectionReason": "Rejection Reason",
+    "expired": "Expired",
+    "closingSoon": "Closing soon"
+  },
   "Dashboard": {
     "search": "Search people, features, and actions",
     "aboutSportyExpats": "About SportyExpats",
@@ -980,6 +1049,23 @@
     "viewReply": "View {count} reply",
     "viewReplies": "View {count} replies",
     "hideReplies": "Hide replies",
-    "unknownUser": "Unknown User"
+    "unknownUser": "Unknown User",
+    "comment": "comment",
+    "noCommentsYet": "No comments yet. Be the first!",
+    "signInToComment": "Please sign in to comment.",
+    "error": "Error",
+    "commentFailed": "Could not post comment.",
+    "replyingTo": "Replying to",
+    "replyTo": "Reply to",
+    "viewAllComments": "View all {count} {label}"
+    ,"eventProfessionals": "EVENTS FOR PROFESSIONALS AND ENTHUSIASTS",
+    "eventsEachMonth": "8+ EVENTS EACH MONTH",
+    "organiseActivities": "ORGANISE YOUR OWN ACTIVITIES",
+    "networkCommunity": "NETWORK AND TRUE COMMUNITY",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "searchGroups": "Search groups, categories, locations...",
+    "noResults": "No results for \"{query}\"",
+    "noEvents": "No {tab} events found"
   }
 }

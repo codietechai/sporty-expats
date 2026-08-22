@@ -8,6 +8,7 @@ import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useUser } from "@clerk/clerk-expo";
+import { useAuth } from "@clerk/clerk-expo";
 import { getErrorMessage } from "@/helpers/getErrorMessage";
 import { showToast } from "@/components/common/Toast";
 import { useNotificationsContext } from "@/contexts/NotificationsContext";

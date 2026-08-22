@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useLayoutEffect, useCallback } from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
@@ -22,8 +22,15 @@ const Dashboard = () => {
   const navigation = useNavigation<DrawerNavigationProp<any>>();
   const { unreadCount, fetchNotifications } = useNotificationsContext();
 
+  // Navigate before paint so there is no white flash on sign-out
+  useLayoutEffect(() => {
+    if (isSignedIn === false) {
+      navigation.navigate("Home" as any);
+    }
+  }, [isSignedIn]);
+
   useEffect(() => {
-    if (!isSignedIn) {
+    if (isSignedIn === false) {
       navigation.navigate("Home" as any);
     }
   }, [isSignedIn]);

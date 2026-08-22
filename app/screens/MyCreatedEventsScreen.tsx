@@ -1,5 +1,5 @@
 import i18n from "@/translations/i18n";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
     Animated,
     FlatList,
@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useQuery } from "react-query";
 import dayjs from "dayjs";
 import { useUserDb } from "@/app/hooks/useUserDb";
@@ -26,6 +26,7 @@ import {
 import type { Event } from "@/client/endpoints/events/types";
 import { categoriesList } from "@/components/Create-Events/categories";
 import { useNotificationsContext } from "@/contexts/NotificationsContext";
+import { useAuth } from "@clerk/clerk-expo";
 
 const STATUS_FILTERS = ["All", "Pending", "Approved", "Rejected"] as const;
 type StatusFilter = typeof STATUS_FILTERS[number];
@@ -62,6 +63,23 @@ const sk = StyleSheet.create({
     lineShort: { height: 11, width: "40%", backgroundColor: "#1e1e1e", borderRadius: 4 },
 });
 
+// ── Status helpers (matching web-app colors exactly) ─────────────────────────
+
+const STATUS_LEGEND = [
+    { label: "Approved", color: "#166534", dot: "#166534" },
+    { label: "Pending",  color: "#FCD34D", dot: "#FCD34D" },
+    { label: "Rejected", color: "#FF0000", dot: "#FF0000" },
+] as const;
+
+function getStatusBorderColor(status: string): string {
+    switch (status) {
+        case "Approved": return "#166534";
+        case "Rejected": return "#FF0000";
+        case "Pending":  return "#FCD34D";
+        default:         return "#FCD34D";
+    }
+}
+
 export default function MyCreatedEventsScreen() {
     const navigation = useNavigation<any>();
     const { userDb } = useUserDb();
@@ -77,6 +95,11 @@ export default function MyCreatedEventsScreen() {
         [GET_USER_CREATED_EVENTS_KEY, userId],
         () => getUserCreatedEvents(userId),
         { enabled: !!userId, retry: 1 },
+    );
+
+    // Refetch whenever this screen comes back into focus
+    useFocusEffect(
+        useCallback(() => { if (userId) refetch(); }, [refetch, userId])
     );
 
     const events = useMemo(() => {
@@ -201,9 +224,24 @@ export default function MyCreatedEventsScreen() {
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.list}
                     showsVerticalScrollIndicator={false}
+                    ListHeaderComponent={
+                        /* ── Status legend — matches web-app ── */
+                        <View style={styles.legendRow}>
+                            <Text style={styles.legendTitle}>Status</Text>
+                            {STATUS_LEGEND.map(({ label, dot }) => (
+                                <View key={label} style={styles.legendItem}>
+                                    <View style={[styles.legendDot, { backgroundColor: dot }]} />
+                                    <Text style={styles.legendLabel}>{label}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    }
                     renderItem={({ item }) => (
                         <TouchableOpacity
-                            style={styles.card}
+                            style={[
+                                styles.card,
+                                { borderColor: getStatusBorderColor(item.status), borderWidth: 2 },
+                            ]}
                             activeOpacity={0.85}
                             onPress={() => navigation.navigate("EventInfo", { event: item })}
                         >
@@ -320,12 +358,35 @@ const styles = StyleSheet.create({
     retryBtn: { marginTop: 4, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10, backgroundColor: "#166534" },
     retryBtnText: { color: "#fff", fontWeight: "600" },
     list: { paddingHorizontal: 16, paddingBottom: 32, gap: 14 },
+
+    // Status legend
+    legendRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: 12,
+        backgroundColor: "rgba(255,255,255,0.04)",
+        borderRadius: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        marginBottom: 14,
+    },
+    legendTitle: {
+        fontSize: 10,
+        fontWeight: "700",
+        color: "#6B7280",
+        textTransform: "uppercase",
+        letterSpacing: 0.8,
+        marginRight: 4,
+    },
+    legendItem: { flexDirection: "row", alignItems: "center", gap: 5 },
+    legendDot: { width: 10, height: 10, borderRadius: 5 },
+    legendLabel: { fontSize: 12, color: "#9CA3AF", fontWeight: "500" },
+
     card: {
         backgroundColor: "#1a1a1a",
         borderRadius: 16,
         overflow: "hidden",
-        borderWidth: 1,
-        borderColor: "#1e1e1e",
     },
     cardImage: { width: "100%", height: 160 },
     cardImagePlaceholder: {

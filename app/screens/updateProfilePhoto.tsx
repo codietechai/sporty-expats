@@ -14,6 +14,7 @@ import { useUserDb } from "../hooks/useUserDb";
 import { getErrorMessage } from "@/helpers/getErrorMessage";
 import { showToast } from "@/components/common/Toast";
 import { useNotificationsContext } from "@/contexts/NotificationsContext";
+import { useAuth } from "@clerk/clerk-expo";
 
 const UpdateProfilePhotoScreen = () => {
   const navigation = useNavigation();

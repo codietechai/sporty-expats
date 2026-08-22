@@ -11,6 +11,7 @@ import { DrawerActions, useNavigation } from "@react-navigation/native";
 import { RootDrawerParamList } from "@/components/Sidebar";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { useUser } from "@clerk/clerk-expo";
+import { useAuth } from "@clerk/clerk-expo";
 import { useNotificationsContext } from "@/contexts/NotificationsContext";
 
 type MenuItem = {

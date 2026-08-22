@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNotificationsContext } from "@/contexts/NotificationsContext";
 import NotificationsScreen, { NotificationCategory, Notification } from "./NotificationsScreen";
 import type { NotificationType } from "@sparkstrand/notifications-react";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { resolveNotificationDestination } from "@/helpers/navigationRef";
 
 // Map UI category keys → SDK NotificationType
 const CATEGORY_TO_SDK: Partial<Record<NotificationCategory, NotificationType>> = {
@@ -48,6 +49,13 @@ export default function NotificationsContainer() {
         fetchNotifications({ page: 1, limit: 20, includeRead: true });
     }, []);
 
+    // Refetch on focus so returning to this screen always shows fresh notifications
+    useFocusEffect(
+        useCallback(() => {
+            refreshNotifications();
+        }, [refreshNotifications])
+    );
+
     const handleCategoryChange = useCallback((cat: NotificationCategory) => {
         setActiveCategory(cat);
         const sdkType = CATEGORY_TO_SDK[cat];
@@ -81,34 +89,12 @@ export default function NotificationsContainer() {
         : false;
 
     const handleNavigate = useCallback((notification: Notification) => {
-        const { metadata, actionUrl } = notification;
-
-        // Post notification — navigate immediately
-        if (metadata?.postId) {
-            navigation.navigate("Post", { postId: metadata.postId });
-            return;
-        }
-
-        // Event notification — navigate immediately with just the ID;
-        // EventInfoScreen fetches its own data so there's no blocking wait
-        if (metadata?.eventId) {
-            navigation.navigate("EventInfo", { eventId: metadata.eventId });
-            return;
-        }
-
-        // actionUrl fallback — extract ID from known patterns and navigate instantly
-        if (actionUrl) {
-            const eventMatch = actionUrl.match(/event[s]?[\/\-]([a-zA-Z0-9_-]+)/i);
-            const postMatch  = actionUrl.match(/post[s]?[\/\-]([a-zA-Z0-9_-]+)/i);
-            if (eventMatch?.[1]) {
-                navigation.navigate("EventInfo", { eventId: eventMatch[1] });
-                return;
-            }
-            if (postMatch?.[1]) {
-                navigation.navigate("Post", { postId: postMatch[1] });
-                return;
-            }
-        }
+        const destination = resolveNotificationDestination(
+            notification.metadata ?? null,
+            notification.actionUrl ?? null,
+        );
+        if (!destination) return;
+        navigation.navigate(destination.screen as never, destination.params as never);
     }, [navigation]);
 
     const categoryCounts = useMemo(

@@ -15,6 +15,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
 import { getUserDetailsByClerkId } from "@/client/endpoints/users/getUserDetailsByClerkId";
 import { createUser } from "@/client/endpoints/users/createUser";
+import i18n from "@/translations/i18n";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -108,10 +109,10 @@ const SocialLoginButton = ({
   }, [startOAuthFlow, user, userId, onClose, onSuccess]);
 
   const buttonText = () => {
-    if (isLoading) return "Loading...";
-    if (strategy === "facebook") return "Continue with Facebook";
-    if (strategy === "google") return "Continue with Google";
-    if (strategy === "apple") return "Continue with Apple";
+    if (isLoading) return i18n.t("Auth.loading");
+    if (strategy === "facebook") return i18n.t("Auth.continueWithFacebook");
+    if (strategy === "google") return i18n.t("Auth.continueWithGoogle");
+    if (strategy === "apple") return i18n.t("Auth.continueWithApple");
   };
 
   const buttonIcon = () => {

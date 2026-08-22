@@ -3,6 +3,7 @@ import { Text, View, TouchableOpacity, StyleSheet } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useNavigation } from "@react-navigation/native";
 import { DrawerActions } from "@react-navigation/native";
+import { useAuth } from "@clerk/clerk-expo";
 
 type HeaderProps = {
   myFeed?: boolean;
@@ -24,6 +25,7 @@ export const BrandWordmark: React.FC<BrandWordmarkProps> = ({ size = 20, centere
 
 const Header: React.FC<HeaderProps> = ({ myFeed, onAddPress, onMenuPress, unreadNotifications = 0 }) => {
   const navigation = useNavigation<any>();
+  const { isSignedIn } = useAuth();
 
   const handleMenuPress = () => {
     if (onMenuPress) {
@@ -57,22 +59,24 @@ const Header: React.FC<HeaderProps> = ({ myFeed, onAddPress, onMenuPress, unread
         </TouchableOpacity>
 
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.bellBtn} onPress={() => navigation.navigate("Notifications" as any)}>
-            <Svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="white" width={24} height={24}>
-              <Path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
-              />
-            </Svg>
-            {unreadNotifications > 0 && (
-              <View style={styles.bellBadge}>
-                <Text style={styles.bellBadgeText}>
-                  {unreadNotifications > 99 ? "99+" : unreadNotifications}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          {isSignedIn && (
+            <TouchableOpacity style={styles.bellBtn} onPress={() => navigation.navigate("Notifications" as any)}>
+              <Svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="white" width={24} height={24}>
+                <Path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+                />
+              </Svg>
+              {unreadNotifications > 0 && (
+                <View style={styles.bellBadge}>
+                  <Text style={styles.bellBadgeText}>
+                    {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
           {myFeed && (
             <TouchableOpacity style={styles.addBtn} onPress={handleAddFeedPress}>
               <Svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="white" width={20} height={20}>

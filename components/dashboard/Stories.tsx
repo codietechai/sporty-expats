@@ -7,12 +7,13 @@ import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from 'expo-image';
 import * as ImagePicker from "expo-image-picker";
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -22,6 +23,7 @@ import {
 import { useQuery } from "react-query";
 import { useUser } from "@clerk/clerk-expo";
 import StoriesSkeleton from "@/components/dashboard/StoriesSkeleton";
+import { timeAgo } from "@/helpers/date";
 
 const DEFAULT_AVATAR = "https://storage.strandcdn.com/avatar.svg";
 
@@ -32,6 +34,8 @@ export type Story = {
   creationTime: string;
   name: string;
   imageUrl: string;
+  viewCount?: number;
+  viewers?: { id: string; name: string; imageUrl: string; viewedAt: string }[];
 };
 
 type GroupedStory = {
@@ -289,7 +293,6 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
   // Memoize grouped stories to prevent recalculation
   const grouped = useMemo(() => {
     if (!data) return [];
-    // API shape: { data: [ { user: { id, name, imageUrl }, stories: Story[] } ] }
     const items: any[] = data?.data?.data ?? data?.data ?? [];
     const flat: Story[] = [];
     items.forEach((item: any) => {
@@ -305,6 +308,8 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
           name: s.name ?? name,
           creationTime: s.creationTime,
           imageUrl: s.imageUrl ?? imageUrl,
+          viewCount: s.viewCount ?? 0,
+          viewers: s.viewers ?? [],
         });
       });
     });
@@ -318,16 +323,38 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
   }, [refetch, fetchStatus]);
 
   // ── Story viewer ─────────────────────────────────────────────────────────────
+  const registerView = useCallback(async (storyId: string) => {
+    if (!userId) return;
+    try {
+      await backendClient.post(`/stories/${storyId}/viewers`, { userId });
+    } catch {
+      // fire-and-forget — view registration failure shouldn't interrupt the UX
+    }
+  }, [userId]);
+
   const openGroup = useCallback((group: GroupedStory) => {
     setSelectedGroup(group);
     setStoryIndex(0);
-  }, []);
+    // Register view for the first story immediately — skip own stories
+    const firstStory = group.stories[0];
+    if (firstStory && firstStory.authorId !== userId) {
+      registerView(firstStory.id);
+    }
+  }, [userId, registerView]);
 
   const nextStory = useCallback(() => {
     if (!selectedGroup) return;
-    if (storyIndex < selectedGroup.stories.length - 1) setStoryIndex((i: number) => i + 1);
-    else setSelectedGroup(null);
-  }, [selectedGroup, storyIndex]);
+    if (storyIndex < selectedGroup.stories.length - 1) {
+      const nextIndex = storyIndex + 1;
+      setStoryIndex(nextIndex);
+      const story = selectedGroup.stories[nextIndex];
+      if (story && story.authorId !== userId) {
+        registerView(story.id);
+      }
+    } else {
+      setSelectedGroup(null);
+    }
+  }, [selectedGroup, storyIndex, userId, registerView]);
 
   const prevStory = useCallback(() => {
     if (storyIndex > 0) setStoryIndex((i: number) => i - 1);
@@ -459,35 +486,70 @@ export default function Stories({ onAddPost }: { onAddPost?: () => void }) {
 
       {/* ── Story viewer modal ── */}
       <Modal visible={!!selectedGroup} transparent animationType="fade">
-        {selectedGroup && (
-          <View style={styles.viewerBg}>
-            <View style={styles.progressRow}>
-              {selectedGroup.stories.map((_, i) => (
-                <View key={i} style={[styles.progressDot, i === storyIndex && styles.progressDotActive]} />
-              ))}
+        {selectedGroup && (() => {
+          const currentStory = selectedGroup.stories[storyIndex];
+          const isAuthor = currentStory?.authorId === userId;
+          const viewers = currentStory?.viewers ?? [];
+          const viewCount = currentStory?.viewCount ?? 0;
+          return (
+            <View style={styles.viewerBg}>
+              <View style={styles.progressRow}>
+                {selectedGroup.stories.map((_, i) => (
+                  <View key={i} style={[styles.progressDot, i === storyIndex && styles.progressDotActive]} />
+                ))}
+              </View>
+              <View style={styles.viewerHeader}>
+                <Image source={{ uri: selectedGroup.imageUrl || DEFAULT_AVATAR }} style={styles.viewerAvatar} />
+                <Text style={styles.viewerName}>{selectedGroup.name}</Text>
+                <TouchableOpacity onPress={() => setSelectedGroup(null)} hitSlop={12}>
+                  <Ionicons name="close" size={24} color="#fff" />
+                </TouchableOpacity>
+              </View>
+              <Image
+                source={{ uri: currentStory?.file?.fileUrl }}
+                style={styles.viewerImage}
+                resizeMode="cover"
+              />
+              <View style={styles.tapZones}>
+                <TouchableWithoutFeedback onPress={prevStory}>
+                  <View style={styles.tapLeft} />
+                </TouchableWithoutFeedback>
+                <TouchableWithoutFeedback onPress={nextStory}>
+                  <View style={styles.tapRight} />
+                </TouchableWithoutFeedback>
+              </View>
+
+              {/* ── Viewer list — only shown to story author ── */}
+              {isAuthor && (
+                <View style={styles.viewersPanel}>
+                  <Text style={styles.viewersPanelTitle}>
+                    {viewCount === 1
+                      ? i18n.t("Stories.viewedBy", { count: viewCount })
+                      : i18n.t("Stories.viewedByPlural", { count: viewCount })}
+                  </Text>
+                  {viewers.length === 0 ? (
+                    <Text style={styles.noViewersText}>{i18n.t("Stories.noViewers")}</Text>
+                  ) : (
+                    <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 120 }}>
+                      {viewers.map((v) => (
+                        <View key={v.id} style={styles.viewerRow}>
+                          <Image
+                            source={{ uri: v.imageUrl || DEFAULT_AVATAR }}
+                            style={styles.viewerRowAvatar}
+                          />
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.viewerRowName}>{v.name}</Text>
+                            <Text style={styles.viewerRowTime}>{timeAgo(v.viewedAt)}</Text>
+                          </View>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  )}
+                </View>
+              )}
             </View>
-            <View style={styles.viewerHeader}>
-              <Image source={{ uri: selectedGroup.imageUrl || DEFAULT_AVATAR }} style={styles.viewerAvatar} />
-              <Text style={styles.viewerName}>{selectedGroup.name}</Text>
-              <TouchableOpacity onPress={() => setSelectedGroup(null)} hitSlop={12}>
-                <Ionicons name="close" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            <Image
-              source={{ uri: selectedGroup.stories[storyIndex]?.file?.fileUrl }}
-              style={styles.viewerImage}
-              resizeMode="cover"
-            />
-            <View style={styles.tapZones}>
-              <TouchableWithoutFeedback onPress={prevStory}>
-                <View style={styles.tapLeft} />
-              </TouchableWithoutFeedback>
-              <TouchableWithoutFeedback onPress={nextStory}>
-                <View style={styles.tapRight} />
-              </TouchableWithoutFeedback>
-            </View>
-          </View>
-        )}
+          );
+        })()}
       </Modal>
 
       {/* ── Status preview modal (pending / rejected) ── */}
@@ -664,6 +726,28 @@ const styles = StyleSheet.create({
   tapZones: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, flexDirection: "row" },
   tapLeft: { flex: 1 },
   tapRight: { flex: 1 },
+
+  // Viewer panel (author only)
+  viewersPanel: {
+    position: "absolute", bottom: 0, left: 0, right: 0,
+    backgroundColor: "rgba(15,15,15,0.92)",
+    borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)",
+    paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24,
+  },
+  viewersPanelTitle: {
+    color: "#fff", fontWeight: "700", fontSize: 14, marginBottom: 10,
+  },
+  noViewersText: { color: "#6B7280", fontSize: 13 },
+  viewerRow: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    paddingVertical: 6,
+  },
+  viewerRowAvatar: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: "#1a1a1a",
+  },
+  viewerRowName: { color: "#fff", fontSize: 13, fontWeight: "600" },
+  viewerRowTime: { color: "#6B7280", fontSize: 11, marginTop: 1 },
 
   // Status preview modal badge
   statusBadge: {

@@ -3,6 +3,7 @@ import { View, Image, StyleSheet, Text, ScrollView } from "react-native";
 import { Stack } from "expo-router";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import i18n from "@/translations/i18n";
 
 export default function Market() {
   const totalSlices = 6;
@@ -17,10 +18,10 @@ export default function Market() {
         <Header />
         <ScrollView>
           <Text className="text-white text-5xl uppercase font-oswald pt-14 text-center">
-            Agree on a fair price
+            {i18n.t("Market.fairPrice")}
           </Text>
           <Text className="text-main text-5xl uppercase font-oswald pt-5 text-center">
-            Buy and sell in the market
+            {i18n.t("Market.buyAndSell")}
           </Text>
 
           <View style={styles.imageRow}>
@@ -53,7 +54,7 @@ export default function Market() {
           </View>
 
           <Text className="text-white text-5xl uppercase font-oswald pt-14 text-center">
-            Network and true community
+            {i18n.t("Market.networkCommunity")}
           </Text>
           <View className="flex flex-row justify-center">
             <Image

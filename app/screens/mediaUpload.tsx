@@ -18,6 +18,7 @@ import { getUploadedMediaByUser } from "@/client/endpoints/users/getUserUploaded
 import MediaGallery from "@/components/profile/mediaGallery";
 import { useUserDb } from "@/app/hooks/useUserDb";
 import { useNotificationsContext } from "@/contexts/NotificationsContext";
+import { useAuth } from "@clerk/clerk-expo";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const GAP = 2;

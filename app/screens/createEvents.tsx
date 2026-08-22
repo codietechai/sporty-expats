@@ -18,6 +18,7 @@ import type { Event } from "@/client/endpoints/events/types";
 import { getErrorMessage } from "@/helpers/getErrorMessage";
 import { showToast } from "@/components/common/Toast";
 import { useNotificationsContext } from "@/contexts/NotificationsContext";
+import { useAuth } from "@clerk/clerk-expo";
 
 export type EventFormValues = {
   title: string;

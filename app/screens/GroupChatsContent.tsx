@@ -15,6 +15,7 @@ import GroupChatSkeleton from "@/components/groupchat/GroupChatSkeleton";
 import type { ChatRoom } from "@sparkstrand/chat-api-client/v2/types";
 import type { EventRoomMetadata } from "@/app/chat/group/hooks/eventMetadata";
 import { useNotificationsContext } from "@/contexts/NotificationsContext";
+import { useAuth } from "@clerk/clerk-expo";
 
 const PAGE_SIZE = 10;
 
@@ -124,7 +125,7 @@ export default function GroupChatsContent({ initialRoomId }: Props) {
                         <TextInput
                             value={searchQuery}
                             onChangeText={(t) => { setSearchQuery(t); setPage(1); }}
-                            placeholder="Search groups, categories, locations…"
+                            placeholder={i18n.t("Dashboard.searchGroups")}
                             placeholderTextColor="#4B5563"
                             style={styles.searchInput}
                         />
@@ -144,14 +145,14 @@ export default function GroupChatsContent({ initialRoomId }: Props) {
                             onPress={() => { setActiveTab("upcoming"); setPage(1); }}
                         >
                             <Ionicons name="calendar-outline" size={13} color={activeTab === "upcoming" ? "#fff" : "#6B7280"} />
-                            <Text style={[styles.pillTabText, activeTab === "upcoming" && styles.pillTabTextActive]}>Upcoming</Text>
+                            <Text style={[styles.pillTabText, activeTab === "upcoming" && styles.pillTabTextActive]}>{i18n.t("Dashboard.upcoming")}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.pillTab, activeTab === "past" && styles.pillTabActive]}
                             onPress={() => { setActiveTab("past"); setPage(1); }}
                         >
                             <Ionicons name="time-outline" size={13} color={activeTab === "past" ? "#fff" : "#6B7280"} />
-                            <Text style={[styles.pillTabText, activeTab === "past" && styles.pillTabTextActive]}>Past</Text>
+                            <Text style={[styles.pillTabText, activeTab === "past" && styles.pillTabTextActive]}>{i18n.t("Dashboard.past")}</Text>
                         </TouchableOpacity>
                     </View>
                     <View style={styles.countBadge}>
@@ -175,7 +176,7 @@ export default function GroupChatsContent({ initialRoomId }: Props) {
                     <View style={styles.centered}>
                         <Text style={styles.emptyEmoji}>🏟️</Text>
                         <Text style={styles.stateText}>
-                            {searchQuery.trim() ? `No results for "${searchQuery}"` : `No ${activeTab} events found`}
+                            {searchQuery.trim() ? i18n.t("Dashboard.noResults", { query: searchQuery }) : i18n.t("Dashboard.noEvents", { tab: activeTab === "past" ? i18n.t("Dashboard.past").toLowerCase() : i18n.t("Dashboard.upcoming").toLowerCase() })}
                         </Text>
                     </View>
                 ) : (

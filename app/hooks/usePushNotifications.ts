@@ -3,6 +3,7 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
+import { resolveNotificationDestination } from "@/helpers/navigationRef";
 
 // Show alerts for notifications received while the app is in the foreground
 Notifications.setNotificationHandler({
@@ -18,12 +19,23 @@ export interface PushNotificationState {
   notification: Notifications.Notification | null;
 }
 
-export function usePushNotifications(): PushNotificationState {
+/**
+ * Optional callback supplied by the caller so navigation can happen inside
+ * the React component tree (where useNavigation() is valid).
+ */
+export type PushTapHandler = (screen: string, params: Record<string, unknown>) => void;
+
+export function usePushNotifications(onTap?: PushTapHandler): PushNotificationState {
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [notification, setNotification] = useState<Notifications.Notification | null>(null);
 
   const notificationListener = useRef<Notifications.EventSubscription>();
   const responseListener = useRef<Notifications.EventSubscription>();
+
+  // Keep a stable ref to the latest onTap callback so the listener closure
+  // doesn't go stale when the parent re-renders.
+  const onTapRef = useRef<PushTapHandler | undefined>(onTap);
+  useEffect(() => { onTapRef.current = onTap; }, [onTap]);
 
   useEffect(() => {
     registerForPushNotificationsAsync().then((token) => {
@@ -38,8 +50,24 @@ export function usePushNotifications(): PushNotificationState {
     );
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener(
-      (_response: Notifications.NotificationResponse) => {
-        // Wire navigation on tap here if needed
+      (response: Notifications.NotificationResponse) => {
+        // Extract the data payload that was embedded in the notification.
+        // Expo push notifications carry custom data in `notification.request.content.data`.
+        const data = response.notification.request.content.data as
+          | Record<string, string>
+          | null
+          | undefined;
+
+        const actionUrl =
+          (data?.actionUrl as string | undefined) ??
+          (data?.action_url as string | undefined) ??
+          null;
+
+        const destination = resolveNotificationDestination(data ?? null, actionUrl);
+
+        if (destination && onTapRef.current) {
+          onTapRef.current(destination.screen, destination.params);
+        }
       }
     );
 

@@ -1,5 +1,5 @@
 import i18n from "@/translations/i18n";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
     View,
     Text,
@@ -14,13 +14,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useEvents } from "@/app/hooks/useEvents";
 import type { Event } from "@/client/endpoints/events/types";
 import { categoriesList } from "@/components/Create-Events/categories";
 import { normalizeMediaUrl } from "@/helpers/normalizeMediaUrl";
 import dayjs from "dayjs";
 import { useNotificationsContext } from "@/contexts/NotificationsContext";
+import { useAuth } from "@clerk/clerk-expo";
 
 const CATEGORIES = ["All", ...categoriesList];
 
@@ -103,8 +104,13 @@ export default function EventsListScreen() {
         events, isLoading, isError,
         updateFilters, resetFilters,
         hasNextPage, hasPrevPage, goToNextPage, goToPrevPage,
-        currentPage, pageSize,
+        currentPage, pageSize, refetch,
     } = useEvents({ timeFilter: "upcoming" });
+
+    // Refetch whenever this screen comes back into focus
+    useFocusEffect(
+        useCallback(() => { refetch(); }, [refetch])
+    );
 
     const handleTimeFilterChange = (f: TimeFilter) => {
         setTimeFilter(f);

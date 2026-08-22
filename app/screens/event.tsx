@@ -56,8 +56,8 @@ export default function Event() {
         <ScrollView style={styles.container}>
       {/* Section 1: Events for Professionals */}
       <Text style={styles.heading}>
-        <Text style={styles.highlight}>EVENTS </Text>
-        FOR{"\n"}PROFESSIONALS{"\n"}AND ENTHUSIASTS
+        <Text style={styles.highlight}>{i18n.t("Dashboard.eventProfessionals").split(" ")[0]} </Text>
+        {i18n.t("Dashboard.eventProfessionals").split(" ").slice(1).join(" ")}
       </Text>
 
       <View style={styles.svgOverlapContainer}>
@@ -98,7 +98,7 @@ export default function Event() {
               },
             ]}
           >
-            {"8+ EVENTS EACH MONTH     ".repeat(20)}
+            {(i18n.t("Dashboard.eventsEachMonth") + "     ").repeat(20)}
           </Animated.Text>
 
           <Animated.Text
@@ -111,7 +111,7 @@ export default function Event() {
               },
             ]}
           >
-            {"8+ EVENTS EACH MONTH     ".repeat(20)}
+            {(i18n.t("Dashboard.eventsEachMonth") + "     ").repeat(20)}
           </Animated.Text>
         </View>
 
@@ -129,9 +129,9 @@ export default function Event() {
 
       {/* Section 3: Organise Your Own Activities */}
       <View style={styles.activitiesHeading}>
-        <Text style={styles.activitiesLine1}>ORGANISE YOUR</Text>
+        <Text style={styles.activitiesLine1}>{i18n.t("Dashboard.organiseActivities").split(" ").slice(0, 2).join(" ")}</Text>
         <Text style={styles.activitiesLine2}>
-          OWN ::: <Text style={styles.activitiesGreen}>{i18n.t("LandingPageSecondSection.ACTIVITIES")}</Text>
+          {i18n.t("Dashboard.organiseActivities").split(" ")[2]} ::: <Text style={styles.activitiesGreen}>{i18n.t("LandingPageSecondSection.ACTIVITIES")}</Text>
         </Text>
       </View>
 
@@ -151,7 +151,7 @@ export default function Event() {
       </View>
 
       {/* Section 4: Network and Community */}
-      <Text style={styles.sectionTitle}>NETWORK AND TRUE COMMUNITY</Text>
+      <Text style={styles.sectionTitle}>{i18n.t("Dashboard.networkCommunity")}</Text>
       <Image source={Runners} style={styles.fullWidthImage} />
       <Footer />
     </ScrollView>

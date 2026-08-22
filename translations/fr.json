@@ -108,7 +108,35 @@
     "SignIn": "Se connecter",
     "NoAccount": "Pas de compte?",
     "Create": "Créer un compte",
-    "ForgotPassword": "Mot de passe oublié"
+    "ForgotPassword": "Mot de passe oublié",
+    "terms": "En continuant, vous acceptez nos conditions et notre politique de confidentialité.",
+    "resetTitle": "Réinitialiser le mot de passe",
+    "resetInstructions": "Saisissez votre adresse e-mail pour recevoir un code de réinitialisation.",
+    "sendResetCode": "Envoyer le code",
+    "backTo": "Retour à",
+    "resetCodeTitle": "Saisir le code de réinitialisation",
+    "resetCodeInstructions": "Consultez votre e-mail pour le code à 6 chiffres.",
+    "resetCode": "Code de réinitialisation",
+    "newPassword": "Nouveau mot de passe",
+    "messages": {
+      "loggedIn": "Connexion réussie",
+      "loginFailed": "Échec de la connexion",
+      "resetCodeSent": "Code de réinitialisation envoyé par e-mail",
+      "resetEmailFailed": "Échec de l'envoi de l'e-mail",
+      "passwordReset": "Mot de passe réinitialisé",
+      "passwordResetFailed": "Échec de la réinitialisation du mot de passe"
+    }
+  },
+  "Auth": {
+    "continueWithGoogle": "Continuer avec Google",
+    "continueWithFacebook": "Continuer avec Facebook",
+    "continueWithApple": "Continuer avec Apple",
+    "loading": "Chargement..."
+  },
+  "Market": {
+    "fairPrice": "Convenir d'un prix juste",
+    "buyAndSell": "Achetez et vendez sur le marché",
+    "networkCommunity": "Réseau et vraie communauté"
   },
   "SignUp": {
     "Username": "Nom d'utilisateur",
@@ -123,6 +151,14 @@
     "Continues": "Continuer",
     "VerifyEC": "Vérifier le code de courrier électronique",
     "EmailC": "Code de courrier électronique",
+    "verifyTitle": "Vérifiez votre e-mail",
+    "verifyInstructions": "Saisissez le code à 6 chiffres envoyé à votre adresse e-mail.",
+    "verificationCode": "Code de vérification",
+    "messages": {
+      "verificationSent": "Code de vérification envoyé par e-mail.",
+      "signedUp": "Inscription réussie",
+      "invalidCode": "Code invalide ou expiré."
+    },
     "Verify": "Vérifier",
     "Dob": "Date de naissance",
     "Gender": {
@@ -303,7 +339,15 @@
     "MarkYourselfAsParticipant": "Vous marquer comme participant?",
     "SearchMembers": "Rechercher des membres",
     "SelectMember": "Sélectionnez un membre",
-    "FailedToLoadMembers": "Échec du chargement des membres. Veuillez réessayer plus tard."
+    "FailedToLoadMembers": "Échec du chargement des membres. Veuillez réessayer plus tard.",
+    "NoMembersFound": "Aucun membre trouvé.",
+    "AddOrganizer": "Ajouter un organisateur",
+    "RemoveOrganizer": "Supprimer l'organisateur",
+    "AddParticipant": "Ajouter un participant",
+    "RemoveParticipant": "Supprimer le participant",
+    "EventCreated": "Événement créé",
+    "OrganizerParticipants": "Marquer les organisateurs comme participants",
+    "you": "Vous"
   },
   "Media": {
     "SomethingWentWrong": "Quelque chose a mal tourné",
@@ -919,6 +963,39 @@
     "statusRejected": "Rejeté",
     "statusClosed": "Fermé"
   },
+  "Stories": {
+    "viewedBy": "Vu par {{count}} personne",
+    "viewedByPlural": "Vu par {{count}} personnes",
+    "noViewers": "Pas encore de vues",
+    "uploadTitle": "Télécharger une story",
+    "selectImage": "Appuyez pour sélectionner une image",
+    "uploadSuccess": "Votre story a été téléchargée avec succès !"
+  },
+  "EventInfo": {
+    "free": "Gratuit",
+    "spotsRemaining": "{{count}} place(s) restante(s)",
+    "maxAttendees": "Max {{count}} participant(s)",
+    "minAttendees": "Min {{count}} participant(s)",
+    "refundDeadline": "Date limite de remboursement",
+    "openInMaps": "Ouvrir dans Maps",
+    "withdrawParticipation": "Se retirer",
+    "withdrawTitle": "Se retirer",
+    "withdrawConfirm": "Êtes-vous sûr de vouloir vous retirer de cet événement ?",
+    "withdrawBtn": "Se retirer",
+    "withdrawSuccess": "Vous vous êtes retiré de cet événement.",
+    "withdrawError": "Impossible de se retirer. Veuillez réessayer.",
+    "youAreRegistered": "Inscrit · {{count}} billet(s)",
+    "participateAgain": "Participer à nouveau",
+    "requestRefund": "Demander un remboursement",
+    "endsLabel": "Se termine",
+    "eventSoldOut": "Événement complet",
+    "notifyUsers": "Notifier les utilisateurs",
+    "participants": "Participants",
+    "invited": "Invités",
+    "rejectionReason": "Motif de rejet",
+    "expired": "Expiré",
+    "closingSoon": "Fermeture imminente"
+  },
   "Dashboard": {
     "search": "Rechercher des personnes, des fonctionnalités et des actions",
     "aboutSportyExpats": "À propos de SportyExpats",
@@ -969,6 +1046,23 @@
     "viewReply": "Voir {count} réponse",
     "viewReplies": "Voir {count} réponses",
     "hideReplies": "Masquer les réponses",
-    "unknownUser": "Utilisateur inconnu"
+    "unknownUser": "Utilisateur inconnu",
+    "comment": "commentaire",
+    "noCommentsYet": "Aucun commentaire pour le moment. Soyez le premier !",
+    "signInToComment": "Veuillez vous connecter pour commenter.",
+    "error": "Erreur",
+    "commentFailed": "Impossible de publier le commentaire.",
+    "replyingTo": "Réponse à",
+    "replyTo": "Répondre à",
+    "viewAllComments": "Voir les {count} {label}",
+    "eventProfessionals": "ÉVÉNEMENTS POUR PROFESSIONNELS ET PASSIONNÉS",
+    "eventsEachMonth": "8+ ÉVÉNEMENTS PAR MOIS",
+    "organiseActivities": "ORGANISEZ VOS PROPRES ACTIVITÉS",
+    "networkCommunity": "RÉSEAUTAGE ET VIE COMMUNAUTAIRE",
+    "upcoming": "À venir",
+    "past": "Passés",
+    "searchGroups": "Rechercher des groupes, catégories, lieux...",
+    "noResults": "Aucun résultat pour \"{query}\"",
+    "noEvents": "Aucun événement {tab} trouvé"
   }
 }

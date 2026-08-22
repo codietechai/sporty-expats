@@ -99,6 +99,8 @@ export default function Sidebar(props: DrawerContentComponentProps) {
       setLoggedIn(false);
       setModalVisible(false);
       setShowDropdown(false);
+      // Redirect to Home whenever auth session is lost
+      props.navigation.navigate("Home");
     }
   }, [user]);
 

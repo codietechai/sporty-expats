@@ -16,6 +16,7 @@ import { BrandWordmark } from "@/components/Header";
 import * as SplashScreen from 'expo-splash-screen';
 import { ToastProvider } from "@/components/common/Toast";
 import { usePushNotifications } from "@/app/hooks/usePushNotifications";
+import { useNavigation } from "@react-navigation/native";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -77,8 +78,12 @@ export default function RootLayout() {
 
 // Initialises push notifications once at the root level.
 // Kept in a separate component so the hook runs inside ClerkLoaded.
+// useNavigation() is valid here because this renders inside the Stack navigator.
 function PushNotificationInit() {
-  usePushNotifications();
+  const navigation = useNavigation<any>();
+  usePushNotifications((screen, params) => {
+    navigation.navigate(screen as never, params as never);
+  });
   return null;
 }
 
